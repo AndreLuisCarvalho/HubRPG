@@ -58,3 +58,9 @@ if (total === 0) {
   inserir.run('A Cidade Sem Sol', 'Ordem Paranormal', 'Investigação em uma cidade onde o sol nunca nasce.', '#a347ff');
   inserir.run('Ruínas de Valkaria', 'Tormenta20', 'Exploração das ruínas da antiga capital.', '#c68f3f');
 }
+
+// Migração: adiciona a coluna "mapa" em bancos que já existiam
+const colunasCampanha = db.prepare('PRAGMA table_info(campanhas)').all().map((c) => c.name);
+if (!colunasCampanha.includes('mapa')) {
+  db.exec("ALTER TABLE campanhas ADD COLUMN mapa TEXT DEFAULT ''");
+}
