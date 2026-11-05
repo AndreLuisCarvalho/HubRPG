@@ -1,0 +1,98 @@
+$papel-pardo: #c9a66b;
+$tinta: #2b2113;
+$fonte-maquina: 'Special Elite', monospace;
+
+.pasta {
+  position: relative;
+  padding-top: 20px;
+}
+
+// Folha de dentro da pasta
+.folha {
+  position: absolute;
+  top: 16px;
+  left: 12px;
+  right: 12px;
+  height: 48px;
+  background: #f4f0e6;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transform: rotate(-1.5deg);
+  transition: transform 0.35s ease;
+}
+
+.aba {
+  position: absolute;
+  top: 0;
+  left: 16px;
+  padding: 3px 14px 6px;
+  background: $papel-pardo;
+  border-radius: 6px 6px 0 0;
+  font-family: $fonte-maquina;
+  font-size: 0.7rem;
+  color: #4a3a20;
+}
+
+.capa {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 18px 16px;
+  background: linear-gradient(170deg, lighten($papel-pardo, 6%), darken($papel-pardo, 3%));
+  border-radius: 0 6px 6px 6px;
+  color: $tinta;
+  box-shadow: inset 0 0 30px rgba(110, 70, 20, 0.35), 0 4px 10px rgba(0, 0, 0, 0.45);
+  transform-origin: bottom center;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.clipe {
+  position: absolute;
+  top: -12px;
+  right: 70px;
+  width: 10px;
+  height: 30px;
+  border: 2px solid #a8adb3;
+  border-radius: 6px;
+}
+
+.carimbo {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  padding: 2px 6px;
+  border: 2px solid #b3261e;
+  color: #b3261e;
+  font-family: $fonte-maquina;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  transform: rotate(-8deg);
+  opacity: 0.75;
+}
+
+.sistema {
+  font-family: $fonte-maquina;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6b5432;
+}
+
+.nome {
+  font-family: $fonte-maquina;
+  font-size: 1.15rem;
+}
+
+// Selecionada: a folha sai e a capa inclina
+.aberta {
+  .folha { transform: translateY(-16px) rotate(-3deg); }
+
+  .capa {
+    transform: perspective(700px) rotateX(10deg);
+    box-shadow:
+      inset 0 0 30px rgba(110, 70, 20, 0.35),
+      0 0 0 2px var(--cor),
+      0 12px 28px color-mix(in srgb, var(--cor) 35%, transparent);
+  }
+}
