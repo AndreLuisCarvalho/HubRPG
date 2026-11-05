@@ -1,0 +1,75 @@
+@use '../../styles/mixins' as *;
+
+.pagina {
+  display: grid;
+  grid-template-columns: minmax(300px, 400px) 1fr;
+  height: 100vh;
+  overflow: hidden;
+
+  @include celular {
+    grid-template-columns: 1fr;
+    grid-template-rows: 40vh auto;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+
+    > section { grid-row: 1; }   // o palco do mapa vai para cima
+  }
+}
+
+.lateral {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 40px 24px;
+  background: var(--fundo);
+  overflow-y: auto;
+  transition: opacity 0.4s;
+
+  @include celular { grid-row: 2; }
+}
+
+.rotulo {
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+
+.titulo {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  line-height: 1.1;
+  margin: 8px 0;
+}
+
+.subtitulo { color: var(--texto-suave); }
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dica {
+  margin-top: auto;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.cortina {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease-in;
+}
+
+// Ao entrar numa campanha
+.entrando {
+  .lateral { opacity: 0; }
+  .cortina { opacity: 1; }
+}
