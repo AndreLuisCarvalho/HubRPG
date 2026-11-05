@@ -1,111 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600&display=swap');
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  --fundo: #0b0b10;
+  --superficie: #15151d;
+  --borda: #2a2a36;
+  --texto: #e8e6f0;
+  --texto-suave: #9a97a8;
+  --cor: #8b5cf6;
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
+* { box-sizing: border-box; margin: 0; }
 
 body {
-  margin: 0;
+  background: radial-gradient(circle at top, #1a1530 0%, var(--fundo) 60%);
+  color: var(--texto);
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: 100vh;
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
+h1 { font-family: 'Cinzel', serif; letter-spacing: 0.04em; }
+
+kbd {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.85em;
+}
+
+.erro { color: #ff6b6b; }
+
+/* ---------- Menu ---------- */
+.menu { max-width: 1100px; margin: 0 auto; padding: 48px 16px; }
+
+.menu-topo { text-align: center; margin-bottom: 40px; }
+.menu-rotulo { text-transform: uppercase; letter-spacing: 0.3em; font-size: 0.75rem; color: var(--texto-suave); }
+.menu-topo h1 { font-size: clamp(2rem, 6vw, 3.5rem); margin: 8px 0; }
+.menu-subtitulo { font-size: 1.1rem; }
+.menu-dica { color: var(--texto-suave); font-size: 0.85rem; margin-top: 12px; }
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.card {
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
+  gap: 8px;
+  text-align: left;
+  min-height: 180px;
+  padding: 20px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--cor) 18%, var(--superficie)), var(--superficie));
+  border: 1px solid var(--borda);
+  border-top: 4px solid var(--cor);
+  border-radius: 12px;
+  color: var(--texto);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+.card.selecionado {
+  transform: translateY(-4px) scale(1.02);
+  border-color: var(--cor);
+  box-shadow: 0 0 0 1px var(--cor), 0 12px 32px color-mix(in srgb, var(--cor) 35%, transparent);
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
+.card-sistema { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--cor); font-weight: 600; }
+.card-nome { font-family: 'Cinzel', serif; font-size: 1.35rem; font-weight: 600; }
+.card-descricao { color: var(--texto-suave); font-size: 0.9rem; flex: 1; }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
+.card-status { align-self: flex-start; font-size: 0.75rem; padding: 2px 10px; border-radius: 999px; background: var(--borda); }
+.status-ativa { background: #1f3d2b; color: #6ee7a0; }
+.status-pausada { background: #3d351f; color: #e7c96e; }
+.status-encerrada { background: #3d1f1f; color: #e76e6e; }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
+/* ---------- Página da campanha ---------- */
+.pagina { max-width: 900px; margin: 0 auto; padding: 32px 16px; display: grid; gap: 12px; }
+.voltar { color: var(--texto-suave); text-decoration: none; font-size: 0.9rem; }
+.voltar:hover { color: var(--texto); }
+.campanha-titulo { font-size: clamp(1.8rem, 5vw, 3rem); color: var(--cor); }
