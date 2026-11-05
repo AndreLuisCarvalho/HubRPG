@@ -25,12 +25,15 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { nome, sistema = '', descricao = '', imagem = '', mapa = '', cor = '#8b5cf6' } = req.body ?? {};
+  const {
+    nome, sistema = '', descricao = '', imagem = '', mapa = '',
+    cor = '#8b5cf6', tema = 'padrao',
+  } = req.body ?? {};
   if (!nome) return res.status(400).json({ erro: 'O nome é obrigatório' });
 
   const resultado = db
-    .prepare('INSERT INTO campanhas (nome, sistema, descricao, imagem, mapa, cor) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(nome, sistema, descricao, imagem, mapa, cor);
+    .prepare('INSERT INTO campanhas (nome, sistema, descricao, imagem, mapa, cor, tema) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(nome, sistema, descricao, imagem, mapa, cor, tema);
 
   res.status(201).json(buscarCampanha(resultado.lastInsertRowid));
 });
@@ -41,8 +44,8 @@ router.put('/:id', (req, res) => {
 
   const c = { ...atual, ...(req.body ?? {}) };
   db.prepare(
-    'UPDATE campanhas SET nome = ?, sistema = ?, descricao = ?, imagem = ?, mapa = ?, cor = ?, status = ? WHERE id = ?'
-  ).run(c.nome, c.sistema, c.descricao, c.imagem, c.mapa, c.cor, c.status, atual.id);
+    'UPDATE campanhas SET nome = ?, sistema = ?, descricao = ?, imagem = ?, mapa = ?, cor = ?, status = ?, tema = ? WHERE id = ?'
+  ).run(c.nome, c.sistema, c.descricao, c.imagem, c.mapa, c.cor, c.status, c.tema, atual.id);
 
   res.json(buscarCampanha(atual.id));
 });
