@@ -1,0 +1,41 @@
+@use '../../styles/mixins' as *;
+
+.info {
+  position: absolute;
+  right: 32px;
+  bottom: 32px;
+  max-width: 420px;
+  display: grid;
+  gap: 8px;
+  padding: 20px 24px;
+  background: rgba(11, 11, 16, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--borda);
+  border-top: 3px solid var(--cor);
+  border-radius: 12px;
+  animation: surgir 0.6s ease 0.2s both;
+
+  @include celular {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+.sistema { @include sobretitulo; }
+.nome { font-size: 1.6rem; }
+.descricao { color: var(--texto-suave); font-size: 0.9rem; }
+
+.dados {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+@keyframes surgir {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}

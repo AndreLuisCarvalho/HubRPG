@@ -1,0 +1,19 @@
+$celular: 800px;
+
+@mixin celular {
+  @media (max-width: $celular) { @content; }
+}
+
+@mixin fonte-titulo {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.04em;
+}
+
+// Texto pequeno em caixa alta acima dos títulos ("ORDEM PARANORMAL")
+@mixin sobretitulo {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--cor);
+}
