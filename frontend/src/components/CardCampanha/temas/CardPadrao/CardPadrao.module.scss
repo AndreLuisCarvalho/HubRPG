@@ -1,0 +1,27 @@
+@use '../../../../styles/mixins' as *;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-left: 4px solid var(--cor);
+  border-radius: 10px;
+  transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.selecionado {
+  border-color: var(--cor);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cor) 25%, var(--superficie)), var(--superficie));
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--cor) 30%, transparent);
+}
+
+.sistema { @include sobretitulo; }
+
+.nome {
+  @include fonte-titulo;
+  font-size: 1.15rem;
+  font-weight: 600;
+}

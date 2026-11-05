@@ -1,0 +1,79 @@
+$couro-claro: #3b2a23;
+$couro-escuro: #160f0d;
+$pergaminho-velho: #d8c6a8;
+
+.livro {
+  display: flex;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
+}
+
+.lombada {
+  width: 14px;
+  flex-shrink: 0;
+  border-radius: 4px 0 0 4px;
+  background: repeating-linear-gradient(180deg, #120c0a 0 10px, #2a1c17 10px 12px);
+}
+
+.capa {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 18px 16px;
+  text-align: center;
+  background: radial-gradient(circle at 30% 20%, $couro-claro, $couro-escuro 75%);
+  border-radius: 0 10px 10px 0;
+  color: $pergaminho-velho;
+  transition: box-shadow 0.4s;
+
+  // Costura em volta da capa
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1px dashed rgba(190, 160, 120, 0.3);
+    border-radius: 0 7px 7px 0;
+    pointer-events: none;
+  }
+}
+
+.runas {
+  font-size: 0.8rem;
+  letter-spacing: 0.5em;
+  color: #5c4a3e;
+  transition: color 0.4s, text-shadow 0.4s;
+}
+
+.sistema {
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #8a7560;
+}
+
+.nome {
+  font-family: 'Pirata One', serif;
+  font-size: 1.4rem;
+  line-height: 1.1;
+  transition: text-shadow 0.4s;
+}
+
+// Selecionado: o livro "desperta"
+.desperto {
+  .capa { box-shadow: inset 0 0 40px color-mix(in srgb, var(--cor) 25%, transparent); }
+
+  .runas {
+    color: var(--cor);
+    text-shadow: 0 0 6px var(--cor), 0 0 14px var(--cor);
+    animation: pulsar 2.4s ease-in-out infinite;
+  }
+
+  .nome { text-shadow: 0 0 10px color-mix(in srgb, var(--cor) 50%, transparent); }
+}
+
+@keyframes pulsar {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}

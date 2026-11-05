@@ -1,0 +1,89 @@
+$madeira: #7a5530;
+$papel: #ecdcb8;
+$tinta: #3a2812;
+$fonte-antiga: 'IM Fell English SC', serif;
+
+.pergaminho {
+  padding: 0 6px;
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.5));
+}
+
+// Os rolos de madeira em cima e embaixo
+.rolo {
+  display: block;
+  height: 12px;
+  margin: 0 -6px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, $madeira, lighten($madeira, 35%) 45%, $madeira);
+}
+
+.papel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 18px 18px;
+  text-align: center;
+  color: $tinta;
+  // Manchas de papel envelhecido
+  background:
+    radial-gradient(circle at 15% 25%, rgba(140, 90, 30, 0.18), transparent 35%),
+    radial-gradient(circle at 85% 70%, rgba(140, 90, 30, 0.15), transparent 40%),
+    linear-gradient(90deg, darken($papel, 12%), $papel 15%, $papel 85%, darken($papel, 12%));
+}
+
+.sistema {
+  font-family: $fonte-antiga;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: #7a5a32;
+}
+
+.nome {
+  font-family: $fonte-antiga;
+  font-size: 1.3rem;
+}
+
+// Truque do grid: 0fr = fechado, 1fr = altura do conteúdo
+.desenrolar {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.45s ease;
+
+  > div {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  p {
+    padding-top: 8px;
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+}
+
+// Selo de cera na cor da campanha
+.selo {
+  position: absolute;
+  right: 14px;
+  bottom: -8px;
+  z-index: 1;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 30%,
+    color-mix(in srgb, var(--cor) 60%, white),
+    var(--cor) 55%,
+    color-mix(in srgb, var(--cor) 55%, black)
+  );
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+}
+
+.aberto {
+  .desenrolar { grid-template-rows: 1fr; }
+  .selo { transform: scale(1.1) rotate(-10deg); }
+}
