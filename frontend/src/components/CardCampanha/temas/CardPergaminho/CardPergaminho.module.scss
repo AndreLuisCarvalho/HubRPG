@@ -66,20 +66,9 @@ $fonte-antiga: 'IM Fell English SC', serif;
 // Selo de cera na cor da campanha
 .selo {
   position: absolute;
-  right: 14px;
-  bottom: -8px;
-  z-index: 1;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 35% 30%,
-    color-mix(in srgb, var(--cor) 60%, white),
-    var(--cor) 55%,
-    color-mix(in srgb, var(--cor) 55%, black)
-  );
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  transform: scale(0.9);
+  right: 16px;
+  bottom: -6px;
+  z-index: 2;
   transition: transform 0.3s ease;
 }
 

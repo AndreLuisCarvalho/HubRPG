@@ -1,0 +1,88 @@
+.invocacao { position: relative; }
+
+// O círculo fica atrás do texto, maior que o cartão
+.circulo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 340px;
+  height: 340px;
+  margin: -170px 0 0 -170px;   // centraliza sem usar transform (o transform é da rotação)
+  fill: none;
+  stroke: var(--cor);
+  stroke-width: 1.2;
+  opacity: 0.55;
+  filter: drop-shadow(0 0 6px var(--cor));
+  pointer-events: none;
+  animation: girar 40s linear infinite;
+
+  // pathLength="1" no JSX faz cada traço medir "1"; assim o efeito de desenhar
+  // funciona igual para qualquer forma
+  circle,
+  polygon {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: desenhar 1.4s ease-in-out forwards;
+  }
+
+  circle:nth-of-type(2) { animation-delay: 0.25s; }
+  polygon { animation-delay: 0.5s; }
+}
+
+.conteudo {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  padding: 22px 24px;
+  text-align: center;
+  background: radial-gradient(ellipse at center, rgba(20, 6, 10, 0.85), rgba(5, 2, 4, 0.92));
+  border: 1px solid color-mix(in srgb, var(--cor) 40%, transparent);
+  border-radius: 4px;
+  box-shadow:
+    0 0 30px color-mix(in srgb, var(--cor) 25%, transparent),
+    inset 0 0 30px rgba(0, 0, 0, 0.8);
+  color: #d8c6a8;
+  animation: materializar 1s ease-out 0.9s both;   // aparece depois do círculo
+}
+
+.sistema {
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--cor);
+}
+
+.nome {
+  font-family: 'Pirata One', serif;
+  font-size: 1.9rem;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--cor) 50%, transparent);
+  animation: tremular 4s linear 2s infinite;
+}
+
+.descricao {
+  font-size: 0.9rem;
+  font-style: italic;
+  color: #a8957c;
+}
+
+.dados {
+  justify-content: center;
+  color: #8a7560;
+}
+
+@keyframes desenhar { to { stroke-dashoffset: 0; } }
+@keyframes girar { to { transform: rotate(360deg); } }
+
+@keyframes materializar {
+  from { opacity: 0; filter: blur(10px); transform: scale(0.96); }
+  to   { opacity: 1; filter: blur(0); transform: none; }
+}
+
+// Falha de luz de vez em quando
+@keyframes tremular {
+  0%, 90%, 100% { opacity: 1; }
+  92% { opacity: 0.4; }
+  94% { opacity: 0.9; }
+  96% { opacity: 0.5; }
+}

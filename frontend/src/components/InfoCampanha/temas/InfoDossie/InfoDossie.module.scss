@@ -1,0 +1,102 @@
+@use 'sass:color';
+
+$pardo: #c9a66b;
+$papel: #f4f0e6;
+$tinta: #2b2113;
+$fonte-maquina: 'Special Elite', monospace;
+
+// overflow: hidden esconde o documento enquanto ele ainda está "dentro" da pasta
+.dossie {
+  position: relative;
+  overflow: hidden;
+  padding: 0 12px 34px;
+}
+
+.documento {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding: 18px 20px 26px;
+  // Papel pautado
+  background:
+    repeating-linear-gradient(0deg, transparent 0 23px, rgba(80, 120, 180, 0.12) 23px 24px),
+    $papel;
+  color: $tinta;
+  font-family: $fonte-maquina;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transform-origin: bottom center;
+  animation: sairDaPasta 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both;
+}
+
+.cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed rgba(43, 33, 19, 0.4);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #6b5432;
+}
+
+.carimbo {
+  padding: 2px 6px;
+  border: 2px solid #b3261e;
+  color: #b3261e;
+  animation: carimbar 0.35s ease-out 1s both;
+}
+
+.sistema {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6b5432;
+}
+
+.nome {
+  font-family: $fonte-maquina;
+  font-size: 1.4rem;
+  letter-spacing: 0;
+}
+
+.descricao {
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.dados { color: #4a3a20; }
+
+.pasta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  height: 48px;
+  padding: 0 16px 10px;
+  background: linear-gradient(170deg, color.adjust($pardo, $lightness: 6%), $pardo);
+  border-top: 3px solid var(--cor);
+  border-radius: 4px 4px 8px 8px;
+  box-shadow: 0 -3px 8px rgba(0, 0, 0, 0.35), inset 0 0 20px rgba(110, 70, 20, 0.35);
+}
+
+.etiqueta {
+  padding: 2px 8px;
+  background: $papel;
+  font-family: $fonte-maquina;
+  font-size: 0.75rem;
+  color: #4a3a20;
+}
+
+@keyframes sairDaPasta {
+  from { transform: translateY(85%) rotate(0); }
+  70%  { transform: translateY(-4px) rotate(-1.2deg); }
+  to   { transform: translateY(0) rotate(-0.8deg); }
+}
+
+@keyframes carimbar {
+  from { opacity: 0; transform: scale(2.2) rotate(-6deg); }
+  to   { opacity: 1; transform: scale(1) rotate(-6deg); }
+}
