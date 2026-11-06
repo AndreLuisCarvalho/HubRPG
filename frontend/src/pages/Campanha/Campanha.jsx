@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../services/api';
+import MenuCampanha from './MenuCampanha/MenuCampanha';
+import VisaoGeral from './secoes/VisaoGeral/VisaoGeral';
+import ListaFichas from './secoes/ListaFichas/ListaFichas';
+import EmBreve from './secoes/EmBreve/EmBreve';
 import styles from './Campanha.module.scss';
 
 export default function Campanha() {
@@ -21,22 +25,29 @@ export default function Campanha() {
 
   if (erro) {
     return (
-      <main className={styles.pagina}>
+      <main className={styles.estado}>
         <p className="erro">{erro}</p>
-        <Link to="/" className={styles.voltar}>← Voltar</Link>
+        <Link to="/">← Voltar ao menu</Link>
       </main>
     );
   }
 
-  if (!campanha) return <main className={styles.pagina}><p>Carregando…</p></main>;
+  if (!campanha) return <main className={styles.estado}><p>Carregando…</p></main>;
 
   return (
-    <main className={styles.pagina} style={{ '--cor': campanha.cor }}>
-      <Link to="/" className={styles.voltar}>← Menu <kbd>Esc</kbd></Link>
-      <p className={styles.sistema}>{campanha.sistema}</p>
-      <h1 className={styles.titulo}>{campanha.nome}</h1>
-      <p>{campanha.descricao}</p>
-      <p className={styles.dica}>A base da campanha chega em breve.</p>
-    </main>
+    <div className={styles.layout} style={{ '--cor': campanha.cor }}>
+      <MenuCampanha campanha={campanha} />
+
+      <main className={styles.conteudo}>
+        <Routes>
+          <Route index element={<VisaoGeral campanha={campanha} />} />
+          {/* key força recarregar a lista ao trocar de tipo */}
+          <Route path="jogadores" element={<ListaFichas key="jogador" campanha={campanha} tipo="jogador" titulo="Jogadores" />} />
+          <Route path="npcs" element={<ListaFichas key="npc" campanha={campanha} tipo="npc" titulo="NPCs" />} />
+          <Route path="monstros" element={<ListaFichas key="monstro" campanha={campanha} tipo="monstro" titulo="Monstros" />} />
+          <Route path=":secao" element={<EmBreve />} />
+        </Routes>
+      </main>
+    </div>
   );
 }

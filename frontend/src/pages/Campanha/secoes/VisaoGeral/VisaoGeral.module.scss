@@ -1,0 +1,45 @@
+@use '../../../../styles/mixins' as *;
+
+.visao {
+  display: grid;
+  gap: 20px;
+}
+
+.banner {
+  position: relative;
+  height: 240px;
+  overflow: hidden;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 30% 40%, color-mix(in srgb, var(--cor) 40%, transparent), transparent 60%),
+    var(--superficie);
+  background-size: cover;
+  background-position: center;
+
+  // Escurece embaixo para o texto aparecer bem
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.8), transparent 60%);
+  }
+}
+
+.bannerTexto {
+  position: absolute;
+  left: 24px;
+  bottom: 20px;
+  z-index: 1;
+  display: grid;
+  gap: 4px;
+}
+
+.sistema { @include sobretitulo; }
+
+.nome { font-size: clamp(1.8rem, 4vw, 2.6rem); }
+
+.descricao {
+  max-width: 70ch;
+  line-height: 1.6;
+  color: var(--texto-suave);
+}

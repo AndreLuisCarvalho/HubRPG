@@ -1,33 +1,22 @@
 @use '../../styles/mixins' as *;
 
-.pagina {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 32px 16px;
+.layout {
   display: grid;
-  gap: 12px;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
   animation: aparecer 0.6s ease both;   // continua o mergulho saindo do preto
+
+  @include celular { grid-template-columns: 1fr; }
 }
 
-.voltar {
-  color: var(--texto-suave);
-  text-decoration: none;
-  font-size: 0.9rem;
+.conteudo {
+  min-width: 0;
+  padding: 32px;
 
-  &:hover { color: var(--texto); }
+  @include celular { padding: 20px 16px; }
 }
 
-.sistema { @include sobretitulo; }
-
-.titulo {
-  font-size: clamp(1.8rem, 5vw, 3rem);
-  color: var(--cor);
-}
-
-.dica {
-  font-size: 0.85rem;
-  color: var(--texto-suave);
-}
+.estado { padding: 32px 16px; }
 
 @keyframes aparecer {
   from { opacity: 0; }

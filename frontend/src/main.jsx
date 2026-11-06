@@ -9,7 +9,7 @@ createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<MenuCampanhas />} />
-        <Route path="/campanha/:id" element={<Campanha />} />
+        <Route path="/campanha/:id/*" element={<Campanha />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>
