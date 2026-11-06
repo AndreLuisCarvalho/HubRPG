@@ -1,0 +1,59 @@
+.pericias {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+}
+
+.titulo { font-size: 1.1rem; }
+
+.lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pericia {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: var(--texto-suave);
+
+  select {
+    padding: 2px 6px;
+    border: 1px solid var(--borda);
+    border-radius: 6px;
+    background: var(--superficie);
+    color: inherit;
+    font: inherit;
+    font-size: 0.8rem;
+  }
+}
+
+// Perícias com algum treino ganham destaque
+.treinada {
+  background: color-mix(in srgb, var(--cor) 12%, transparent);
+  color: var(--texto);
+}
+
+.atributo {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--cor);
+}
+
+.teste {
+  min-width: 6ch;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

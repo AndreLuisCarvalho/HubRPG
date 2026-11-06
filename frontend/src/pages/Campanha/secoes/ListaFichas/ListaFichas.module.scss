@@ -28,15 +28,57 @@
   gap: 14px;
 }
 
+.novo {
+  margin-left: auto;
+  padding: 8px 14px;
+  border: 1px solid var(--cor);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--cor) 20%, transparent);
+  color: var(--texto);
+  font: inherit;
+  cursor: pointer;
+
+  &:hover { background: color-mix(in srgb, var(--cor) 35%, transparent); }
+}
+
 .ficha {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
   background: var(--superficie);
   border: 1px solid var(--borda);
   border-top: 3px solid var(--cor);
   border-radius: 10px;
+  color: var(--texto);
+  text-decoration: none;
+  transition: transform 0.15s, border-color 0.15s;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--cor);
+  }
+}
+
+.identidade {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nome {
+  display: block;
+  font-weight: 600;
+}
+
+.resumo {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.barras {
+  display: grid;
+  gap: 8px;
 }
 
 .avatar {
@@ -50,5 +92,3 @@
   @include fonte-titulo;
   font-size: 1.1rem;
 }
-
-.nome { font-weight: 600; }

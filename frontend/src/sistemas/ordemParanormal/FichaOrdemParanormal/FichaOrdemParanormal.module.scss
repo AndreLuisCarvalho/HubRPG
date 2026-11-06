@@ -1,0 +1,103 @@
+@use '../../../styles/mixins' as *;
+
+.ficha {
+  display: grid;
+  gap: 24px;
+}
+
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.identidade {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 2px solid var(--cor);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cor) 25%, var(--superficie));
+  @include fonte-titulo;
+  font-size: 1.8rem;
+}
+
+.nome { font-size: 1.9rem; }
+
+.seletores {
+  display: flex;
+  gap: 16px;
+  margin-top: 6px;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--texto-suave);
+  }
+
+  select {
+    padding: 4px 8px;
+    border: 1px solid var(--borda);
+    border-radius: 6px;
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+  }
+}
+
+.derivados {
+  display: flex;
+  gap: 12px;
+
+  div {
+    min-width: 90px;
+    padding: 10px 14px;
+    text-align: center;
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    border-radius: 10px;
+  }
+
+  dt {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+
+  dd {
+    margin: 0;
+    @include fonte-titulo;
+    font-size: 1.6rem;
+  }
+}
+
+.recursos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  padding: 20px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+}
+
+.corpo {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  align-items: start;
+  gap: 24px;
+
+  @include celular { grid-template-columns: 1fr; }
+}

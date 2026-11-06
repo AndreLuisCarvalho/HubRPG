@@ -6,6 +6,7 @@ import VisaoGeral from './secoes/VisaoGeral/VisaoGeral';
 import ListaFichas from './secoes/ListaFichas/ListaFichas';
 import EmBreve from './secoes/EmBreve/EmBreve';
 import styles from './Campanha.module.scss';
+import DetalheFicha from './secoes/DetalheFicha/DetalheFicha';
 
 export default function Campanha() {
   const { id } = useParams();
@@ -41,10 +42,10 @@ export default function Campanha() {
       <main className={styles.conteudo}>
         <Routes>
           <Route index element={<VisaoGeral campanha={campanha} />} />
-          {/* key força recarregar a lista ao trocar de tipo */}
           <Route path="jogadores" element={<ListaFichas key="jogador" campanha={campanha} tipo="jogador" titulo="Jogadores" />} />
           <Route path="npcs" element={<ListaFichas key="npc" campanha={campanha} tipo="npc" titulo="NPCs" />} />
           <Route path="monstros" element={<ListaFichas key="monstro" campanha={campanha} tipo="monstro" titulo="Monstros" />} />
+          <Route path="fichas/:fichaId" element={<DetalheFicha campanha={campanha} />} />
           <Route path=":secao" element={<EmBreve />} />
         </Routes>
       </main>

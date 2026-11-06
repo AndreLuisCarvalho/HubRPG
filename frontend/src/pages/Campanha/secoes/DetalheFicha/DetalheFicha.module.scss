@@ -1,0 +1,14 @@
+.detalhe {
+  display: grid;
+  gap: 16px;
+}
+
+.voltar {
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+  text-decoration: none;
+
+  &:hover { color: var(--texto); }
+}
+
+.aviso { color: var(--texto-suave); }
