@@ -1,0 +1,59 @@
+@use '../../../../../styles/mixins' as *;
+
+.atributos {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+}
+
+.titulo { font-size: 1.1rem; }
+
+.lista {
+  display: grid;
+  gap: 8px;
+}
+
+.atributo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+
+  button {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--borda);
+    border-radius: 6px;
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+    cursor: pointer;
+
+    &:hover { border-color: var(--cor); }
+  }
+}
+
+.centro {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.valor {
+  @include fonte-titulo;
+  font-size: 1.6rem;
+  min-width: 1ch;
+  text-align: center;
+}
+
+.sigla {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--cor);
+}
