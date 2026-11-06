@@ -47,6 +47,17 @@ db.exec(`
     conteudo    TEXT DEFAULT '',
     criado_em   TEXT DEFAULT CURRENT_TIMESTAMP
   );
+
+    CREATE TABLE IF NOT EXISTS fichas (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    campanha_id   INTEGER NOT NULL REFERENCES campanhas(id) ON DELETE CASCADE,
+    tipo          TEXT NOT NULL DEFAULT 'jogador',
+    nome          TEXT NOT NULL,
+    imagem        TEXT DEFAULT '',
+    dados         TEXT NOT NULL DEFAULT '{}',
+    criado_em     TEXT DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TEXT DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Dados iniciais, só se o banco estiver vazio
@@ -69,3 +80,4 @@ function adicionarColuna(tabela, coluna, definicao) {
 
 adicionarColuna('campanhas', 'mapa', "TEXT DEFAULT ''");
 adicionarColuna('campanhas', 'tema', "TEXT DEFAULT 'padrao'");
+adicionarColuna('campanhas', 'sistema_id', "TEXT DEFAULT ''");

@@ -3,12 +3,14 @@ import cors from 'cors';
 import { db } from './db.js';
 import campanhasRouter from './routes/campanhas.js';
 import { criarRotasDeItens } from './routes/itensDaCampanha.js';
+import fichasRouter from './routes/fichas.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 app.use('/api/campanhas', campanhasRouter);
+app.use('/api', fichasRouter);
 
 app.use('/api', criarRotasDeItens({
   tabela: 'sessoes',
