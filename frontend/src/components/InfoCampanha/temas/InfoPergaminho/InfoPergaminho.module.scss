@@ -1,0 +1,152 @@
+@use 'sass:color';
+
+$madeira: #7a5530;
+$papel: #ecdcb8;
+$tinta: #3a2812;
+$fonte-antiga: 'IM Fell English SC', serif;
+$largura-rolo: 16px;
+$sobra-rolo: 10px;   // quanto o rolo passa do papel em cima e embaixo
+
+// Linha do tempo da cena
+$inicio-abertura: 0.4s;
+$duracao-abertura: 1.8s;
+$fim-abertura: $inicio-abertura + $duracao-abertura;
+$curva-abertura: cubic-bezier(0.65, 0, 0.35, 1);
+
+// O padding lateral reserva o espaço dos rolos no tamanho final
+.pergaminho {
+  position: relative;
+  padding: 0 $largura-rolo;
+  margin: $sobra-rolo 0;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.6));
+  animation: chegar 0.4s ease-out both;
+}
+
+.papel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 20px 26px 24px;
+  text-align: center;
+  color: $tinta;
+  // Bordas de cima e de baixo mais escuras, como papel gasto
+  background:
+    radial-gradient(circle at 15% 25%, rgba(140, 90, 30, 0.18), transparent 35%),
+    radial-gradient(circle at 85% 70%, rgba(140, 90, 30, 0.15), transparent 40%),
+    linear-gradient(180deg, color.adjust($papel, $lightness: -12%), $papel 12%, $papel 88%, color.adjust($papel, $lightness: -12%));
+  animation: abrirPapel $duracao-abertura $curva-abertura $inicio-abertura both;
+
+  > * {
+    animation: revelar 0.8s ease-out ($fim-abertura - 0.5s) both;
+  }
+}
+
+.sistema {
+  font-family: $fonte-antiga;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  color: #7a5a32;
+}
+
+.nome {
+  font-family: $fonte-antiga;
+  font-size: 1.7rem;
+  letter-spacing: 0.02em;
+}
+
+.ornamento {
+  font-size: 1.1rem;
+  color: var(--cor);
+}
+
+.descricao {
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.dados {
+  justify-content: center;
+  color: #5a4022;
+}
+
+/* ---------- Rolos (em pé) ---------- */
+.rolo {
+  position: absolute;
+  top: -$sobra-rolo;
+  bottom: -$sobra-rolo;
+  z-index: 1;
+  width: $largura-rolo;
+  border-radius: 8px;
+  // Gradiente na horizontal: dá o volume de cilindro em pé
+  background: linear-gradient(90deg, $madeira, color.adjust($madeira, $lightness: 35%) 45%, $madeira);
+
+  // Pontas do rolo (puxadores em cima e embaixo)
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    width: 22px;
+    height: 8px;
+    margin-left: -11px;
+    border-radius: 4px;
+    background: color.adjust($madeira, $lightness: -12%);
+  }
+
+  &::before { top: -5px; }
+  &::after  { bottom: -5px; }
+}
+
+.roloEsquerdo {
+  left: 0;
+  animation: abrirEsquerdo $duracao-abertura $curva-abertura $inicio-abertura both;
+}
+
+.roloDireito {
+  right: 0;
+  animation: abrirDireito $duracao-abertura $curva-abertura $inicio-abertura both;
+}
+
+/* ---------- Selo ---------- */
+.lacre {
+  position: absolute;
+  right: 32px;
+  bottom: -28px;
+  z-index: 2;
+  animation: carimbar 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) ($fim-abertura + 0.1s) both;
+}
+
+/* ---------- Animações ---------- */
+@keyframes chegar {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+// Recorte: começa como uma linha vertical no meio e abre para os lados
+@keyframes abrirPapel {
+  from { clip-path: inset(0 50% 0 50%); }
+  to   { clip-path: inset(0); }
+}
+
+// Rolos começam colados no centro e se afastam para as laterais
+@keyframes abrirEsquerdo {
+  from { left: calc(50% - #{$largura-rolo}); }
+  to   { left: 0; }
+}
+
+@keyframes abrirDireito {
+  from { right: calc(50% - #{$largura-rolo}); }
+  to   { right: 0; }
+}
+
+@keyframes revelar {
+  from { opacity: 0; filter: blur(4px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+@keyframes carimbar {
+  from { opacity: 0; transform: translateY(-30px) scale(1.8) rotate(-30deg); }
+  70%  { opacity: 1; transform: translateY(2px) scale(0.95) rotate(4deg); }
+  to   { opacity: 1; transform: none; }
+}

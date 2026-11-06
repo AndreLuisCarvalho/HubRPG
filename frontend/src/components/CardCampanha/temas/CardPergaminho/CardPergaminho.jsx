@@ -1,4 +1,5 @@
 import styles from './CardPergaminho.module.scss';
+import SeloCera from '../../../SeloCera/SeloCera';
 
 export default function CardPergaminho({ campanha, selecionado }) {
   return (
@@ -15,7 +16,7 @@ export default function CardPergaminho({ campanha, selecionado }) {
           </div>
         </div>
 
-        <span className={styles.selo} aria-hidden="true" />
+        <SeloCera tamanho={34} className={styles.selo} />
       </div>
 
       <span className={styles.rolo} />
