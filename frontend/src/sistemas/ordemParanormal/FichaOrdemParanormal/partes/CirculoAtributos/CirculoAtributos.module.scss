@@ -1,0 +1,141 @@
+@use '../../../../../styles/mixins' as *;
+
+.circulo { position: relative; }
+
+.editar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--borda);
+  border-radius: 50%;
+  background: var(--superficie);
+  color: var(--texto-suave);
+  font: inherit;
+  cursor: pointer;
+
+  &:hover,
+  &[aria-pressed='true'] {
+    color: var(--texto);
+    border-color: var(--cor);
+  }
+}
+
+// container-type permite usar "cqw" (1% da largura do quadro):
+// tudo dentro do círculo escala junto com ele
+.palco {
+  position: relative;
+  width: 100%;
+  max-width: 330px;
+  margin: 0 auto;
+  aspect-ratio: 1;
+  container-type: inline-size;
+}
+
+.desenho {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: color-mix(in srgb, var(--texto) 75%, transparent);
+}
+
+.anelExterno {
+  stroke: var(--cor);
+  stroke-width: 0.7;
+  stroke-dasharray: 0.5 1.6;
+  stroke-linecap: round;
+}
+
+.anelInterno { stroke-width: 1.6; }
+
+.estrela {
+  stroke: color-mix(in srgb, var(--cor) 60%, white);
+  stroke-width: 0.9;
+  opacity: 0.85;
+}
+
+.raio { stroke-width: 0.8; }
+
+.centro {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 40% 35%, #f4f1ea, #b9b3a6);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--cor) 45%, transparent);
+  color: #111;
+  @include fonte-titulo;
+  font-size: 5cqw;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.no {
+  position: absolute;
+  width: 28%;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border: 3px solid var(--texto);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--fundo);
+  box-shadow: 0 0 0 3px var(--fundo), 0 0 0 4px color-mix(in srgb, var(--texto) 35%, transparent);
+  transition: border-color 0.2s;
+}
+
+.valor {
+  @include fonte-titulo;
+  font-size: 9cqw;
+}
+
+.nome {
+  margin-top: 0.8cqw;
+  padding-top: 0.6cqw;
+  border-top: 1px solid var(--texto-suave);
+  font-size: 2cqw;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.sigla {
+  @include fonte-titulo;
+  font-size: 5cqw;
+}
+
+.editando .no { border-color: var(--cor); }
+
+.botao {
+  position: absolute;
+  top: 50%;
+  width: 8cqw;
+  height: 8cqw;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--cor);
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: var(--superficie);
+  color: var(--texto);
+  font-size: 4.5cqw;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover { background: color-mix(in srgb, var(--cor) 35%, var(--superficie)); }
+}
+
+.menos { left: -5cqw; }
+.mais  { right: -5cqw; }

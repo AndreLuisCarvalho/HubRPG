@@ -19,10 +19,13 @@ export default function Campanha() {
   }, [id]);
 
   useEffect(() => {
-    const aoTeclar = (e) => e.key === 'Escape' && navigate('/');
-    window.addEventListener('keydown', aoTeclar);
-    return () => window.removeEventListener('keydown', aoTeclar);
-  }, [navigate]);
+  function aoTeclar(e) {
+    const digitando = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
+    if (e.key === 'Escape' && !digitando) navigate('/');
+  }
+  window.addEventListener('keydown', aoTeclar);
+  return () => window.removeEventListener('keydown', aoTeclar);
+}, [navigate]);
 
   if (erro) {
     return (

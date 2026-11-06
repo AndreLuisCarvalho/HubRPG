@@ -17,3 +17,30 @@ $celular: 800px;
   letter-spacing: 0.15em;
   color: var(--cor);
 }
+
+// Rótulo pequeno de campo ("ORIGEM", "CLASSE")
+@mixin rotulo-campo {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+// Select com sublinhado, no estilo de ficha de papel
+@mixin select-linha {
+  padding: 4px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--borda);
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  cursor: pointer;
+
+  option { background: var(--superficie); }
+
+  &:focus {
+    outline: none;
+    border-bottom-color: var(--cor);
+  }
+}

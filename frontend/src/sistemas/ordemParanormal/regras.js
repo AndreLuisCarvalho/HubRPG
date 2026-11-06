@@ -5,9 +5,18 @@ export function fichaInicial() {
   return {
     classe: 'combatente',
     nex: 5,
+    origem: '',
+    jogador: '',
     atributos: { agi: 1, for: 1, int: 1, pre: 1, vig: 1 },
     pericias: {},
+    periciasOutros: {},
     atuais: {},
+    defesa: { equipamento: 0, outros: 0 },
+    deslocamento: 9,
+    protecao: '',
+    resistencias: '',
+    proficiencias: '',
+    descricao: '',
   };
 }
 
@@ -41,23 +50,45 @@ export function recursos(dados) {
   return RECURSOS.map((r) => ({ ...r, atual: atuais[r.id], maximo: maximos[r.id] }));
 }
 
-export const calcularDefesa = (dados) => 10 + (dados.atributos?.agi ?? 0);
-
 export const limitePePorTurno = (dados) => Math.floor((dados.nex ?? 5) / 5);
 
-export function bonusPericia(dados, periciaId) {
-  const grau = dados.pericias?.[periciaId] ?? 'destreinado';
-  return GRAUS[grau]?.bonus ?? 0;
+export function deslocamento(dados) {
+  const metros = dados.deslocamento ?? 9;
+  return { metros, quadrados: Math.floor(metros / 1.5) };
 }
 
-// Ex.: "3d20+5". Atributo 0 rola 2d20 e fica com o menor (↓)
+/* ---------- Perícias ---------- */
+export const grauDaPericia = (dados, id) => dados.pericias?.[id] ?? 'destreinado';
+
+export function bonusPericia(dados, id) {
+  const treino = GRAUS[grauDaPericia(dados, id)]?.bonus ?? 0;
+  const outros = dados.periciasOutros?.[id] ?? 0;
+  return treino + outros;
+}
+
+// Atributo 0 rola 2d20 e fica com o menor (↓)
+export function dadosDoAtributo(dados, atributoId) {
+  const valor = dados.atributos?.[atributoId] ?? 0;
+  return valor === 0 ? '2d20↓' : `${valor}d20`;
+}
+
+// Ex.: "3d20+5" (vai ser usado pelo rolador de dados)
 export function dadosDoTeste(dados, periciaId) {
   const pericia = PERICIAS.find((p) => p.id === periciaId);
-  const valor = dados.atributos?.[pericia.atributo] ?? 0;
   const bonus = bonusPericia(dados, periciaId);
-  const base = valor === 0 ? '2d20↓' : `${valor}d20`;
+  const base = dadosDoAtributo(dados, pericia.atributo);
   return bonus ? `${base}+${bonus}` : base;
 }
+
+/* ---------- Defesa ---------- */
+export function calcularDefesa(dados) {
+  const { equipamento = 0, outros = 0 } = dados.defesa ?? {};
+  return 10 + (dados.atributos?.agi ?? 0) + equipamento + outros;
+}
+
+// Esquiva: Defesa + bônus de Reflexos · Bloqueio: redução igual ao bônus de Fortitude
+export const calcularEsquiva = (dados) => calcularDefesa(dados) + bonusPericia(dados, 'reflexos');
+export const calcularBloqueio = (dados) => bonusPericia(dados, 'fortitude');
 
 export function resumo(dados) {
   const classe = CLASSES[dados.classe];
