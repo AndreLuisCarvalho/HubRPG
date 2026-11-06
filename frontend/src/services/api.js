@@ -13,6 +13,17 @@ async function requisicao(caminho, opcoes = {}) {
 }
 
 export const api = {
+  // Campanhas
   listarCampanhas: () => requisicao('/campanhas'),
   buscarCampanha: (id) => requisicao(`/campanhas/${id}`),
+  atualizarCampanha: (id, dados) => requisicao(`/campanhas/${id}`, { method: 'PUT', body: dados }),
+
+  // Fichas
+  listarFichas: (campanhaId, tipo) =>
+    requisicao(`/campanhas/${campanhaId}/fichas${tipo ? `?tipo=${tipo}` : ''}`),
+  buscarFicha: (id) => requisicao(`/fichas/${id}`),
+  criarFicha: (campanhaId, ficha) =>
+    requisicao(`/campanhas/${campanhaId}/fichas`, { method: 'POST', body: ficha }),
+  atualizarFicha: (id, alteracoes) => requisicao(`/fichas/${id}`, { method: 'PUT', body: alteracoes }),
+  excluirFicha: (id) => requisicao(`/fichas/${id}`, { method: 'DELETE' }),
 };
