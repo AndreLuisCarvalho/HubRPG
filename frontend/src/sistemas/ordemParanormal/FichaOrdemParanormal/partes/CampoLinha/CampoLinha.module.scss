@@ -1,0 +1,58 @@
+@use '../../../../../styles/mixins' as *;
+
+.campo {
+  display: flex;
+  min-width: 0;
+
+  input {
+    min-width: 0;
+    padding: 4px 2px;
+    border: 0;
+    border-bottom: 1px solid var(--borda);
+    background: transparent;
+    color: var(--texto);
+    font: inherit;
+    transition: border-color 0.15s;
+
+    &:focus {
+      outline: none;
+      border-bottom-color: var(--cor);
+    }
+
+    // Esconde as setinhas do campo numérico
+    &[type='number'] {
+      appearance: textfield;
+
+      &::-webkit-inner-spin-button,
+      &::-webkit-outer-spin-button {
+        appearance: none;
+        margin: 0;
+      }
+    }
+  }
+}
+
+.rotulo {
+  @include rotulo-campo;
+  flex-shrink: 0;
+}
+
+.lado {
+  align-items: flex-end;
+  gap: 10px;
+
+  input { flex: 1; }
+}
+
+.embaixo {
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 2px;
+
+  input {
+    width: 3em;
+    text-align: center;
+  }
+
+  .rotulo { font-size: 0.6rem; }
+}

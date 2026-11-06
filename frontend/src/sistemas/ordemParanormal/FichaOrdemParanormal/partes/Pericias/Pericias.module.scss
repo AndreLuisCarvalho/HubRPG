@@ -1,59 +1,112 @@
+@use '../../../../../styles/mixins' as *;
+
 .pericias {
   display: grid;
-  gap: 12px;
-  padding: 16px;
-  background: var(--superficie);
-  border: 1px solid var(--borda);
-  border-radius: 12px;
-}
-
-.titulo { font-size: 1.1rem; }
-
-.lista {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 4px 16px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.pericia {
-  display: grid;
-  grid-template-columns: 1fr auto auto auto;
-  align-items: center;
   gap: 10px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  color: var(--texto-suave);
+}
 
-  select {
-    padding: 2px 6px;
-    border: 1px solid var(--borda);
-    border-radius: 6px;
-    background: var(--superficie);
+.titulo {
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+
+  th {
+    @include rotulo-campo;
+    padding: 0 6px 8px;
+    font-size: 0.6rem;
+  }
+
+  td {
+    padding: 4px 6px;
+    text-align: center;
+    color: var(--texto);
+    font-variant-numeric: tabular-nums;
+  }
+
+  tbody tr {
+    transition: background 0.15s;
+
+    &:hover { background: rgba(255, 255, 255, 0.03); }
+  }
+
+  sup {
+    margin-left: 1px;
+    color: var(--texto-suave);
+  }
+
+  select,
+  input {
+    width: 3.2em;
+    padding: 2px 0;
+    border: 0;
+    border-bottom: 1px solid var(--borda);
+    background: transparent;
     color: inherit;
     font: inherit;
-    font-size: 0.8rem;
+    text-align: center;
+    text-align-last: center;
+    appearance: none;
+    cursor: pointer;
+
+    &:focus {
+      outline: none;
+      border-bottom-color: var(--cor);
+    }
   }
+
+  select option { background: var(--superficie); }
 }
 
-// Perícias com algum treino ganham destaque
-.treinada {
-  background: color-mix(in srgb, var(--cor) 12%, transparent);
-  color: var(--texto);
-}
+.esquerda { text-align: left !important; }
 
-.atributo {
-  font-size: 0.7rem;
+.sigla {
+  margin-left: 6px;
+  font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--cor);
+  letter-spacing: 0.08em;
+  color: var(--texto-suave);
 }
 
-.teste {
-  min-width: 6ch;
-  font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
+.bonus { font-weight: 600; }
+
+// Perícia treinada: destaque na cor da campanha
+.treinada td {
+  color: color-mix(in srgb, var(--cor) 55%, white);
+}
+
+.treinada .sigla { color: var(--cor); }
+
+.rolar {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+  }
+
+  &:disabled { cursor: default; opacity: 0.7; }
+  &:not(:disabled):hover { color: var(--cor); }
+}
+
+.legenda {
+  font-size: 0.7rem;
+  font-style: italic;
+  color: var(--texto-suave);
 }
