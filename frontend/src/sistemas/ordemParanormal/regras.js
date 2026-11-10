@@ -7,6 +7,8 @@ export function fichaInicial() {
     nex: 5,
     origem: '',
     jogador: '',
+    trilha: '',
+    ataques: [],
     atributos: { agi: 1, for: 1, int: 1, pre: 1, vig: 1 },
     pericias: {},
     periciasOutros: {},
@@ -62,7 +64,7 @@ export const grauDaPericia = (dados, id) => dados.pericias?.[id] ?? 'destreinado
 
 export function bonusPericia(dados, id) {
   const treino = GRAUS[grauDaPericia(dados, id)]?.bonus ?? 0;
-  const outros = dados.periciasOutros?.[id] ?? 0;
+  const outros = Math.max(0, dados.periciasOutros?.[id] ?? 0);
   return treino + outros;
 }
 
@@ -83,7 +85,7 @@ export function dadosDoTeste(dados, periciaId) {
 /* ---------- Defesa ---------- */
 export function calcularDefesa(dados) {
   const { equipamento = 0, outros = 0 } = dados.defesa ?? {};
-  return 10 + (dados.atributos?.agi ?? 0) + equipamento + outros;
+  return 10 + (dados.atributos?.agi ?? 0) + Math.max(0, equipamento) + Math.max(0, outros);
 }
 
 // Esquiva: Defesa + bônus de Reflexos · Bloqueio: redução igual ao bônus de Fortitude

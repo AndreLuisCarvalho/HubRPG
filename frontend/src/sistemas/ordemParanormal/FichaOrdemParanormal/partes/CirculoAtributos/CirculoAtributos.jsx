@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ATRIBUTOS, ATRIBUTO_MAX, ATRIBUTO_MIN } from '../../../modelo';
+import { ATRIBUTOS, ATRIBUTO_MAX, ATRIBUTO_MIN, NEX } from '../../../modelo';
 import styles from './CirculoAtributos.module.scss';
 
 // Sentido horário a partir do topo, como na ficha oficial
@@ -17,7 +17,11 @@ const ESTRELA = [0, 2, 4, 1, 3].map((i) => {
   return `${x},${y}`;
 }).join(' ');
 
-export default function CirculoAtributos({ atributos = {}, onAlterar }) {
+// Anel do NEX dentro do núcleo
+const RAIO_NEX = 44;
+const VOLTA_NEX = 2 * Math.PI * RAIO_NEX;
+
+export default function CirculoAtributos({ atributos = {}, onAlterar, nex = 5, onAlterarNex }) {
   const [editando, setEditando] = useState(false);
 
   function alterar(id, delta) {
@@ -26,37 +30,45 @@ export default function CirculoAtributos({ atributos = {}, onAlterar }) {
   }
 
   return (
-    <section className={`${styles.circulo} ${editando ? styles.editando : ''}`}>
-      <button
-        className={styles.editar}
-        onClick={() => setEditando((e) => !e)}
-        aria-pressed={editando}
-        title={editando ? 'Concluir edição' : 'Editar atributos'}
-      >
-        {editando ? '✓' : '✎'}
-      </button>
-
+    <div className={`${styles.circulo} ${editando ? styles.editando : ''}`}>
       <div className={styles.palco}>
         <svg className={styles.desenho} viewBox="0 0 100 100" aria-hidden="true">
-          <circle cx="50" cy="50" r="47" className={styles.anelExterno} />
+          <circle cx="50" cy="50" r="48" className={styles.anelExterno} />
           <circle cx="50" cy="50" r={RAIO} className={styles.anelInterno} />
           <polygon points={ESTRELA} className={styles.estrela} />
-          {ORDEM.map((id, i) => {
-            const { x, y } = ponto(i);
-            return <line key={id} x1="50" y1="50" x2={x} y2={y} className={styles.raio} />;
-          })}
         </svg>
 
-        <div className={styles.centro}>Atributos</div>
+        {/* Núcleo = NEX. O select invisível por cima abre a lista ao clicar */}
+        <label className={styles.nucleo} title="Mudar NEX">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <circle className={styles.trilho} cx="50" cy="50" r={RAIO_NEX} />
+            <circle
+              className={styles.progresso}
+              cx="50" cy="50" r={RAIO_NEX}
+              strokeDasharray={VOLTA_NEX}
+              strokeDashoffset={VOLTA_NEX * (1 - nex / 100)}
+            />
+          </svg>
+          <span className={styles.nex}>
+            <b>{nex}%</b>
+            <small>NEX</small>
+          </span>
+          <select value={nex} onChange={(e) => onAlterarNex(Number(e.target.value))} aria-label="NEX">
+            {NEX.map((n) => <option key={n} value={n}>{n}%</option>)}
+          </select>
+        </label>
 
         {ORDEM.map((id, i) => {
           const atributo = ATRIBUTOS.find((a) => a.id === id);
           const { x, y } = ponto(i);
 
-          return (
-            <div key={id} className={styles.no} style={{ left: `${x}%`, top: `${y}%` }}>
+                    return (
+            <div key={id} className={styles.no} style={{ left: `${x}%`, top: `${y}%` }} title={atributo.nome}>
+              {/* Hexágono em SVG: o stroke com stroke-linejoin="round" deixa as quinas suaves */}
+              <svg className={styles.hex} viewBox="0 0 100 100" aria-hidden="true">
+                <polygon points="50,6 90,29 90,71 50,94 10,71 10,29" />
+              </svg>
               <span className={styles.valor}>{atributos[id] ?? 0}</span>
-              <span className={styles.nome}>{atributo.nome}</span>
               <span className={styles.sigla}>{atributo.sigla}</span>
 
               {editando && (
@@ -68,7 +80,16 @@ export default function CirculoAtributos({ atributos = {}, onAlterar }) {
             </div>
           );
         })}
+
+        <button
+          className={styles.editar}
+          onClick={() => setEditando((e) => !e)}
+          aria-pressed={editando}
+          title={editando ? 'Concluir edição' : 'Editar atributos'}
+        >
+          {editando ? '✓' : '✎'}
+        </button>
       </div>
-    </section>
+    </div>
   );
 }

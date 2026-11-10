@@ -1,6 +1,10 @@
+// Ocupa toda a altura que sobra no .conteudo
 .detalhe {
-  display: grid;
-  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .voltar {

@@ -1,0 +1,53 @@
+@use '../../../../../styles/mixins' as *;
+
+/* ---------- Seletor de passo ---------- */
+.passo {
+  margin-left: auto;   // encosta à direita do cabeçalho do painel
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  > span {
+    @include fonte-ficha;
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    color: var(--texto-suave);
+  }
+}
+
+.opcoes {
+  display: flex;
+  padding: 2px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+
+  button {
+    min-width: 30px;
+    padding: 2px 10px;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.72rem;
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      background: var(--cor);
+      color: #fff;
+    }
+  }
+}
+
+/* ---------- Orbes ---------- */
+.orbes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: center;
+  gap: 8px;
+  padding-top: 10px;   // espaço para o número que sobe ao mudar
+
+  // Notebooks e celular: orbes menores (a variável passa por herança até cada Orbe)
+  @media (max-width: 1500px) and (min-width: 801px) { --tamanho: 76px; }
+  @include celular { --tamanho: 64px; }
+}

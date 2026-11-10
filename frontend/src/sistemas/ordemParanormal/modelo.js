@@ -60,7 +60,7 @@ export const PERICIAS = [
 ];
 
 export const RECURSOS = [
-  { id: 'pv', nome: 'Vida', sigla: 'PV', cor: '#b3261e' },
-  { id: 'san', nome: 'Sanidade', sigla: 'SAN', cor: '#7b2fd0' },
-  { id: 'pe', nome: 'Esforço', sigla: 'PE', cor: '#e8820c' },
+  { id: 'pv', nome: 'Vida', sigla: 'PV', cor: '#d42a3c', elemento: 'sangue' },
+  { id: 'san', nome: 'Sanidade', sigla: 'SAN', cor: '#a24bff', elemento: 'energia' },
+  { id: 'pe', nome: 'Esforço', sigla: 'PE', cor: '#f0b429', elemento: 'conhecimento' },
 ];

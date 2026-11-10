@@ -1,37 +1,20 @@
 @use '../../../../../styles/mixins' as *;
 
-.circulo { position: relative; }
-
-.editar {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 3;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--borda);
-  border-radius: 50%;
-  background: var(--superficie);
-  color: var(--texto-suave);
-  font: inherit;
-  cursor: pointer;
-
-  &:hover,
-  &[aria-pressed='true'] {
-    color: var(--texto);
-    border-color: var(--cor);
-  }
+.circulo {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  container-type: size;
 }
 
-// container-type permite usar "cqw" (1% da largura do quadro):
-// tudo dentro do círculo escala junto com ele
+// Até 290px, mas nunca mais que 34% da altura da tela (é isso que evita a rolagem)
 .palco {
   position: relative;
-  width: 100%;
-  max-width: 330px;
-  margin: 0 auto;
+  width: min(100cqw, 100cqh);
   aspect-ratio: 1;
-  container-type: inline-size;
+  container-type: inline-size;   // dentro do sigilo, tudo continua medido em cqw
 }
 
 .desenho {
@@ -40,91 +23,149 @@
   width: 100%;
   height: 100%;
   fill: none;
-  stroke: color-mix(in srgb, var(--texto) 75%, transparent);
 }
 
 .anelExterno {
   stroke: var(--cor);
-  stroke-width: 0.7;
-  stroke-dasharray: 0.5 1.6;
+  stroke-width: 0.5;
+  stroke-dasharray: 0.4 1.6;
   stroke-linecap: round;
 }
 
-.anelInterno { stroke-width: 1.6; }
-
-.estrela {
-  stroke: color-mix(in srgb, var(--cor) 60%, white);
-  stroke-width: 0.9;
-  opacity: 0.85;
+.anelInterno {
+  stroke: #3a3352;
+  stroke-width: 1.2;
 }
 
-.raio { stroke-width: 0.8; }
+.estrela {
+  stroke: var(--cor);
+  stroke-width: 0.7;
+  stroke-linejoin: round;
+  opacity: 0.7;
+  filter: drop-shadow(0 0 1.5px var(--cor));
+}
 
-.centro {
+/* ---------- Núcleo: anel do NEX ---------- */
+.nucleo {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 40%;
+  width: 34%;
   aspect-ratio: 1;
-  display: grid;
-  place-items: center;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle at 40% 35%, #f4f1ea, #b9b3a6);
-  box-shadow: 0 0 28px color-mix(in srgb, var(--cor) 45%, transparent);
-  color: #111;
-  @include fonte-titulo;
-  font-size: 5cqw;
-  font-weight: 800;
-  text-transform: uppercase;
+  background: radial-gradient(circle, color-mix(in srgb, var(--cor) 30%, #0b0912), #0b0912 70%);
+  box-shadow:
+    0 0 30px color-mix(in srgb, var(--cor) 45%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--cor) 40%, transparent);
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+
+  &:hover { box-shadow: 0 0 40px var(--cor), inset 0 0 22px var(--cor); }
+
+  svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);   // o anel começa a encher pelo topo
+    fill: none;
+    stroke-width: 5;
+  }
+
+  // Invisível por cima do núcleo: clicar abre a lista de NEX
+  select {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
 }
 
+.trilho { stroke: #26213a; }
+
+.progresso {
+  stroke: var(--cor);
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px var(--cor));
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+// Texto "15% / NEX" no centro
+.nex {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  line-height: 1;
+  pointer-events: none;   // deixa o clique passar para o select
+  @include fonte-ficha;
+
+  b { font-size: 7cqw; }
+
+  small {
+    font-size: 2.8cqw;
+    letter-spacing: 0.2em;
+    color: var(--texto-suave);
+  }
+}
+
+/* ---------- Atributos (hexágonos) ---------- */
 .no {
   position: absolute;
-  width: 28%;
+  width: 25%;
   aspect-ratio: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-content: center;
+  text-align: center;
   line-height: 1;
-  border: 3px solid var(--texto);
-  border-radius: 50%;
   transform: translate(-50%, -50%);
-  background: var(--fundo);
-  box-shadow: 0 0 0 3px var(--fundo), 0 0 0 4px color-mix(in srgb, var(--texto) 35%, transparent);
-  transition: border-color 0.2s;
 }
+
+.hex {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--cor) 55%, transparent));
+
+  polygon {
+    fill: #17121f;
+    stroke: var(--cor);
+    stroke-width: 5;
+    stroke-linejoin: round;   // quinas arredondadas
+  }
+}
+
+.valor,
+.sigla { position: relative; }
 
 .valor {
   @include fonte-titulo;
-  font-size: 9cqw;
-}
-
-.nome {
-  margin-top: 0.8cqw;
-  padding-top: 0.6cqw;
-  border-top: 1px solid var(--texto-suave);
-  font-size: 2cqw;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--texto-suave);
+  font-size: 8.5cqw;
 }
 
 .sigla {
-  @include fonte-titulo;
-  font-size: 5cqw;
+  @include fonte-ficha;
+  font-size: 3.3cqw;
+  letter-spacing: 0.15em;
+  color: var(--texto-suave);
 }
 
-.editando .no { border-color: var(--cor); }
+/* ---------- Modo de edição ---------- */
+.editando .hex { filter: drop-shadow(0 0 10px var(--cor)); }
 
 .botao {
   position: absolute;
   top: 50%;
+  z-index: 1;
   width: 8cqw;
   height: 8cqw;
   display: grid;
   place-items: center;
+  padding: 0;
   border: 1px solid var(--cor);
   border-radius: 50%;
   transform: translateY(-50%);
@@ -137,5 +178,29 @@
   &:hover { background: color-mix(in srgb, var(--cor) 35%, var(--superficie)); }
 }
 
-.menos { left: -5cqw; }
-.mais  { right: -5cqw; }
+.menos { left: -6cqw; }
+.mais  { right: -6cqw; }
+
+// Botão ✎ no canto do sigilo
+.editar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--borda);
+  border-radius: 50%;
+  background: var(--superficie);
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  &:hover,
+  &[aria-pressed='true'] {
+    color: var(--texto);
+    border-color: var(--cor);
+  }
+}

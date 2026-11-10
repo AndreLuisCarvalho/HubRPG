@@ -15,7 +15,7 @@ function Preenchimento({ porcentagem }) {
  * Barra de recurso estilo videogame.
  * Com onAlterar: versão grande com « ‹ › ». Sem onAlterar: versão compacta, só leitura.
  */
-export default function BarraRecurso({ rotulo, nome, cor, atual, maximo, onAlterar }) {
+export default function BarraRecurso({ rotulo, nome, cor, atual, maximo, onAlterar, ocultarTitulo = false }) {
   const porcentagem = maximo > 0 ? Math.max(0, Math.min(100, (atual / maximo) * 100)) : 0;
   const critico = porcentagem > 0 && porcentagem <= 25;
   const classes = `${critico ? styles.critico : ''}`;
@@ -25,7 +25,7 @@ export default function BarraRecurso({ rotulo, nome, cor, atual, maximo, onAlter
     return (
       <div className={`${styles.compacta} ${classes}`} style={{ '--cor-barra': cor }}>
         <div className={styles.topo}>
-          <span className={styles.sigla} title={nome}>{rotulo}</span>
+          {!ocultarTitulo && <span className={styles.titulo}>{nome}</span>}
           <span className={styles.numeros}><strong>{atual}</strong> / {maximo}</span>
         </div>
         <div className={styles.barra} {...medidor}>
