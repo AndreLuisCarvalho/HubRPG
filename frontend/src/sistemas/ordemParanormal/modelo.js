@@ -198,6 +198,13 @@ export const ORIGENS = {
   },
 };
 
+// Contagem até a morte ou a loucura (livro p. 88 e 112): com PV 0 ou SAN 0,
+// ao chegar no limite (3 turnos / 3 rodadas na mesma cena) o agente morre ou fica insano
+export const CONTAGENS = {
+  pv: { id: 'morrendo', rotulo: 'Morrendo', final: 'Morto', unidade: 'turno', limite: 3 },
+  san: { id: 'enlouquecendo', rotulo: 'Enlouquecendo', final: 'Insano', unidade: 'rodada', limite: 3 },
+};
+
 export const RECURSOS = [
   { id: 'pv', nome: 'Vida', sigla: 'PV', cor: '#d42a3c', elemento: 'sangue' },
   { id: 'san', nome: 'Sanidade', sigla: 'SAN', cor: '#a24bff', elemento: 'energia' },

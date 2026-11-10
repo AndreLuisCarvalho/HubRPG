@@ -1,5 +1,5 @@
 // Como o sistema CALCULA. Funções puras: recebem dados, devolvem resultado.
-import { CLASSES, GRAUS, NEX, ORIGENS, PERICIAS, RECURSOS } from './modelo';
+import { CLASSES, CONTAGENS, GRAUS, NEX, ORIGENS, PERICIAS, RECURSOS } from './modelo';
 
 export function fichaInicial({ classe = 'combatente', jogador = '', origem = '' } = {}) {
   return {
@@ -13,6 +13,8 @@ export function fichaInicial({ classe = 'combatente', jogador = '', origem = '' 
     periciasOutros: {},
     kits: {},
     atuais: {},
+    temporarios: {},
+    contagens: {},
     defesa: { equipamento: 0, outros: 0 },
     deslocamento: 9,
     ataques: [],
@@ -88,11 +90,53 @@ export function calcularAtuais(dados) {
 }
 
 // Formato comum a todos os sistemas: lista de recursos prontos para desenhar
+// "temporario" = pontos temporários (podem passar do máximo e são gastos primeiro)
 export function recursos(dados) {
   const maximos = calcularMaximos(dados);
   const atuais = calcularAtuais(dados);
-  return RECURSOS.map((r) => ({ ...r, atual: atuais[r.id], maximo: maximos[r.id] }));
+  return RECURSOS.map((r) => ({
+    ...r,
+    atual: atuais[r.id],
+    maximo: maximos[r.id],
+    temporario: Math.max(0, dados.temporarios?.[r.id] ?? 0),
+  }));
 }
+
+/* ---------- Mudanças nos recursos (devolvem só o pedaço de "dados" que mudou) ---------- */
+
+// Perder: gasta primeiro os pontos temporários, depois o valor atual
+export function perderRecurso(dados, id, quantidade) {
+  const temporario = Math.max(0, dados.temporarios?.[id] ?? 0);
+  const doTemporario = Math.min(temporario, quantidade);
+  const atuais = calcularAtuais(dados);
+
+  return {
+    temporarios: { ...dados.temporarios, [id]: temporario - doTemporario },
+    atuais: { ...atuais, [id]: Math.max(0, atuais[id] - (quantidade - doTemporario)) },
+  };
+}
+
+// Recuperar ou digitar: o valor normal nunca passa do máximo
+export function definirAtual(dados, id, valor) {
+  const maximo = calcularMaximos(dados)[id];
+  const atuais = calcularAtuais(dados);
+  return { atuais: { ...atuais, [id]: Math.min(Math.max(valor, 0), maximo) } };
+}
+
+export const definirTemporario = (dados, id, valor) => ({
+  temporarios: { ...dados.temporarios, [id]: Math.max(0, valor) },
+});
+
+// Contagem de morrendo/enlouquecendo ligada a um recurso (ou null se ele não tem)
+export function contagemDoRecurso(dados, recursoId) {
+  const regra = CONTAGENS[recursoId];
+  if (!regra) return null;
+  return { ...regra, valor: Math.min(dados.contagens?.[regra.id] ?? 0, regra.limite) };
+}
+
+export const definirContagem = (dados, contagemId, valor) => ({
+  contagens: { ...dados.contagens, [contagemId]: Math.max(0, valor) },
+});
 
 // Limite de PE por turno = NEX/5, e 20 no NEX 99% (é o 20º nível). Universitário soma +1.
 export const limitePePorTurno = (dados) =>
@@ -158,14 +202,20 @@ export function resumo(dados) {
 /* ---------- Para as listas de fichas ---------- */
 
 // Estado do agente, do mais grave para o mais leve (ou null se está tudo bem).
-// Livro p. 88: PV 0 = morrendo · SAN 0 = enlouquecendo
+// Livro p. 88: PV 0 = morrendo · SAN 0 = enlouquecendo (3 turnos/rodadas = morto/insano)
 //              PV abaixo da metade = machucado · SAN abaixo da metade = perturbado
 export function estado(dados) {
   const lista = recursos(dados);
   const pv = lista.find((r) => r.id === 'pv');
   const san = lista.find((r) => r.id === 'san');
   const abaixoDaMetade = (r) => r.atual < r.maximo / 2;
+  const chegouNoFim = (id) => {
+    const c = contagemDoRecurso(dados, id);
+    return c && c.valor >= c.limite;
+  };
 
+  if (chegouNoFim('pv')) return { id: 'morto', rotulo: 'Morto' };
+  if (chegouNoFim('san')) return { id: 'insano', rotulo: 'Insano' };
   if (pv.atual === 0) return { id: 'morrendo', rotulo: 'Morrendo' };
   if (san.atual === 0) return { id: 'enlouquecendo', rotulo: 'Enlouquecendo' };
   if (abaixoDaMetade(pv)) return { id: 'machucado', rotulo: 'Machucado' };

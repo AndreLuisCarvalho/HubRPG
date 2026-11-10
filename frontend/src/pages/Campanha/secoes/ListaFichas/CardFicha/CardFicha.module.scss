@@ -29,6 +29,11 @@
   &.morrendo { border-color: rgba(212, 42, 60, 0.55); }
   &.perturbado,
   &.enlouquecendo { border-color: rgba(162, 75, 255, 0.6); }
+  &.morto,
+  &.insano {
+    border-color: #3a3546;
+    filter: grayscale(0.85);
+  }
 }
 
 // Com o menu aberto, o card fica por cima dos vizinhos (senão o menu fica escondido)
@@ -62,6 +67,13 @@
     color: #fff;
     box-shadow: 0 0 14px #d42a3c;
     animation: alerta 1.4s ease-in-out infinite;
+  }
+
+  &.morto,
+  &.insano {
+    background: #1c1a22;
+    color: #cfcbd9;
+    border: 1px solid #4a4458;
   }
 
   &.enlouquecendo {
