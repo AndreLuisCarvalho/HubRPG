@@ -25,8 +25,9 @@
   }
 
   // Borda conforme o estado
-  &.perigo,
+  &.machucado,
   &.morrendo { border-color: rgba(212, 42, 60, 0.55); }
+  &.perturbado,
   &.enlouquecendo { border-color: rgba(162, 75, 255, 0.6); }
 }
 
@@ -44,10 +45,16 @@
   font-size: 0.6rem;
   letter-spacing: 0.14em;
 
-  &.perigo {
+  &.machucado {
     background: #5e0c18;
     color: #ffb3bb;
     box-shadow: 0 0 10px rgba(212, 42, 60, 0.6);
+  }
+
+  &.perturbado {
+    background: #1e0a3d;
+    color: #c9a2ff;
+    box-shadow: 0 0 8px rgba(162, 75, 255, 0.45);
   }
 
   &.morrendo {
