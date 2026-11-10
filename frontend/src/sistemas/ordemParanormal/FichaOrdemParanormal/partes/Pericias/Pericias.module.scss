@@ -98,6 +98,40 @@
   }
 }
 
+// Maleta ao lado do nome: apagada sem kit, acesa com kit
+.kit {
+  display: inline-grid;
+  place-items: center;
+  margin-left: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  vertical-align: middle;
+  cursor: pointer;
+  opacity: 0.35;
+  transition: opacity 0.15s;
+
+  svg {
+    width: 13px;
+    height: 13px;
+    fill: none;
+    stroke: var(--texto-suave);
+    stroke-width: 1.8;
+    stroke-linejoin: round;
+  }
+
+  &:hover { opacity: 0.8; }
+}
+
+.comKit {
+  opacity: 1;
+
+  svg {
+    stroke: var(--cor);
+    filter: drop-shadow(0 0 3px var(--cor));
+  }
+}
+
 .dados {
   @include fonte-ficha;
   font-size: 0.78rem;
