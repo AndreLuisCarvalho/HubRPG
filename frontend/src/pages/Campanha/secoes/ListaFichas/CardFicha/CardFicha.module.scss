@@ -1,0 +1,222 @@
+@use '../../../../../styles/mixins' as *;
+
+.card {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--cor) 22%, transparent);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(26, 21, 40, 0.85), rgba(12, 10, 19, 0.9));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--cor) 30%, transparent),
+    0 10px 30px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    transform: translateY(-2px);
+    border-color: var(--cor);
+    box-shadow:
+      0 0 0 1px var(--cor),
+      0 0 26px color-mix(in srgb, var(--cor) 35%, transparent);
+  }
+
+  // Borda conforme o estado
+  &.perigo,
+  &.morrendo { border-color: rgba(212, 42, 60, 0.55); }
+  &.enlouquecendo { border-color: rgba(162, 75, 255, 0.6); }
+}
+
+// Com o menu aberto, o card fica por cima dos vizinhos (senão o menu fica escondido)
+.comMenu { z-index: 10; }
+
+/* ---------- Etiqueta de estado ---------- */
+.estado {
+  position: absolute;
+  top: -10px;
+  right: 48px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  @include fonte-ficha;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+
+  &.perigo {
+    background: #5e0c18;
+    color: #ffb3bb;
+    box-shadow: 0 0 10px rgba(212, 42, 60, 0.6);
+  }
+
+  &.morrendo {
+    background: #d42a3c;
+    color: #fff;
+    box-shadow: 0 0 14px #d42a3c;
+    animation: alerta 1.4s ease-in-out infinite;
+  }
+
+  &.enlouquecendo {
+    background: #30096e;
+    color: #e2c6ff;
+    box-shadow: 0 0 10px rgba(162, 75, 255, 0.6);
+  }
+}
+
+/* ---------- Cabeçalho ---------- */
+.cabecalho {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--cor) 50%, #1a1428), #0d0b14 75%);
+  box-shadow:
+    0 0 0 2px var(--cor),
+    0 0 0 4px #0d0b14,
+    0 0 0 5px color-mix(in srgb, var(--cor) 40%, transparent);
+  @include fonte-titulo;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.identidade {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nome {
+  @include fonte-titulo;
+  font-size: 1.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resumo {
+  @include fonte-ficha;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--cor);
+}
+
+.jogador {
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+
+/* ---------- Menu ⋯ ---------- */
+.menuArea {
+  position: relative;
+  align-self: start;
+}
+
+.mais {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--borda);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  &:hover,
+  &[aria-expanded='true'] {
+    color: var(--texto);
+    border-color: var(--cor);
+  }
+}
+
+.menu {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  z-index: 5;
+  width: 190px;
+  display: grid;
+  padding: 6px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: #1a1626;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+
+  button {
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.84rem;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover { background: rgba(255, 255, 255, 0.06); }
+  }
+
+  .excluir { color: #ff8592; }
+
+  .confirmar {
+    background: #d42a3c;
+    color: #fff;
+    font-weight: 600;
+
+    &:hover { background: #e63a4d; }
+  }
+}
+
+/* ---------- Corpo ---------- */
+.orbes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  justify-items: center;
+}
+
+.destaques {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.destaque {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 6px 4px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+
+  b {
+    max-width: 100%;
+    @include fonte-titulo;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  span {
+    @include fonte-ficha;
+    font-size: 0.52rem;
+    letter-spacing: 0.12em;
+    color: var(--texto-suave);
+  }
+}
+
+@keyframes alerta {
+  50% { box-shadow: 0 0 24px #d42a3c; }
+}

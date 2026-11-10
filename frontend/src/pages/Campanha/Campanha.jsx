@@ -19,14 +19,15 @@ export default function Campanha() {
     api.buscarCampanha(id).then(setCampanha).catch((e) => setErro(e.message));
   }, [id]);
 
-  useEffect(() => {
-  function aoTeclar(e) {
-    const digitando = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
-    if (e.key === 'Escape' && !digitando) navigate('/');
-  }
-  window.addEventListener('keydown', aoTeclar);
-  return () => window.removeEventListener('keydown', aoTeclar);
-}, [navigate]);
+    useEffect(() => {
+    function aoTeclar(e) {
+      const digitando = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
+      const modalAberto = document.querySelector('dialog[open]');   // o Esc é do modal
+      if (e.key === 'Escape' && !digitando && !modalAberto) navigate('/');
+    }
+    window.addEventListener('keydown', aoTeclar);
+    return () => window.removeEventListener('keydown', aoTeclar);
+  }, [navigate]);
 
   if (erro) {
     return (
