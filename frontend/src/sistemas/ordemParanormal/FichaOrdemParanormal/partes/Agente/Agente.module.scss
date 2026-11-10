@@ -131,8 +131,7 @@ input.tag {
     color: var(--texto-suave);
   }
 
-  input,
-  select {
+  input {
     width: 100%;
     min-width: 0;
     padding: 0;
@@ -150,25 +149,6 @@ input.tag {
     }
 
     &::placeholder { color: var(--texto-suave); }
-  }
-
-  select {
-    cursor: pointer;
-    text-align-last: center;   // centraliza o texto do select
-
-    option { background: var(--superficie); }
-  }
-
-  // Nome do poder da origem (a descrição aparece ao passar o mouse)
-  .poder {
-    @include fonte-ficha;
-    font-size: 0.56rem;
-    letter-spacing: 0.1em;
-    color: var(--cor);
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 }
 

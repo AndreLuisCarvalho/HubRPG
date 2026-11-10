@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { ATRIBUTOS, GRAUS, PERICIAS } from '../../../modelo';
-import {
-  bonusPericia, dadosDoAtributo, dadosDoTeste, grauDaPericia, PENALIDADE_SEM_KIT, temKit,
-} from '../../../regras';
+import { bonusPericia, dadosDoAtributo, dadosDoTeste, grauDaPericia } from '../../../regras';
 import Painel from '../Painel/Painel';
 import styles from './Pericias.module.scss';
 
@@ -14,13 +12,6 @@ const siglaDoAtributo = (id) => ATRIBUTOS.find((a) => a.id === id)?.sigla;
 const IconeD20 = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M12 2 21 7v10l-9 5-9-5V7Z M12 2 7 10h10Z M7 10l5 12 5-12" />
-  </svg>
-);
-
-// Maleta: perícia que precisa de kit
-const IconeKit = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M4 8h16v11H4z M9 8V5h6v3 M4 13h16" />
   </svg>
 );
 
@@ -42,13 +33,6 @@ export default function Pericias({ dados, onAlterarDados, className = '' }) {
     if (grau === 'destreinado') delete novas[id];
     else novas[id] = grau;
     onAlterarDados({ pericias: novas });
-  }
-
-  function alternarKit(id) {
-    const kits = { ...(dados.kits ?? {}) };
-    if (kits[id]) delete kits[id];
-    else kits[id] = true;
-    onAlterarDados({ kits });
   }
 
   const filtro = (
@@ -80,17 +64,6 @@ export default function Pericias({ dados, onAlterarDados, className = '' }) {
                 {p.nome}
                 {p.somenteTreinada && <sup title="Somente treinada">*</sup>}
                 {p.carga && <sup title="Penalidade de carga">+</sup>}
-                {p.kit && (
-                  <button
-                    className={`${styles.kit} ${temKit(dados, p.id) ? styles.comKit : ''}`}
-                    onClick={() => alternarKit(p.id)}
-                    title={temKit(dados, p.id) ? 'Tem o kit' : `Sem kit: −${PENALIDADE_SEM_KIT} no teste (clique se tiver o kit)`}
-                    aria-label={`Kit de ${p.nome}`}
-                    aria-pressed={temKit(dados, p.id)}
-                  >
-                    <IconeKit />
-                  </button>
-                )}
               </span>
 
               <span className={styles.dados}>

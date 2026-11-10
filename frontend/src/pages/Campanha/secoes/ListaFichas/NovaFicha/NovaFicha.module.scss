@@ -22,8 +22,7 @@
     color: var(--texto-suave);
   }
 
-  input,
-  select {
+  input {
     padding: 9px 12px;
     border: 1px solid var(--borda);
     border-radius: 10px;
@@ -33,8 +32,6 @@
     font-size: 0.92rem;
 
     &::placeholder { color: color-mix(in srgb, var(--texto-suave) 70%, transparent); }
-
-    option { background: var(--superficie); }
 
     &:focus {
       outline: none;
