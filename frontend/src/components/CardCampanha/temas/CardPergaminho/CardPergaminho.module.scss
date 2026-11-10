@@ -1,3 +1,4 @@
+@use 'sass:color';
 $madeira: #7a5530;
 $papel: #ecdcb8;
 $tinta: #3a2812;
@@ -14,7 +15,7 @@ $fonte-antiga: 'IM Fell English SC', serif;
   height: 12px;
   margin: 0 -6px;
   border-radius: 6px;
-  background: linear-gradient(180deg, $madeira, lighten($madeira, 35%) 45%, $madeira);
+    background: linear-gradient(180deg, $madeira, color.adjust($madeira, $lightness: 35%) 45%, $madeira);
 }
 
 .papel {
@@ -30,7 +31,7 @@ $fonte-antiga: 'IM Fell English SC', serif;
   background:
     radial-gradient(circle at 15% 25%, rgba(140, 90, 30, 0.18), transparent 35%),
     radial-gradient(circle at 85% 70%, rgba(140, 90, 30, 0.15), transparent 40%),
-    linear-gradient(90deg, darken($papel, 12%), $papel 15%, $papel 85%, darken($papel, 12%));
+    linear-gradient(90deg, color.adjust($papel, $lightness: -12%), $papel 15%, $papel 85%, color.adjust($papel, $lightness: -12%));
 }
 
 .sistema {
