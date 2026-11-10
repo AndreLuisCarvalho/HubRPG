@@ -184,6 +184,13 @@ input.tag {
     @include fonte-titulo;
     font-size: 1.35rem;
     line-height: 1;
+
+    // Prefixo pequeno, ex.: "RD" no Bloqueio
+    small {
+      margin-right: 2px;
+      font-size: 0.5em;
+      color: var(--texto-suave);
+    }
   }
 
   span {
@@ -192,6 +199,11 @@ input.tag {
     letter-spacing: 0.12em;
     color: var(--texto-suave);
   }
+}
+
+.inativo {
+  opacity: 0.4;
+  border-style: dashed;
 }
 
 .destaque {
