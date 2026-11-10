@@ -1,0 +1,53 @@
+@use '../../../../../styles/mixins' as *;
+
+// Ocupa o lugar do nome da orbe, na mesma altura (não empurra o layout)
+.contagem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--c, var(--cor));   // --c vem da orbe (vermelho na Vida, roxo na Sanidade)
+}
+
+.rotulo {
+  @include fonte-ficha;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  animation: pulsar 1.4s ease-in-out infinite;
+}
+
+.marcas {
+  display: flex;
+  gap: 4px;
+}
+
+// Losango vazio = turno ainda não passou
+.marca {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  background: transparent;
+  transform: rotate(45deg);
+  cursor: pointer;
+  opacity: 0.6;
+
+  &:hover { opacity: 1; }
+}
+
+.acesa {
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  opacity: 1;
+}
+
+// Chegou no limite: morto / insano
+.fim {
+  color: var(--texto-suave);
+
+  .rotulo { animation: none; }
+}
+
+@keyframes pulsar {
+  50% { opacity: 0.45; }
+}

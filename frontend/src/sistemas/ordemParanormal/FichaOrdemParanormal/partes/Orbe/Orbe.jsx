@@ -77,16 +77,22 @@ function Gotas() {
   ));
 }
 
-export default function Orbe({ recurso, passo = 1, onAlterar }) {
-  const { nome, atual, maximo, elemento } = recurso;
+// onMenos(qtd): perder · onMais(qtd): recuperar · onDigitar(valor): valor exato
+// onTemporario(valor): pontos temporários · rodape: troca o nome (ex.: contagem de morrendo)
+export default function Orbe({ recurso, passo = 1, onMenos, onMais, onDigitar, onTemporario, rodape }) {
+  const { nome, atual, maximo, elemento, temporario = 0 } = recurso;
   const [digitando, setDigitando] = useState(false);
+  const [editandoTemp, setEditandoTemp] = useState(false);
   const [evento, setEvento] = useState(null); // { tipo: 'perda' | 'ganho', valor, chave }
-  const anterior = useRef(atual);
+
+  // A animação olha o total (atual + temporários): perder só temporário também anima
+  const total = atual + temporario;
+  const anterior = useRef(total);
 
   // Compara com o valor anterior: se mudou, dispara a animação de perda ou ganho
   useEffect(() => {
-    const diferenca = atual - anterior.current;
-    anterior.current = atual;
+    const diferenca = total - anterior.current;
+    anterior.current = total;
     if (diferenca === 0) return;
 
     const tipo = diferenca < 0 ? 'perda' : 'ganho';
@@ -99,7 +105,7 @@ export default function Orbe({ recurso, passo = 1, onAlterar }) {
 
     const timer = setTimeout(() => setEvento(null), DURACAO_EVENTO);
     return () => clearTimeout(timer);
-  }, [atual]);
+  }, [total]);
 
   const porcentagem = maximo > 0 ? Math.max(0, Math.min(100, (atual / maximo) * 100)) : 0;
   const critico = porcentagem > 0 && porcentagem <= 25;
@@ -109,21 +115,29 @@ export default function Orbe({ recurso, passo = 1, onAlterar }) {
     styles[elemento],
     critico && styles.critico,
     evento && styles[evento.tipo],
+    temporario > 0 && styles.comTemporario,
   ].filter(Boolean).join(' ');
 
   function confirmar(e) {
     setDigitando(false);
     const valor = Math.max(0, Number(e.target.value) || 0);
-    if (valor !== atual) onAlterar(valor);
+    if (valor !== atual) onDigitar(valor);
   }
 
-  function aoTeclar(e) {
+  function confirmarTemporario(e) {
+    setEditandoTemp(false);
+    const valor = Math.max(0, Number(e.target.value) || 0);
+    if (valor !== temporario) onTemporario(valor);
+  }
+
+  // Enter confirma; Esc desfaz o que foi digitado
+  const aoTeclar = (original) => (e) => {
     if (e.key === 'Enter') e.currentTarget.blur();
     if (e.key === 'Escape') {
-      e.currentTarget.value = atual;   // desfaz o que foi digitado
+      e.currentTarget.value = original;
       e.currentTarget.blur();
     }
-  }
+  };
 
   return (
     <div className={classes} style={{ '--nivel': `${porcentagem}%` }}>
@@ -151,7 +165,7 @@ export default function Orbe({ recurso, passo = 1, onAlterar }) {
               autoFocus
               defaultValue={atual}
               onBlur={confirmar}
-              onKeyDown={aoTeclar}
+              onKeyDown={aoTeclar(atual)}
               aria-label={`Novo valor de ${nome}`}
             />
           ) : (
@@ -162,9 +176,33 @@ export default function Orbe({ recurso, passo = 1, onAlterar }) {
           )}
         </div>
 
+        {/* Pontos temporários: selo no alto da orbe (apagado quando é 0) */}
+        {editandoTemp ? (
+          <input
+            className={`${styles.temporario} ${styles.entradaTemp}`}
+            type="number"
+            min="0"
+            autoFocus
+            defaultValue={temporario}
+            onBlur={confirmarTemporario}
+            onKeyDown={aoTeclar(temporario)}
+            aria-label={`${nome} temporário`}
+          />
+        ) : (
+          <button
+            className={styles.temporario}
+            onClick={() => setEditandoTemp(true)}
+            title={temporario > 0
+              ? `${temporario} ${nome} temporário: é gasto primeiro e pode passar do máximo`
+              : `Adicionar ${nome} temporário`}
+          >
+            {temporario > 0 ? `+${temporario}` : 'T'}
+          </button>
+        )}
+
         <button
           className={`${styles.ajuste} ${styles.menos}`}
-          onClick={() => onAlterar(atual - passo)}
+          onClick={() => onMenos(passo)}
           aria-label={`Diminuir ${passo} de ${nome}`}
           title={`−${passo}`}
         >
@@ -172,7 +210,7 @@ export default function Orbe({ recurso, passo = 1, onAlterar }) {
         </button>
         <button
           className={`${styles.ajuste} ${styles.mais}`}
-          onClick={() => onAlterar(atual + passo)}
+          onClick={() => onMais(passo)}
           aria-label={`Aumentar ${passo} de ${nome}`}
           title={`+${passo}`}
         >
@@ -180,7 +218,7 @@ export default function Orbe({ recurso, passo = 1, onAlterar }) {
         </button>
       </div>
 
-      <span className={styles.nome}>{nome}</span>
+      {rodape ?? <span className={styles.nome}>{nome}</span>}
     </div>
   );
 }

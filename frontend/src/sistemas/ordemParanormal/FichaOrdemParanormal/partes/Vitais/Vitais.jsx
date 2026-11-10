@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { recursos } from '../../../regras';
+import {
+  contagemDoRecurso, definirAtual, definirContagem, definirTemporario, perderRecurso, recursos,
+} from '../../../regras';
+import Contagem from '../Contagem/Contagem';
 import Orbe from '../Orbe/Orbe';
 import Painel from '../Painel/Painel';
 import styles from './Vitais.module.scss';
@@ -30,10 +33,16 @@ export default function Vitais({ dados, onAlterarDados, className = '' }) {
     }
   }
 
-  function alterar(recurso, valor) {
-    const atuais = Object.fromEntries(lista.map((r) => [r.id, r.atual]));
-    atuais[recurso.id] = Math.min(Math.max(valor, 0), recurso.maximo);
-    onAlterarDados({ atuais });
+  // Com PV/SAN em 0 (ou já marcando), o nome da orbe vira a contagem de morrendo/enlouquecendo
+  function rodapeDe(recurso) {
+    const contagem = contagemDoRecurso(dados, recurso.id);
+    if (!contagem || (recurso.atual > 0 && contagem.valor === 0)) return null;
+    return (
+      <Contagem
+        {...contagem}
+        onAlterar={(valor) => onAlterarDados(definirContagem(dados, contagem.id, valor))}
+      />
+    );
   }
 
   const seletor = (
@@ -53,7 +62,16 @@ export default function Vitais({ dados, onAlterarDados, className = '' }) {
     <Painel acoes={seletor} className={className}>
       <div className={styles.orbes}>
         {lista.map((r) => (
-          <Orbe key={r.id} recurso={r} passo={passo} onAlterar={(valor) => alterar(r, valor)} />
+          <Orbe
+            key={r.id}
+            recurso={r}
+            passo={passo}
+            onMenos={(qtd) => onAlterarDados(perderRecurso(dados, r.id, qtd))}
+            onMais={(qtd) => onAlterarDados(definirAtual(dados, r.id, r.atual + qtd))}
+            onDigitar={(valor) => onAlterarDados(definirAtual(dados, r.id, valor))}
+            onTemporario={(valor) => onAlterarDados(definirTemporario(dados, r.id, valor))}
+            rodape={rodapeDe(r)}
+          />
         ))}
       </div>
     </Painel>

@@ -136,6 +136,65 @@
   &:active { transform: scale(0.9); }
 }
 
+/* ---------- Pontos temporários ---------- */
+.temporario {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  z-index: 2;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px dashed color-mix(in srgb, var(--c) 50%, transparent);
+  border-radius: 999px;
+  background: #0d0b14;
+  color: var(--texto-suave);
+  @include fonte-ficha;
+  font-size: 0.62rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.45;
+  transition: opacity 0.15s;
+
+  &:hover { opacity: 1; }
+}
+
+.entradaTemp {
+  width: 42px;
+  opacity: 1;
+  text-align: center;
+  appearance: textfield;
+
+  &:focus { outline: none; }
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+}
+
+// Com temporários: selo aceso e um anel claro extra em volta da esfera
+.comTemporario {
+  .temporario {
+    border-style: solid;
+    border-color: var(--claro);
+    background: color-mix(in srgb, var(--c) 45%, #0d0b14);
+    color: #fff;
+    box-shadow: 0 0 10px var(--c);
+    opacity: 1;
+  }
+
+  .esfera {
+    box-shadow:
+      0 0 0 3px #1c1828,
+      0 0 0 4px var(--c),
+      0 0 0 6px color-mix(in srgb, var(--claro) 70%, transparent),
+      0 0 24px color-mix(in srgb, var(--claro) 45%, transparent),
+      inset 0 -8px 18px rgba(0, 0, 0, 0.6);
+  }
+}
+
 .menos { left: -7px; }
 .mais  { right: -7px; }
 
