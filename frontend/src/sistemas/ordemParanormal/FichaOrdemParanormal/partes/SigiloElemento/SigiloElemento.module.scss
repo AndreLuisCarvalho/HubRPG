@@ -1,0 +1,29 @@
+.sigilo {
+  width: var(--tamanho);
+  height: var(--tamanho);
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--e);
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--e) 22%, #0b0912), #0b0912 70%);
+  box-shadow:
+    0 0 10px color-mix(in srgb, var(--e) 45%, transparent),
+    inset 0 0 8px color-mix(in srgb, var(--e) 30%, transparent);
+  transition: opacity 0.15s;
+
+  svg {
+    width: 55%;
+    height: 55%;
+    fill: none;
+    stroke: var(--e);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+.apagado {
+  opacity: 0.35;
+  box-shadow: none;
+}

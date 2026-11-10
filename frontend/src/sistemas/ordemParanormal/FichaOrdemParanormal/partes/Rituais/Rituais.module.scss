@@ -1,0 +1,257 @@
+@use '../../../../../styles/mixins' as *;
+ 
+// Ocupa a altura da aba; só a lista rola
+.rituais {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  min-height: 0;
+  padding-top: 10px;
+}
+ 
+/* ---------- Cabeçalho: selo da DT + números + aprender ---------- */
+.cabecalho {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+ 
+.selo {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  line-height: 1;
+  cursor: help;
+ 
+  svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    fill: none;
+  }
+ 
+  b {
+    position: relative;
+    @include fonte-titulo;
+    font-weight: 800;
+    font-size: 1.25rem;
+  }
+ 
+  small {
+    position: relative;
+    margin-top: 2px;
+    @include fonte-ficha;
+    font-size: 0.5rem;
+    letter-spacing: 0.2em;
+    color: var(--texto-suave);
+  }
+}
+ 
+.pontilhado {
+  stroke: var(--cor);
+  stroke-width: 1;
+  stroke-dasharray: 1 3;
+  opacity: 0.7;
+}
+ 
+.anel {
+  stroke: var(--cor);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 4px var(--cor));
+}
+ 
+// Dois números lado a lado, separados por uma linha fina
+.info {
+  display: flex;
+  gap: 18px;
+  margin: 0;
+ 
+  div {
+    display: grid;
+    gap: 2px;
+    cursor: help;
+ 
+    & + div {
+      padding-left: 18px;
+      border-left: 1px solid var(--borda);
+    }
+  }
+ 
+  dt {
+    @include fonte-ficha;
+    font-size: 0.56rem;
+    letter-spacing: 0.16em;
+    color: var(--texto-suave);
+  }
+ 
+  dd {
+    margin: 0;
+    @include fonte-titulo;
+    font-size: 1.15rem;
+ 
+    span {
+      font-family: inherit;
+      font-size: 0.65em;
+      color: var(--texto-suave);
+    }
+  }
+}
+ 
+// Passou do limite de rituais: número em vermelho
+.excedeu { color: #ff8592; }
+ 
+.aprender {
+  padding: 8px 14px;
+  border: 1px solid var(--cor);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cor) 25%, #0d0b14);
+  color: #fff;
+  @include fonte-ficha;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+ 
+  &:hover { background: color-mix(in srgb, var(--cor) 45%, #0d0b14); }
+ 
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+ 
+/* ---------- Filtro por elemento ---------- */
+.filtro {
+  display: flex;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--borda);
+ 
+  button {
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+  }
+}
+ 
+/* ---------- Lista ---------- */
+.lista {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  margin: 0;
+  padding: 0 2px 0 0;
+  overflow-y: auto;
+  list-style: none;
+}
+ 
+// Cada ritual: faixa e brilho na cor do elemento (--e vem do style do <li>)
+.ritual {
+  position: relative;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--e) 10%, transparent), transparent 45%);
+ 
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--e);
+    box-shadow: 0 0 8px var(--e);
+  }
+}
+ 
+.aberto {
+  border-color: color-mix(in srgb, var(--e) 55%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--e) 18%, transparent);
+}
+ 
+.linha {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+ 
+.titulo {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+ 
+  b {
+    @include fonte-titulo;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+ 
+.resumo {
+  @include fonte-ficha;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: var(--texto-suave);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+ 
+// Dano em destaque, na cor do elemento
+.dano {
+  max-width: 130px;
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--e) 55%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--e) 14%, transparent);
+  color: #fff;
+  @include fonte-ficha;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+ 
+.custo {
+  padding: 2px 9px;
+  border: 1px solid rgba(240, 180, 41, 0.45);
+  border-radius: 999px;
+  background: rgba(240, 180, 41, 0.08);
+  color: #ffd77a;
+  @include fonte-ficha;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+ 
+.vazio {
+  padding: 24px 12px;
+  border: 1px dashed #3a3350;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+}
+ 

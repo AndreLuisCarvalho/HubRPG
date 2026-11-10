@@ -1,5 +1,7 @@
 // Como o sistema CALCULA. Funções puras: recebem dados, devolvem resultado.
-import { CLASSES, CONTAGENS, GRAUS, NEX, ORIGENS, PERICIAS, RECURSOS } from './modelo';
+import {
+  CLASSES, CONTAGENS, CUSTO_POR_CIRCULO, GRAUS, NEX, ORIGENS, PERICIAS, RECURSOS, RITUAIS,
+} from './modelo';
 
 export function fichaInicial({ classe = 'combatente', jogador = '', origem = '' } = {}) {
   return {
@@ -18,6 +20,7 @@ export function fichaInicial({ classe = 'combatente', jogador = '', origem = '' 
     defesa: { equipamento: 0, outros: 0 },
     deslocamento: 9,
     ataques: [],
+    rituais: [],
     protecao: '',
     resistencias: '',
     proficiencias: '',
@@ -231,3 +234,65 @@ export function destaques(dados) {
     { rotulo: 'NEX', valor: `${dados.nex ?? 5}%` },
   ];
 }
+
+
+/* ---------- Rituais ---------- */
+// Cada ritual conhecido fica salvo como { id, elemento, deClasse }.
+// deClasse: aprendido pela classe (ex.: Ocultista) — não conta no limite.
+// forma: 'basico' | 'discente' | 'verdadeiro'
+ 
+// DT para resistir aos seus rituais (livro p. 121): 10 + limite de PE + Presença
+export const dtDeRituais = (dados) => 10 + limitePePorTurno(dados) + (dados.atributos?.pre ?? 0);
+ 
+// Custo total: o do círculo + o extra da forma escolhida
+export const custoDoRitual = (ritual, forma = 'basico') =>
+  (CUSTO_POR_CIRCULO[ritual.circulo] ?? 0) + (forma === 'basico' ? 0 : ritual[forma]?.pe ?? 0);
+ 
+// Pelo poder Aprender Ritual, o limite é o Intelecto (livro p. 119)
+export const limiteDeRituais = (dados) => dados.atributos?.int ?? 0;
+export const contarAprendidos = (dados) => (dados.rituais ?? []).filter((r) => !r.deClasse).length;
+export const conheceRitual = (dados, id) => (dados.rituais ?? []).some((r) => r.id === id);
+ 
+// Rituais que o agente conhece, juntando o que está salvo com os dados da lista
+export function rituaisConhecidos(dados) {
+  return (dados.rituais ?? [])
+    .map((salvo) => ({ ...salvo, ritual: RITUAIS.find((r) => r.id === salvo.id) }))
+    .filter((r) => r.ritual);
+}
+ 
+// Mudanças (devolvem só o pedaço de "dados" que mudou, igual às de recursos)
+export function aprenderRitual(dados, ritual) {
+  if (conheceRitual(dados, ritual.id)) return {};
+  const novo = { id: ritual.id, elemento: ritual.elementos[0], deClasse: false };
+  return { rituais: [...(dados.rituais ?? []), novo] };
+}
+ 
+export const esquecerRitual = (dados, id) => ({
+  rituais: (dados.rituais ?? []).filter((r) => r.id !== id),
+});
+ 
+export const alterarRitual = (dados, id, mudancas) => ({
+  rituais: (dados.rituais ?? []).map((r) => (r.id === id ? { ...r, ...mudancas } : r)),
+});
+ 
+// A forma cabe no limite de PE por turno? (livro p. 121: nunca se gasta mais que o limite)
+export const formaPermitida = (dados, ritual, forma) => custoDoRitual(ritual, forma) <= limitePePorTurno(dados);
+ 
+// Só conjura se couber no limite por turno e no PE que sobrou (com temporários)
+export function podeConjurar(dados, ritual, forma = 'basico') {
+  const pe = recursos(dados).find((r) => r.id === 'pe');
+  return formaPermitida(dados, ritual, forma) && custoDoRitual(ritual, forma) <= pe.atual + pe.temporario;
+}
+ 
+export const conjurarRitual = (dados, ritual, forma = 'basico') =>
+  perderRecurso(dados, 'pe', custoDoRitual(ritual, forma));
+ 
+// O custo do paranormal (livro p. 121): aviso mostrado antes de conjurar
+const PERDA_PERMANENTE_MEDO = { basico: 1, discente: 2, verdadeiro: 3 };
+ 
+export function custoParanormal(ritual, elemento, forma = 'basico') {
+  const custo = custoDoRitual(ritual, forma);
+  if (elemento === 'med') return `Medo: perde ${custo} SAN e ${PERDA_PERMANENTE_MEDO[forma]} SAN permanente`;
+  return `Ocultismo DT ${20 + custo} · se falhar, perde ${custo} SAN`;
+}
+ 
