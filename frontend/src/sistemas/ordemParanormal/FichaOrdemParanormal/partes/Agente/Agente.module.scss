@@ -1,0 +1,201 @@
+@use '../../../../../styles/mixins' as *;
+
+.agente {
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  text-align: center;
+}
+
+/* ---------- Credencial ---------- */
+.credencial {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+// "AGENTE DA ORDEM" entre duas linhas que somem nas pontas
+.selo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  @include fonte-ficha;
+  font-size: 0.62rem;
+  letter-spacing: 0.35em;
+  color: var(--texto-suave);
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--cor) 60%, transparent), transparent);
+  }
+}
+
+.avatar {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--cor) 45%, #1a1428), #0d0b14 75%);
+  // Anel duplo: cor, faixa escura, cor fraca e brilho
+  box-shadow:
+    0 0 0 2px var(--cor),
+    0 0 0 5px #0d0b14,
+    0 0 0 6px color-mix(in srgb, var(--cor) 40%, transparent),
+    0 0 24px color-mix(in srgb, var(--cor) 50%, transparent);
+  @include fonte-titulo;
+  font-size: 1.9rem;
+  font-weight: 800;
+}
+
+.nome {
+  max-width: 100%;
+  @include fonte-titulo;
+  font-size: 1.75rem;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tag {
+  min-width: 0;
+  padding: 4px 14px;
+  border: 1px solid color-mix(in srgb, var(--cor) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cor) 10%, transparent);
+  color: var(--cor);
+  @include fonte-ficha;
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-align-last: center;
+  appearance: none;
+  cursor: pointer;
+
+  &:hover,
+  &:focus {
+    outline: none;
+    border-color: var(--cor);
+  }
+
+  option {
+    background: var(--superficie);
+    color: var(--texto);
+  }
+
+  &::placeholder { color: color-mix(in srgb, var(--cor) 55%, transparent); }
+}
+
+input.tag {
+  width: 9em;
+  cursor: text;
+}
+
+.vazia { border-style: dashed; }
+
+/* ---------- Origem e Jogador ---------- */
+.dossie {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+
+    label {
+    display: grid;
+    gap: 4px;
+    padding: 10px 8px;
+
+    & + label { border-left: 1px solid var(--borda); }
+  }
+
+  span {
+    @include fonte-ficha;
+    font-size: 0.56rem;
+    letter-spacing: 0.16em;
+    color: var(--texto-suave);
+  }
+
+  input {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-align: center;
+
+    &:focus {
+      outline: none;
+      color: var(--cor);
+    }
+
+    &::placeholder { color: var(--texto-suave); }
+  }
+}
+
+/* ---------- Atributos de combate ---------- */
+.combate {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+
+.atributo {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: 12px 2px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  cursor: help;
+
+  svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: var(--cor);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  b {
+    @include fonte-titulo;
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+
+  span {
+    @include fonte-ficha;
+    font-size: 0.56rem;
+    letter-spacing: 0.12em;
+    color: var(--texto-suave);
+  }
+}
+
+.destaque {
+  border-color: color-mix(in srgb, var(--cor) 55%, transparent);
+  background: color-mix(in srgb, var(--cor) 16%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--cor) 30%, transparent);
+}

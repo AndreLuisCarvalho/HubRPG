@@ -44,3 +44,22 @@ $celular: 800px;
     border-bottom-color: var(--cor);
   }
 }
+
+// Letra condensada em caixa alta, das etiquetas de ficha
+@mixin fonte-ficha {
+  font-family: 'Oswald', 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+// Etiqueta preta com texto claro ("ORIGEM", "PV")
+@mixin etiqueta {
+  @include fonte-ficha;
+  display: inline-block;
+  padding: 3px 10px;
+  background: var(--texto);
+  color: var(--fundo);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+}

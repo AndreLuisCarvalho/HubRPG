@@ -6,20 +6,19 @@
 
   input {
     min-width: 0;
-    padding: 4px 2px;
+    padding: 2px;
     border: 0;
     border-bottom: 1px solid var(--borda);
     background: transparent;
     color: var(--texto);
     font: inherit;
-    transition: border-color 0.15s;
+    font-size: 0.85rem;
 
     &:focus {
       outline: none;
       border-bottom-color: var(--cor);
     }
 
-    // Esconde as setinhas do campo numérico
     &[type='number'] {
       appearance: textfield;
 
@@ -33,10 +32,14 @@
 }
 
 .rotulo {
-  @include rotulo-campo;
   flex-shrink: 0;
+  @include fonte-ficha;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--texto-suave);
 }
 
+// Rótulo à esquerda
 .lado {
   align-items: flex-end;
   gap: 10px;
@@ -44,15 +47,21 @@
   input { flex: 1; }
 }
 
-.embaixo {
-  flex-direction: column-reverse;
+// Rótulo em cima
+.acima {
+  flex-direction: column;
+  gap: 3px;
+}
+
+// Rótulo em cima e tudo centralizado
+.centro {
+  flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
+  text-align: center;
 
   input {
-    width: 3em;
+    width: 100%;
     text-align: center;
   }
-
-  .rotulo { font-size: 0.6rem; }
 }

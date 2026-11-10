@@ -1,0 +1,90 @@
+@use '../../../../../styles/mixins' as *;
+
+.ataques {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.ataque {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 70px 24px;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--borda);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+
+  input {
+    min-width: 0;
+    padding: 2px 0;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    background: none;
+    color: var(--texto);
+    font: inherit;
+
+    &:focus {
+      outline: none;
+      border-bottom-color: var(--cor);
+    }
+
+    &::placeholder { color: color-mix(in srgb, var(--texto-suave) 60%, transparent); }
+  }
+}
+
+.nome {
+  @include fonte-ficha;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+}
+
+.dano {
+  @include fonte-ficha;
+  font-size: 1.05rem;
+  text-align: right;
+  color: #e0465a !important;
+}
+
+.remover {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+  font-size: 1.1rem;
+  cursor: pointer;
+
+  &:hover { color: #e0465a; }
+}
+
+.detalhes {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 8px;
+
+  input {
+    font-size: 0.74rem;
+    color: var(--texto-suave);
+  }
+}
+
+.novo {
+  padding: 8px;
+  border: 1px dashed #3a3352;
+  background: none;
+  border-radius: 10px;
+  color: var(--texto-suave);
+  @include fonte-ficha;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--texto);
+    border-color: var(--cor);
+  }
+}

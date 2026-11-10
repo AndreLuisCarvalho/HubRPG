@@ -7,6 +7,7 @@ import ListaFichas from './secoes/ListaFichas/ListaFichas';
 import EmBreve from './secoes/EmBreve/EmBreve';
 import styles from './Campanha.module.scss';
 import DetalheFicha from './secoes/DetalheFicha/DetalheFicha';
+import { FundoOutroLado } from '../../components';
 
 export default function Campanha() {
   const { id } = useParams();
@@ -40,18 +41,19 @@ export default function Campanha() {
 
   return (
     <div className={styles.layout} style={{ '--cor': campanha.cor }}>
-      <MenuCampanha campanha={campanha} />
+      <FundoOutroLado />
+        <MenuCampanha campanha={campanha} />
 
-      <main className={styles.conteudo}>
-        <Routes>
-          <Route index element={<VisaoGeral campanha={campanha} />} />
-          <Route path="jogadores" element={<ListaFichas key="jogador" campanha={campanha} tipo="jogador" titulo="Jogadores" />} />
-          <Route path="npcs" element={<ListaFichas key="npc" campanha={campanha} tipo="npc" titulo="NPCs" />} />
-          <Route path="monstros" element={<ListaFichas key="monstro" campanha={campanha} tipo="monstro" titulo="Monstros" />} />
-          <Route path="fichas/:fichaId" element={<DetalheFicha campanha={campanha} />} />
-          <Route path=":secao" element={<EmBreve />} />
-        </Routes>
-      </main>
-    </div>
+        <main className={styles.conteudo}>
+          <Routes>
+            <Route index element={<VisaoGeral campanha={campanha} />} />
+            <Route path="jogadores" element={<ListaFichas key="jogador" campanha={campanha} tipo="jogador" titulo="Jogadores" />} />
+            <Route path="npcs" element={<ListaFichas key="npc" campanha={campanha} tipo="npc" titulo="NPCs" />} />
+            <Route path="monstros" element={<ListaFichas key="monstro" campanha={campanha} tipo="monstro" titulo="Monstros" />} />
+            <Route path="fichas/:fichaId" element={<DetalheFicha campanha={campanha} />} />
+            <Route path=":secao" element={<EmBreve />} />
+          </Routes>
+        </main>
+      </div>
   );
 }

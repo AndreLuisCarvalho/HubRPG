@@ -1,28 +1,93 @@
 @use '../../../styles/mixins' as *;
 
+// Sigilo gigante e bem fraco no fundo da ficha
+$sigilo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='white' stroke-width='.6'%3E%3Ccircle cx='50' cy='50' r='48'/%3E%3Ccircle cx='50' cy='50' r='40'/%3E%3Cpolygon points='50,10 73.5,82.4 11.9,37.6 88.1,37.6 26.5,82.4'/%3E%3C/svg%3E");
+
+// PC: a ficha ocupa exatamente o espaço que sobra (flex: 1), sem altura "chutada"
 .ficha {
+  position: relative;
+  isolation: isolate;
+  flex: 1;
+  min-height: 0;
   display: grid;
-  gap: 24px;
+  grid-template-columns: clamp(300px, 22vw, 440px) minmax(0, 1.45fr) minmax(0, 1.1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    'agente pericias vitais'
+    'agente pericias abas';
+  gap: 14px;
+
+  // O sigilo fica DENTRO da ficha (antes ele vazava e criava a rolagem)
+  &::before {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    width: 420px;
+    height: 420px;
+    max-width: 100%;
+    background: $sigilo center / contain no-repeat;
+    opacity: 0.05;
+    pointer-events: none;
+  }
 }
 
-// Telas largas: 3 colunas, como no CRIS
-.colunas {
-  display: grid;
-  grid-template-columns: minmax(300px, 380px) minmax(400px, 1fr) minmax(320px, 1fr);
-  align-items: start;
-  gap: 32px;
+.agente   { grid-area: agente; }
+.vitais   { grid-area: vitais; }
+.pericias { grid-area: pericias; }
+.abas     { grid-area: abas; }
 
-  // Telas médias: as abas descem e ocupam a largura toda
-  @media (max-width: 1400px) {
-    grid-template-columns: minmax(300px, 360px) 1fr;
+.navegacao { display: none; }
 
-    .direita { grid-column: 1 / -1; }
+// Celular: orbes no topo, uma parte por vez no meio, navegação embaixo
+@include celular {
+  .ficha {
+    flex: none;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'vitais' 'conteudo' 'nav';
+    gap: 10px;
+    height: calc(100dvh - 24px);
   }
 
-  @include celular { grid-template-columns: 1fr; }
-}
+  // ".ficha >" deixa a regra mais forte que o display do Painel
+  .ficha > .agente,
+  .ficha > .pericias,
+  .ficha > .abas {
+    grid-area: conteudo;
+    display: none;
+  }
 
-.esquerda {
-  display: grid;
-  gap: 28px;
+  .ficha > .visivel { display: flex; }
+
+  .navegacao {
+    grid-area: nav;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--borda);
+    border-radius: 12px 12px 0 0;
+    background: var(--superficie);
+
+    button {
+      display: grid;
+      justify-items: center;
+      gap: 2px;
+      padding: 8px 0 10px;
+      border: 0;
+      background: none;
+      color: var(--texto-suave);
+      @include fonte-ficha;
+      font-size: 0.66rem;
+      letter-spacing: 0.14em;
+      cursor: pointer;
+
+      span { font-size: 1.1rem; }
+    }
+
+    .ativa {
+      color: var(--texto);
+      box-shadow: inset 0 2px 0 var(--cor);
+    }
+  }
 }

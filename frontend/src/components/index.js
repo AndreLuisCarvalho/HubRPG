@@ -7,3 +7,4 @@ export { default as PalcoMapa } from './PalcoMapa/PalcoMapa';
 export { default as StatusBadge } from './StatusBadge/StatusBadge';
 export { default as SeloCera } from './SeloCera/SeloCera';
 export { default as BarraRecurso } from './BarraRecurso/BarraRecurso';
+export { default as FundoOutroLado } from './FundoOutroLado/FundoOutroLado';

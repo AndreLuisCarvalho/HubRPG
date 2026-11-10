@@ -1,25 +1,29 @@
 import { useState } from 'react';
+import Ataques from '../Ataques/Ataques';
+import CampoLinha from '../CampoLinha/CampoLinha';
+import Painel from '../Painel/Painel';
 import styles from './Abas.module.scss';
 
 const ABAS = [
-  { id: 'combate', rotulo: 'Combate', emBreve: 'Ataques chegam junto com o rolador de dados.' },
-  { id: 'habilidades', rotulo: 'Habilidades', emBreve: 'Habilidades de classe e trilha em breve.' },
+  { id: 'ataques', rotulo: 'Ataques' },
+  { id: 'habilidades', rotulo: 'Habilid.', emBreve: 'Habilidades de classe e trilha em breve.' },
   { id: 'rituais', rotulo: 'Rituais', emBreve: 'Rituais em breve.' },
   { id: 'inventario', rotulo: 'Inventário', emBreve: 'O inventário em grade chega numa fase própria.' },
-  { id: 'descricao', rotulo: 'Descrição' },
+  { id: 'notas', rotulo: 'Notas' },
 ];
 
-export default function Abas({ dados, onAlterarDados }) {
+export default function Abas({ dados, onAlterarDados, className = '' }) {
   const [ativa, setAtiva] = useState(ABAS[0].id);
   const aba = ABAS.find((a) => a.id === ativa);
+  const defesa = dados.defesa ?? {};
 
-  function salvarDescricao(e) {
+  function salvarNotas(e) {
     const texto = e.target.value;
     if (texto !== (dados.descricao ?? '')) onAlterarDados({ descricao: texto });
   }
 
   return (
-    <section className={styles.abas}>
+    <Painel className={className}>
       <div className={styles.lista} role="tablist">
         {ABAS.map((a) => (
           <button
@@ -34,18 +38,36 @@ export default function Abas({ dados, onAlterarDados }) {
         ))}
       </div>
 
-      <div className={styles.painel} role="tabpanel">
-        {aba.id === 'descricao' ? (
+      {/* Listas longas rolam aqui dentro, nunca a página */}
+      <div className={styles.conteudo} role="tabpanel">
+        {aba.id === 'ataques' && (
+          <Ataques ataques={dados.ataques} onAlterar={(ataques) => onAlterarDados({ ataques })} />
+        )}
+        {aba.id === 'notas' && (
           <textarea
-            className={styles.texto}
+            className={styles.notas}
             defaultValue={dados.descricao ?? ''}
-            onBlur={salvarDescricao}
+            onBlur={salvarNotas}
             placeholder="Aparência, personalidade, história, objetivos…"
           />
-        ) : (
-          <p className={styles.vazio}>{aba.emBreve}</p>
         )}
+        {aba.emBreve && <p className={styles.vazio}>{aba.emBreve}</p>}
       </div>
-    </section>
+
+      <div className={styles.protecao}>
+        <CampoLinha rotulo="Proteção" valor={dados.protecao} onSalvar={(protecao) => onAlterarDados({ protecao })} />
+        <CampoLinha rotulo="Resist." valor={dados.resistencias} onSalvar={(resistencias) => onAlterarDados({ resistencias })} />
+        <CampoLinha rotulo="Profic." valor={dados.proficiencias} onSalvar={(proficiencias) => onAlterarDados({ proficiencias })} />
+
+        <div className={styles.numeros}>
+          <CampoLinha tipo="number" step="1.5" rotulo="Desl. (m)" valor={dados.deslocamento ?? 9}
+            onSalvar={(deslocamento) => onAlterarDados({ deslocamento })} />
+          <CampoLinha tipo="number" rotulo="Def. equip." valor={defesa.equipamento}
+            onSalvar={(v) => onAlterarDados({ defesa: { ...defesa, equipamento: v } })} />
+          <CampoLinha tipo="number" rotulo="Def. outros" valor={defesa.outros}
+            onSalvar={(v) => onAlterarDados({ defesa: { ...defesa, outros: v } })} />
+        </div>
+      </div>
+    </Painel>
   );
 }
