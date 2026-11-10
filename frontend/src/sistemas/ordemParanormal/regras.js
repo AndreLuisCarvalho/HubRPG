@@ -52,8 +52,7 @@ export function recursos(dados) {
   return RECURSOS.map((r) => ({ ...r, atual: atuais[r.id], maximo: maximos[r.id] }));
 }
 
-// Limite de PE por turno = NEX/5, e 20 no NEX 99% (é o 20º nível)
-export const limitePePorTurno = (dados) => niveisExtras(dados.nex ?? 5) + 1;
+export const limitePePorTurno = (dados) => Math.floor((dados.nex ?? 5) / 5);
 
 export function deslocamento(dados) {
   const metros = dados.deslocamento ?? 9;
@@ -62,7 +61,6 @@ export function deslocamento(dados) {
 
 /* ---------- Perícias ---------- */
 export const grauDaPericia = (dados, id) => dados.pericias?.[id] ?? 'destreinado';
-export const ehTreinada = (dados, id) => grauDaPericia(dados, id) !== 'destreinado';
 
 export function bonusPericia(dados, id) {
   const treino = GRAUS[grauDaPericia(dados, id)]?.bonus ?? 0;
@@ -90,14 +88,9 @@ export function calcularDefesa(dados) {
   return 10 + (dados.atributos?.agi ?? 0) + Math.max(0, equipamento) + Math.max(0, outros);
 }
 
-// Reações de defesa (livro p. 88). Só existem com a perícia treinada; senão devolvem null.
-// Esquiva: soma o bônus de Reflexos na Defesa contra um ataque.
-export const calcularEsquiva = (dados) =>
-  ehTreinada(dados, 'reflexos') ? calcularDefesa(dados) + bonusPericia(dados, 'reflexos') : null;
-
-// Bloqueio: contra ataque corpo a corpo, recebe RD igual ao bônus de Fortitude.
-export const calcularBloqueio = (dados) =>
-  ehTreinada(dados, 'fortitude') ? bonusPericia(dados, 'fortitude') : null;
+// Esquiva: Defesa + bônus de Reflexos · Bloqueio: redução igual ao bônus de Fortitude
+export const calcularEsquiva = (dados) => calcularDefesa(dados) + bonusPericia(dados, 'reflexos');
+export const calcularBloqueio = (dados) => bonusPericia(dados, 'fortitude');
 
 export function resumo(dados) {
   const classe = CLASSES[dados.classe];
@@ -106,19 +99,16 @@ export function resumo(dados) {
 
 /* ---------- Para as listas de fichas ---------- */
 
-// Estado do agente, do mais grave para o mais leve (ou null se está tudo bem).
-// Livro p. 88: PV 0 = morrendo · SAN 0 = enlouquecendo
-//              PV abaixo da metade = machucado · SAN abaixo da metade = perturbado
+// Estado do agente, do mais grave para o mais leve (ou null se está tudo bem)
 export function estado(dados) {
   const lista = recursos(dados);
   const pv = lista.find((r) => r.id === 'pv');
   const san = lista.find((r) => r.id === 'san');
-  const abaixoDaMetade = (r) => r.atual < r.maximo / 2;
+  const baixo = (r) => r.maximo > 0 && r.atual / r.maximo <= 0.25;
 
   if (pv.atual === 0) return { id: 'morrendo', rotulo: 'Morrendo' };
   if (san.atual === 0) return { id: 'enlouquecendo', rotulo: 'Enlouquecendo' };
-  if (abaixoDaMetade(pv)) return { id: 'machucado', rotulo: 'Machucado' };
-  if (abaixoDaMetade(san)) return { id: 'perturbado', rotulo: 'Perturbado' };
+  if (baixo(pv) || baixo(san)) return { id: 'perigo', rotulo: 'Em perigo' };
   return null;
 }
 

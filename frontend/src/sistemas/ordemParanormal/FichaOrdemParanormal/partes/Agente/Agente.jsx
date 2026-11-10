@@ -31,20 +31,10 @@ export default function Agente({ ficha, onAlterarDados, className = '' }) {
   const { dados } = ficha;
   const desl = deslocamento(dados);
 
-  const esquiva = calcularEsquiva(dados);
-  const bloqueio = calcularBloqueio(dados);
-
-  // null = reação indisponível (perícia não treinada): mostra "—" e fica apagada
   const combate = [
     { id: 'defesa', rotulo: 'Defesa', valor: calcularDefesa(dados), destaque: true, dica: 'Defesa = 10 + AGI + equipamento + outros' },
-    {
-      id: 'esquiva', rotulo: 'Esquiva', valor: esquiva,
-      dica: esquiva === null ? 'Precisa de Reflexos treinado' : 'Reação: Defesa + bônus de Reflexos contra um ataque',
-    },
-    {
-      id: 'bloqueio', rotulo: 'Bloqueio', valor: bloqueio === null ? null : <><small>RD</small>{bloqueio}</>,
-      dica: bloqueio === null ? 'Precisa de Fortitude treinado' : 'Reação contra corpo a corpo: reduz o dano no bônus de Fortitude',
-    },
+    { id: 'esquiva', rotulo: 'Esquiva', valor: calcularEsquiva(dados), dica: 'Defesa + bônus de Reflexos' },
+    { id: 'bloqueio', rotulo: 'Bloqueio', valor: calcularBloqueio(dados), dica: 'Reduz o dano no valor do bônus de Fortitude' },
     { id: 'esforco', rotulo: 'PE/turno', valor: limitePePorTurno(dados), dica: 'Limite de PE gastos por turno' },
     { id: 'deslocamento', rotulo: 'Desloc.', valor: `${desl.metros}m`, dica: `${desl.quadrados} quadrados` },
   ];
@@ -105,13 +95,9 @@ export default function Agente({ ficha, onAlterarDados, className = '' }) {
 
       <div className={styles.combate}>
         {combate.map((c) => (
-          <div
-            key={c.id}
-            className={`${styles.atributo} ${c.destaque ? styles.destaque : ''} ${c.valor === null ? styles.inativo : ''}`}
-            title={c.dica}
-          >
+          <div key={c.id} className={`${styles.atributo} ${c.destaque ? styles.destaque : ''}`} title={c.dica}>
             <svg viewBox="0 0 24 24" aria-hidden="true">{ICONES[c.id]}</svg>
-            <b>{c.valor ?? '—'}</b>
+            <b>{c.valor}</b>
             <span>{c.rotulo}</span>
           </div>
         ))}
