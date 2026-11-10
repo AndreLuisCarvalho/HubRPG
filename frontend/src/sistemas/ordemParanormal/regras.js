@@ -1,5 +1,5 @@
 // Como o sistema CALCULA. Funções puras: recebem dados, devolvem resultado.
-import { CLASSES, GRAUS, NEX, ORIGENS, PERICIAS, RECURSOS } from './modelo';
+import { CLASSES, GRAUS, NEX, PERICIAS, RECURSOS } from './modelo';
 
 export function fichaInicial({ classe = 'combatente', jogador = '', origem = '' } = {}) {
   return {
@@ -9,8 +9,7 @@ export function fichaInicial({ classe = 'combatente', jogador = '', origem = '' 
     jogador,
     trilha: '',
     atributos: { agi: 1, for: 1, int: 1, pre: 1, vig: 1 },
-    pericias: periciasDaOrigem({}, '', origem),
-    kits: {},
+    pericias: {},
     periciasOutros: {},
     atuais: {},
     defesa: { equipamento: 0, outros: 0 },
@@ -26,55 +25,15 @@ export function fichaInicial({ classe = 'combatente', jogador = '', origem = '' 
 // NEX 5% = 0 níveis extras, 10% = 1, ..., 99% = 19
 const niveisExtras = (nex) => Math.max(NEX.indexOf(nex), 0);
 
-/* ---------- Origem ---------- */
-export const dadosDaOrigem = (dados) => ORIGENS[dados.origem] ?? null;
-
-// Fichas antigas guardavam a origem como texto livre: nesse caso mostra o texto
-export const nomeDaOrigem = (dados) => dadosDaOrigem(dados)?.nome ?? dados.origem ?? '';
-
-// Números que a origem soma na ficha (Calejado, Cicatrizes, Dedicação, Patrulha…)
-export function bonusDaOrigem(dados) {
-  const e = dadosDaOrigem(dados)?.efeitos ?? {};
-  const nex = dados.nex ?? 5;
-  const niveis = niveisExtras(nex) + 1;                                   // quantos "5% de NEX" já tem
-  const nexImpares = NEX.filter((n) => n <= nex && n > 5 && n % 10 === 5).length; // 15%, 25%…
-
-  return {
-    pv: (e.pvPorNex ?? 0) * niveis,
-    san: (e.sanPorNex ?? 0) * niveis,
-    pe: (e.peInicial ?? 0) + (e.pePorNexImpar ?? 0) * nexImpares,
-    limitePe: e.limitePe ?? 0,
-    defesa: e.defesa ?? 0,
-    sanInicialMetade: Boolean(e.sanInicialMetade),
-  };
-}
-
-// Troca de origem: tira o treino que a origem antiga deu e treina as perícias da nova.
-// Só mexe em perícias no grau "treinado": se você evoluiu para veterano/expert, fica.
-export function periciasDaOrigem(pericias, origemAntiga, origemNova) {
-  const novas = { ...pericias };
-  const daNova = ORIGENS[origemNova]?.pericias ?? [];
-
-  (ORIGENS[origemAntiga]?.pericias ?? []).forEach((id) => {
-    if (novas[id] === 'treinado' && !daNova.includes(id)) delete novas[id];
-  });
-  daNova.forEach((id) => {
-    if (!novas[id]) novas[id] = 'treinado';
-  });
-  return novas;
-}
-
 export function calcularMaximos(dados) {
   const classe = CLASSES[dados.classe] ?? CLASSES.combatente;
   const { vig = 0, pre = 0 } = dados.atributos ?? {};
   const extras = niveisExtras(dados.nex);
-  const origem = bonusDaOrigem(dados);
-  const sanInicial = origem.sanInicialMetade ? Math.floor(classe.san.inicial / 2) : classe.san.inicial;
 
   return {
-    pv: classe.pv.inicial + vig + extras * (classe.pv.porNex + vig) + origem.pv,
-    pe: classe.pe.inicial + pre + extras * (classe.pe.porNex + pre) + origem.pe,
-    san: sanInicial + extras * classe.san.porNex + origem.san,
+    pv: classe.pv.inicial + vig + extras * (classe.pv.porNex + vig),
+    pe: classe.pe.inicial + pre + extras * (classe.pe.porNex + pre),
+    san: classe.san.inicial + extras * classe.san.porNex,
   };
 }
 
@@ -93,8 +52,7 @@ export function recursos(dados) {
   return RECURSOS.map((r) => ({ ...r, atual: atuais[r.id], maximo: maximos[r.id] }));
 }
 
-// Limite de PE por turno = NEX/5, e 20 no NEX 99% (é o 20º nível)
-export const limitePePorTurno = (dados) => niveisExtras(dados.nex ?? 5) + 1 + bonusDaOrigem(dados).limitePe;
+export const limitePePorTurno = (dados) => Math.floor((dados.nex ?? 5) / 5);
 
 export function deslocamento(dados) {
   const metros = dados.deslocamento ?? 9;
@@ -103,7 +61,6 @@ export function deslocamento(dados) {
 
 /* ---------- Perícias ---------- */
 export const grauDaPericia = (dados, id) => dados.pericias?.[id] ?? 'destreinado';
-export const ehTreinada = (dados, id) => grauDaPericia(dados, id) !== 'destreinado';
 
 export function bonusPericia(dados, id) {
   const treino = GRAUS[grauDaPericia(dados, id)]?.bonus ?? 0;
@@ -117,36 +74,23 @@ export function dadosDoAtributo(dados, atributoId) {
   return valor === 0 ? '2d20↓' : `${valor}d20`;
 }
 
-// Perícias que pedem kit (Crime, Enganação, Medicina, Tecnologia)
-export const precisaDeKit = (id) => Boolean(PERICIAS.find((p) => p.id === id)?.kit);
-export const temKit = (dados, id) => Boolean(dados.kits?.[id]);
-export const PENALIDADE_SEM_KIT = 5;
-
-// Ex.: "3d20+5" (vai ser usado pelo rolador de dados). Sem kit, desconta a penalidade.
+// Ex.: "3d20+5" (vai ser usado pelo rolador de dados)
 export function dadosDoTeste(dados, periciaId) {
   const pericia = PERICIAS.find((p) => p.id === periciaId);
-  const semKit = precisaDeKit(periciaId) && !temKit(dados, periciaId);
-  const bonus = bonusPericia(dados, periciaId) - (semKit ? PENALIDADE_SEM_KIT : 0);
+  const bonus = bonusPericia(dados, periciaId);
   const base = dadosDoAtributo(dados, pericia.atributo);
-  if (!bonus) return base;
-  return bonus > 0 ? `${base}+${bonus}` : `${base}${bonus}`;
+  return bonus ? `${base}+${bonus}` : base;
 }
 
 /* ---------- Defesa ---------- */
 export function calcularDefesa(dados) {
   const { equipamento = 0, outros = 0 } = dados.defesa ?? {};
-  return 10 + (dados.atributos?.agi ?? 0) + Math.max(0, equipamento) + Math.max(0, outros)
-    + bonusDaOrigem(dados).defesa;
+  return 10 + (dados.atributos?.agi ?? 0) + Math.max(0, equipamento) + Math.max(0, outros);
 }
 
-// Reações de defesa (livro p. 88). Só existem com a perícia treinada; senão devolvem null.
-// Esquiva: soma o bônus de Reflexos na Defesa contra um ataque.
-export const calcularEsquiva = (dados) =>
-  ehTreinada(dados, 'reflexos') ? calcularDefesa(dados) + bonusPericia(dados, 'reflexos') : null;
-
-// Bloqueio: contra ataque corpo a corpo, recebe RD igual ao bônus de Fortitude.
-export const calcularBloqueio = (dados) =>
-  ehTreinada(dados, 'fortitude') ? bonusPericia(dados, 'fortitude') : null;
+// Esquiva: Defesa + bônus de Reflexos · Bloqueio: redução igual ao bônus de Fortitude
+export const calcularEsquiva = (dados) => calcularDefesa(dados) + bonusPericia(dados, 'reflexos');
+export const calcularBloqueio = (dados) => bonusPericia(dados, 'fortitude');
 
 export function resumo(dados) {
   const classe = CLASSES[dados.classe];
@@ -155,19 +99,16 @@ export function resumo(dados) {
 
 /* ---------- Para as listas de fichas ---------- */
 
-// Estado do agente, do mais grave para o mais leve (ou null se está tudo bem).
-// Livro p. 88: PV 0 = morrendo · SAN 0 = enlouquecendo
-//              PV abaixo da metade = machucado · SAN abaixo da metade = perturbado
+// Estado do agente, do mais grave para o mais leve (ou null se está tudo bem)
 export function estado(dados) {
   const lista = recursos(dados);
   const pv = lista.find((r) => r.id === 'pv');
   const san = lista.find((r) => r.id === 'san');
-  const abaixoDaMetade = (r) => r.atual < r.maximo / 2;
+  const baixo = (r) => r.maximo > 0 && r.atual / r.maximo <= 0.25;
 
   if (pv.atual === 0) return { id: 'morrendo', rotulo: 'Morrendo' };
   if (san.atual === 0) return { id: 'enlouquecendo', rotulo: 'Enlouquecendo' };
-  if (abaixoDaMetade(pv)) return { id: 'machucado', rotulo: 'Machucado' };
-  if (abaixoDaMetade(san)) return { id: 'perturbado', rotulo: 'Perturbado' };
+  if (baixo(pv) || baixo(san)) return { id: 'perigo', rotulo: 'Em perigo' };
   return null;
 }
 
@@ -175,7 +116,7 @@ export function estado(dados) {
 export function destaques(dados) {
   return [
     { rotulo: 'Defesa', valor: calcularDefesa(dados) },
-    { rotulo: 'Origem', valor: nomeDaOrigem(dados) || '—' },
+    { rotulo: 'Origem', valor: dados.origem || '—' },
     { rotulo: 'NEX', valor: `${dados.nex ?? 5}%` },
   ];
 }
