@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ATRIBUTOS, GRAUS, PERICIAS } from '../../../modelo';
-import { bonusPericia, dadosDoAtributo, dadosDoTeste, grauDaPericia } from '../../../regras';
+import {
+  bonusPericia, dadosDoAtributo, dadosDoTeste, grauDaPericia, PENALIDADE_SEM_KIT, temKit,
+} from '../../../regras';
 import Painel from '../Painel/Painel';
 import styles from './Pericias.module.scss';
 
@@ -12,6 +14,13 @@ const siglaDoAtributo = (id) => ATRIBUTOS.find((a) => a.id === id)?.sigla;
 const IconeD20 = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M12 2 21 7v10l-9 5-9-5V7Z M12 2 7 10h10Z M7 10l5 12 5-12" />
+  </svg>
+);
+
+// Maleta: perícia que precisa de kit
+const IconeKit = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4 8h16v11H4z M9 8V5h6v3 M4 13h16" />
   </svg>
 );
 
@@ -35,6 +44,14 @@ export default function Pericias({ dados, onAlterarDados, className = '' }) {
     onAlterarDados({ pericias: novas });
   }
 
+  // Liga/desliga "tem o kit" daquela perícia
+  function alternarKit(id) {
+    const kits = { ...(dados.kits ?? {}) };
+    if (kits[id]) delete kits[id];
+    else kits[id] = true;
+    onAlterarDados({ kits });
+  }
+
   const filtro = (
     <div className={styles.filtro} role="group" aria-label="Filtrar perícias">
       <button aria-pressed={!soTreinadas} onClick={() => setSoTreinadas(false)}>Todas</button>
@@ -48,6 +65,7 @@ export default function Pericias({ dados, onAlterarDados, className = '' }) {
         {lista.map((p) => {
           const nivel = NIVEIS.indexOf(grauDaPericia(dados, p.id));
           const bonus = bonusPericia(dados, p.id);
+          const comKit = temKit(dados, p.id);
 
           return (
             <li key={p.id} className={`${styles.pericia} ${nivel > 0 ? styles.treinada : ''}`}>
@@ -64,6 +82,17 @@ export default function Pericias({ dados, onAlterarDados, className = '' }) {
                 {p.nome}
                 {p.somenteTreinada && <sup title="Somente treinada">*</sup>}
                 {p.carga && <sup title="Penalidade de carga">+</sup>}
+                {p.kit && (
+                  <button
+                    className={`${styles.kit} ${comKit ? styles.comKit : ''}`}
+                    onClick={() => alternarKit(p.id)}
+                    title={comKit ? 'Tem o kit' : `Sem kit: −${PENALIDADE_SEM_KIT} no teste (clique se tiver o kit)`}
+                    aria-label={`Kit de ${p.nome}`}
+                    aria-pressed={comKit}
+                  >
+                    <IconeKit />
+                  </button>
+                )}
               </span>
 
               <span className={styles.dados}>
