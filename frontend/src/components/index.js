@@ -8,3 +8,5 @@ export { default as StatusBadge } from './StatusBadge/StatusBadge';
 export { default as SeloCera } from './SeloCera/SeloCera';
 export { default as BarraRecurso } from './BarraRecurso/BarraRecurso';
 export { default as FundoOutroLado } from './FundoOutroLado/FundoOutroLado';
+export { default as Modal } from './Modal/Modal';
+export { default as OrbeMini } from './OrbeMini/OrbeMini';

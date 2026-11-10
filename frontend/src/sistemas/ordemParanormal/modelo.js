@@ -12,10 +12,26 @@ export const ATRIBUTO_MIN = 0;
 export const ATRIBUTO_MAX = 5;
 
 // "porNex" = quanto ganha a cada NEX depois do primeiro (5%)
+// "icone" = desenho SVG (atributo "d" de um <path>) usado na criação de ficha
 export const CLASSES = {
-  combatente:   { nome: 'Combatente',   pv: { inicial: 20, porNex: 4 }, pe: { inicial: 2, porNex: 2 }, san: { inicial: 12, porNex: 3 } },
-  especialista: { nome: 'Especialista', pv: { inicial: 16, porNex: 3 }, pe: { inicial: 3, porNex: 3 }, san: { inicial: 16, porNex: 4 } },
-  ocultista:    { nome: 'Ocultista',    pv: { inicial: 12, porNex: 2 }, pe: { inicial: 4, porNex: 4 }, san: { inicial: 20, porNex: 5 } },
+  combatente: {
+    nome: 'Combatente',
+    descricao: 'Linha de frente',
+    icone: 'M5 19 19 5M14 5h5v5M5 14l5 5M3 21l3-3',
+    pv: { inicial: 20, porNex: 4 }, pe: { inicial: 2, porNex: 2 }, san: { inicial: 12, porNex: 3 },
+  },
+  especialista: {
+    nome: 'Especialista',
+    descricao: 'Perícias e versatilidade',
+    icone: 'M11 5a6 6 0 1 0 0 12a6 6 0 1 0 0-12M20 20l-4.5-4.5',
+    pv: { inicial: 16, porNex: 3 }, pe: { inicial: 3, porNex: 3 }, san: { inicial: 16, porNex: 4 },
+  },
+  ocultista: {
+    nome: 'Ocultista',
+    descricao: 'Rituais do Outro Lado',
+    icone: 'M12 3 20 18H4ZM12 10.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5',
+    pv: { inicial: 12, porNex: 2 }, pe: { inicial: 4, porNex: 4 }, san: { inicial: 20, porNex: 5 },
+  },
 };
 
 // 5%, 10%, ..., 95%, 99%

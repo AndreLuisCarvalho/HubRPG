@@ -1,20 +1,20 @@
 // Como o sistema CALCULA. Funções puras: recebem dados, devolvem resultado.
 import { CLASSES, GRAUS, NEX, PERICIAS, RECURSOS } from './modelo';
 
-export function fichaInicial() {
+export function fichaInicial({ classe = 'combatente', jogador = '', origem = '' } = {}) {
   return {
-    classe: 'combatente',
+    classe,
     nex: 5,
-    origem: '',
-    jogador: '',
+    origem,
+    jogador,
     trilha: '',
-    ataques: [],
     atributos: { agi: 1, for: 1, int: 1, pre: 1, vig: 1 },
     pericias: {},
     periciasOutros: {},
     atuais: {},
     defesa: { equipamento: 0, outros: 0 },
     deslocamento: 9,
+    ataques: [],
     protecao: '',
     resistencias: '',
     proficiencias: '',
@@ -95,4 +95,28 @@ export const calcularBloqueio = (dados) => bonusPericia(dados, 'fortitude');
 export function resumo(dados) {
   const classe = CLASSES[dados.classe];
   return `${classe?.nome ?? 'Sem classe'} · NEX ${dados.nex ?? 5}%`;
+}
+
+/* ---------- Para as listas de fichas ---------- */
+
+// Estado do agente, do mais grave para o mais leve (ou null se está tudo bem)
+export function estado(dados) {
+  const lista = recursos(dados);
+  const pv = lista.find((r) => r.id === 'pv');
+  const san = lista.find((r) => r.id === 'san');
+  const baixo = (r) => r.maximo > 0 && r.atual / r.maximo <= 0.25;
+
+  if (pv.atual === 0) return { id: 'morrendo', rotulo: 'Morrendo' };
+  if (san.atual === 0) return { id: 'enlouquecendo', rotulo: 'Enlouquecendo' };
+  if (baixo(pv) || baixo(san)) return { id: 'perigo', rotulo: 'Em perigo' };
+  return null;
+}
+
+// Três informações de destaque para o card
+export function destaques(dados) {
+  return [
+    { rotulo: 'Defesa', valor: calcularDefesa(dados) },
+    { rotulo: 'Origem', valor: dados.origem || '—' },
+    { rotulo: 'NEX', valor: `${dados.nex ?? 5}%` },
+  ];
 }
