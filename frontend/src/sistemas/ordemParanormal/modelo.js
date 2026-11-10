@@ -210,3 +210,19 @@ export const RECURSOS = [
   { id: 'san', nome: 'Sanidade', sigla: 'SAN', cor: '#a24bff', elemento: 'energia' },
   { id: 'pe', nome: 'Esforço', sigla: 'PE', cor: '#f0b429', elemento: 'conhecimento' },
 ];
+
+
+// Elementos do Outro Lado (livro p. 118). "forte" = contra qual elemento ele é efetivo
+export const ELEMENTOS = {
+  con: { nome: 'Conhecimento', cor: '#f0b429', forte: 'ene' },
+  ene: { nome: 'Energia', cor: '#a24bff', forte: 'mor' },
+  mor: { nome: 'Morte', cor: '#b9b5c9', forte: 'san' },
+  san: { nome: 'Sangue', cor: '#d42a3c', forte: 'con' },
+  med: { nome: 'Medo', cor: '#f4f1ff', forte: null },
+};
+
+// Custo em PE de cada círculo de ritual (livro p. 119)
+export const CUSTO_POR_CIRCULO = { 1: 1, 2: 3, 3: 6, 4: 10 };
+
+// A lista fica em rituais.js (é grande); daqui ela é reexportada
+export { RITUAIS } from './rituais';

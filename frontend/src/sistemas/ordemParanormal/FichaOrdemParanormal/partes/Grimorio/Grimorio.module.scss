@@ -1,0 +1,227 @@
+@use '../../../../../styles/mixins' as *;
+
+.grimorio {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+
+/* ---------- Todos / Meus ---------- */
+.alternar {
+  display: flex;
+  width: min(340px, 100%);
+  overflow: hidden;
+  border: 1px solid var(--cor);
+  border-radius: 10px;
+
+  button {
+    flex: 1;
+    padding: 7px;
+    border: 0;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      background: var(--cor);
+      color: #fff;
+    }
+  }
+}
+
+/* ---------- Abas de elemento (bolinha na cor de cada um) ---------- */
+.elementos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  border-bottom: 1px solid var(--borda);
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border: 0;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+
+    i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--e);
+      box-shadow: 0 0 6px var(--e);
+    }
+
+    &:hover { color: var(--texto); }
+
+    &[aria-pressed='true'] {
+      color: #fff;
+      box-shadow: inset 0 -2px 0 var(--cor);
+    }
+  }
+}
+
+/* ---------- Pílulas de círculo com o custo ---------- */
+.circulos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  button {
+    padding: 4px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 999px;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+
+    em {
+      margin-left: 4px;
+      font-style: normal;
+      color: #ffd77a;
+    }
+
+    &[aria-pressed='true'] {
+      border-color: var(--cor);
+      background: color-mix(in srgb, var(--cor) 18%, transparent);
+      color: #fff;
+    }
+  }
+}
+
+.busca {
+  padding: 9px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--texto);
+  font: inherit;
+  font-size: 0.88rem;
+
+  &:focus {
+    outline: none;
+    border-color: var(--cor);
+  }
+}
+
+/* ---------- Lista (rola dentro do modal) ---------- */
+.lista {
+  display: grid;
+  gap: 7px;
+  max-height: min(46vh, 420px);
+  margin: 0;
+  padding: 0 4px 0 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.ritual {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 11px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--e) 8%, transparent), transparent 50%);
+}
+
+.texto {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+
+  b {
+    @include fonte-titulo;
+    font-size: 0.9rem;
+
+    small {
+      margin-left: 6px;
+      padding: 0 6px;
+      border: 1px solid var(--borda);
+      border-radius: 999px;
+      @include fonte-ficha;
+      font-size: 0.55rem;
+      color: var(--texto-suave);
+      vertical-align: middle;
+    }
+  }
+
+  span {
+    font-size: 0.74rem;
+    color: var(--texto-suave);
+  }
+}
+
+.romano {
+  @include fonte-titulo;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--e);
+}
+
+.aprender,
+.conhece {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1rem;
+}
+
+.aprender {
+  padding: 0;
+  border: 1px solid var(--cor);
+  background: none;
+  color: #fff;
+  cursor: pointer;
+
+  &:hover { background: color-mix(in srgb, var(--cor) 30%, transparent); }
+}
+
+.conhece {
+  border: 1px solid #4cc98c;
+  background: rgba(76, 201, 140, 0.18);
+  color: #7ff0b8;
+  font-size: 0.85rem;
+}
+
+.vazio {
+  padding: 24px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+/* ---------- Aviso do limite (fica vermelho quando enche) ---------- */
+.limite {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 9px 12px;
+  border: 1px solid rgba(240, 180, 41, 0.3);
+  border-radius: 10px;
+  background: rgba(240, 180, 41, 0.07);
+  font-size: 0.76rem;
+  color: #f3dc9c;
+}
+
+.cheio {
+  border-color: rgba(212, 42, 60, 0.45);
+  background: rgba(212, 42, 60, 0.08);
+  color: #ffb3bb;
+}
