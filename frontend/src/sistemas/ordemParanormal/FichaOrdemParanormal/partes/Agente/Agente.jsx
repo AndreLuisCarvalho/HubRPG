@@ -1,7 +1,7 @@
-import { CLASSES } from '../../../modelo';
+import { CLASSES, ORIGENS } from '../../../modelo';
 import {
   calcularBloqueio, calcularDefesa, calcularEsquiva,
-  deslocamento, limitePePorTurno,
+  dadosDaOrigem, deslocamento, limitePePorTurno, periciasDaOrigem,
 } from '../../../regras';
 import CirculoAtributos from '../CirculoAtributos/CirculoAtributos';
 import Painel from '../Painel/Painel';
@@ -27,14 +27,28 @@ const ICONES = {
   deslocamento: <path d="M8 4c2 0 3 2 3 5s-1 4-3 4-3-1-3-4 1-5 3-5zM15 11c2 0 3 2 3 5s-1 4-3 4-3-1-3-4 1-5 3-5z" />,
 };
 
+// Origens em ordem alfabética para o seletor
+const LISTA_ORIGENS = Object.entries(ORIGENS)
+  .sort(([, a], [, b]) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
 export default function Agente({ ficha, onAlterarDados, className = '' }) {
   const { dados } = ficha;
   const desl = deslocamento(dados);
 
+  const esquiva = calcularEsquiva(dados);
+  const bloqueio = calcularBloqueio(dados);
+
+  // null = reação indisponível (perícia não treinada): mostra "—" e fica apagada
   const combate = [
     { id: 'defesa', rotulo: 'Defesa', valor: calcularDefesa(dados), destaque: true, dica: 'Defesa = 10 + AGI + equipamento + outros' },
-    { id: 'esquiva', rotulo: 'Esquiva', valor: calcularEsquiva(dados), dica: 'Defesa + bônus de Reflexos' },
-    { id: 'bloqueio', rotulo: 'Bloqueio', valor: calcularBloqueio(dados), dica: 'Reduz o dano no valor do bônus de Fortitude' },
+    {
+      id: 'esquiva', rotulo: 'Esquiva', valor: esquiva,
+      dica: esquiva === null ? 'Precisa de Reflexos treinado' : 'Reação: Defesa + bônus de Reflexos contra um ataque',
+    },
+    {
+      id: 'bloqueio', rotulo: 'Bloqueio', valor: bloqueio === null ? null : <><small>RD</small>{bloqueio}</>,
+      dica: bloqueio === null ? 'Precisa de Fortitude treinado' : 'Reação contra corpo a corpo: reduz o dano no bônus de Fortitude',
+    },
     { id: 'esforco', rotulo: 'PE/turno', valor: limitePePorTurno(dados), dica: 'Limite de PE gastos por turno' },
     { id: 'deslocamento', rotulo: 'Desloc.', valor: `${desl.metros}m`, dica: `${desl.quadrados} quadrados` },
   ];
@@ -45,6 +59,18 @@ export default function Agente({ ficha, onAlterarDados, className = '' }) {
     if (valor !== (dados[campo] ?? '')) onAlterarDados({ [campo]: valor });
   };
   const sairNoEnter = (e) => e.key === 'Enter' && e.currentTarget.blur();
+
+  const origem = dadosDaOrigem(dados);
+  // Texto livre de fichas antigas (antes do seletor): continua aparecendo até trocar
+  const origemAntiga = !origem && dados.origem ? dados.origem : null;
+
+  // Trocar a origem também troca as perícias treinadas por ela
+  function trocarOrigem(id) {
+    onAlterarDados({
+      origem: id,
+      pericias: periciasDaOrigem(dados.pericias ?? {}, dados.origem, id),
+    });
+  }
 
   return (
     <Painel className={`${styles.agente} ${className}`}>
@@ -83,9 +109,16 @@ export default function Agente({ ficha, onAlterarDados, className = '' }) {
       />
 
       <div className={styles.dossie}>
-        <label>
+        <label title={origem ? `${origem.poder.nome}: ${origem.poder.descricao}` : 'Escolha a origem do agente'}>
           <span>Origem</span>
-          <input defaultValue={dados.origem ?? ''} placeholder="—" onBlur={salvarTexto('origem')} onKeyDown={sairNoEnter} />
+          <select value={dados.origem ?? ''} onChange={(e) => trocarOrigem(e.target.value)}>
+            <option value="">—</option>
+            {origemAntiga && <option value={origemAntiga}>{origemAntiga}</option>}
+            {LISTA_ORIGENS.map(([id, o]) => (
+              <option key={id} value={id}>{o.nome}</option>
+            ))}
+          </select>
+          {origem && <small className={styles.poder}>✦ {origem.poder.nome}</small>}
         </label>
         <label>
           <span>Jogador</span>
@@ -95,9 +128,13 @@ export default function Agente({ ficha, onAlterarDados, className = '' }) {
 
       <div className={styles.combate}>
         {combate.map((c) => (
-          <div key={c.id} className={`${styles.atributo} ${c.destaque ? styles.destaque : ''}`} title={c.dica}>
+          <div
+            key={c.id}
+            className={`${styles.atributo} ${c.destaque ? styles.destaque : ''} ${c.valor === null ? styles.inativo : ''}`}
+            title={c.dica}
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">{ICONES[c.id]}</svg>
-            <b>{c.valor}</b>
+            <b>{c.valor ?? '—'}</b>
             <span>{c.rotulo}</span>
           </div>
         ))}

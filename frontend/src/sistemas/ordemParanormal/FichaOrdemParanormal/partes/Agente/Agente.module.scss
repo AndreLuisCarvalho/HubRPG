@@ -108,6 +108,7 @@ input.tag {
 .vazia { border-style: dashed; }
 
 /* ---------- Origem e Jogador ---------- */
+/* ---------- Origem e Jogador ---------- */
 .dossie {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -116,9 +117,10 @@ input.tag {
   border: 1px solid var(--borda);
   border-radius: 12px;
 
-    label {
+  label {
     display: grid;
     gap: 4px;
+    min-width: 0;
     padding: 10px 8px;
 
     & + label { border-left: 1px solid var(--borda); }
@@ -131,7 +133,8 @@ input.tag {
     color: var(--texto-suave);
   }
 
-  input {
+  input,
+  select {
     width: 100%;
     min-width: 0;
     padding: 0;
@@ -149,6 +152,24 @@ input.tag {
     }
 
     &::placeholder { color: var(--texto-suave); }
+  }
+
+  select {
+    cursor: pointer;
+    text-align-last: center;   // centraliza o texto do select
+
+    option { background: var(--superficie); }
+  }
+
+  // Nome do poder da origem (a descrição aparece ao passar o mouse)
+  .poder {
+    @include fonte-ficha;
+    font-size: 0.56rem;
+    letter-spacing: 0.1em;
+    color: var(--cor);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
