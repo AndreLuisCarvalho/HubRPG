@@ -10,6 +10,7 @@ const TEXTOS = {
 
 export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) {
   const classes = sistema?.classes ?? [];
+  const origens = sistema?.origens ?? [];
   const textos = TEXTOS[tipo] ?? TEXTOS.jogador;
 
   const [nome, setNome] = useState('');
@@ -67,7 +68,17 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
 
         <label className={styles.campo}>
           <span>Origem</span>
-          <input value={origem} onChange={(e) => setOrigem(e.target.value)} placeholder="Ex.: Acadêmico, Policial, T.I." />
+          {/* Sistema com lista de origens: escolhe da lista; senão, texto livre */}
+          {origens.length > 0 ? (
+            <select value={origem} onChange={(e) => setOrigem(e.target.value)}>
+              <option value="">Escolher depois</option>
+              {origens.map((o) => (
+                <option key={o.id} value={o.id}>{o.nome} · {o.poder}</option>
+              ))}
+            </select>
+          ) : (
+            <input value={origem} onChange={(e) => setOrigem(e.target.value)} placeholder="Ex.: Acadêmico, Policial, T.I." />
+          )}
         </label>
 
         <div className={styles.acoes}>
