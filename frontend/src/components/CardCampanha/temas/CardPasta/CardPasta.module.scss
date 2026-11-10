@@ -1,3 +1,4 @@
+@use 'sass:color';
 $papel-pardo: #c9a66b;
 $tinta: #2b2113;
 $fonte-maquina: 'Special Elite', monospace;
@@ -39,7 +40,7 @@ $fonte-maquina: 'Special Elite', monospace;
   flex-direction: column;
   gap: 4px;
   padding: 18px 18px 16px;
-  background: linear-gradient(170deg, lighten($papel-pardo, 6%), darken($papel-pardo, 3%));
+    background: linear-gradient(170deg, color.adjust($papel-pardo, $lightness: 6%), color.adjust($papel-pardo, $lightness: -3%));
   border-radius: 0 6px 6px 6px;
   color: $tinta;
   box-shadow: inset 0 0 30px rgba(110, 70, 20, 0.35), 0 4px 10px rgba(0, 0, 0, 0.45);
