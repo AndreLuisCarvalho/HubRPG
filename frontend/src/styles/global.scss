@@ -34,3 +34,38 @@ kbd {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
 }
+
+/* ---------- Barra de rolagem ---------- */
+// Fina, na cor do tema e invisível até passar o mouse na área que rola.
+// No celular, o próprio sistema já esconde a barra quando você para de rolar.
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover {
+  scrollbar-color: color-mix(in srgb, var(--cor, #a347ff) 55%, transparent) transparent;
+}
+
+// Navegadores mais antigos baseados em Chrome/Safari
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  background: transparent;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--cor, #a347ff) 55%, transparent);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--cor, #a347ff);
+}

@@ -1,0 +1,144 @@
+@use '../../../../../styles/mixins' as *;
+
+.arsenal {
+  display: grid;
+  gap: 10px;
+  padding-top: 10px;
+}
+
+.cabecalho {
+  display: flex;
+  gap: 8px;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.9rem;
+
+    &:focus {
+      outline: none;
+      border-color: var(--cor);
+    }
+  }
+}
+
+.voltar {
+  padding: 8px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: none;
+  color: var(--texto);
+  @include fonte-ficha;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+// Abas por tipo; rolam de lado no celular
+// Abas por tipo: quebram linha para todas ficarem visíveis
+.abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--borda);
+
+  button {
+    padding: 6px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 999px;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.68rem;
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      border-color: var(--cor);
+      background: color-mix(in srgb, var(--cor) 25%, transparent);
+      color: #fff;
+    }
+  }
+}
+
+.adicionado {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6fcf97;
+}
+
+.lista {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px 8px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+
+    > span {
+      @include fonte-ficha;
+      font-size: 0.66rem;
+      color: var(--texto-suave);
+    }
+  }
+}
+
+.titulo {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+
+  b {
+    @include fonte-titulo;
+    font-size: 0.95rem;
+    color: var(--texto);
+  }
+
+  small {
+    font-family: 'Inter', sans-serif;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.78rem;
+    color: var(--texto-suave);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.cheio {
+  color: #ff8592 !important;
+}
+
+.mais {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--cor);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cor) 25%, #0d0b14);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.vazio {
+  display: block !important;
+  border-style: dashed !important;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}

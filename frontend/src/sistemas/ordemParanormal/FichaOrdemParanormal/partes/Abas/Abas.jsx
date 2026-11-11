@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Ataques from '../Ataques/Ataques';
 import CampoLinha from '../CampoLinha/CampoLinha';
 import Grimorio from '../Grimorio/Grimorio';
+import Inventario from '../Inventario/Inventario';
 import Painel from '../Painel/Painel';
 import Rituais from '../Rituais/Rituais';
 import styles from './Abas.module.scss';
@@ -10,7 +11,7 @@ const ABAS = [
   { id: 'ataques', rotulo: 'Ataques' },
   { id: 'habilidades', rotulo: 'Habilid.', emBreve: 'Habilidades de classe e trilha em breve.' },
   { id: 'rituais', rotulo: 'Rituais' },
-  { id: 'inventario', rotulo: 'Inventário', emBreve: 'O inventário em grade chega numa fase própria.' },
+  { id: 'inventario', rotulo: 'Inventário' },
   { id: 'notas', rotulo: 'Notas' },
 ];
 
@@ -49,6 +50,7 @@ export default function Abas({ dados, onAlterarDados, className = '' }) {
         {aba.id === 'rituais' && (
           <Rituais dados={dados} onAlterarDados={onAlterarDados} onAbrirGrimorio={() => setGrimorioAberto(true)} />
         )}
+        {aba.id === 'inventario' && <Inventario dados={dados} onAlterarDados={onAlterarDados} />}
         {aba.id === 'notas' && (
           <textarea
             className={styles.notas}
