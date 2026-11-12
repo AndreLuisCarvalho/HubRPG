@@ -47,18 +47,21 @@ export default function Rituais({ dados, onAlterarDados, onAbrirGrimorio }) {
             <dd>{limitePePorTurno(dados)}<span> PE</span></dd>
           </div>
         </dl>
- 
+      </header>
+
+      {/* Filtro por elemento à esquerda e "Aprender" à direita, na mesma linha */}
+      <div className={styles.barra}>
+        <div className={styles.filtro} role="group" aria-label="Filtrar por elemento">
+          {Object.entries(ELEMENTOS).map(([id, el]) => (
+            <button key={id} onClick={() => setFiltro(filtro === id ? null : id)} title={el.nome} aria-pressed={filtro === id}>
+              <SigiloElemento elemento={id} tamanho={24} apagado={filtro !== null && filtro !== id} />
+            </button>
+          ))}
+        </div>
+
         <button className={styles.aprender} onClick={onAbrirGrimorio} disabled={!onAbrirGrimorio}>
           + Aprender
         </button>
-      </header>
- 
-      <div className={styles.filtro} role="group" aria-label="Filtrar por elemento">
-        {Object.entries(ELEMENTOS).map(([id, el]) => (
-          <button key={id} onClick={() => setFiltro(filtro === id ? null : id)} title={el.nome} aria-pressed={filtro === id}>
-            <SigiloElemento elemento={id} tamanho={24} apagado={filtro !== null && filtro !== id} />
-          </button>
-        ))}
       </div>
  
       <ul className={styles.lista}>

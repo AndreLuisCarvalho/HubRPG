@@ -19,13 +19,13 @@
   display: flex;
   padding: 2px;
   border: 1px solid var(--borda);
-  border-radius: 999px;
+  border-radius: 3px;
 
   button {
     min-width: 30px;
     padding: 2px 10px;
     border: 0;
-    border-radius: 999px;
+    border-radius: 3px;
     background: none;
     color: var(--texto-suave);
     @include fonte-ficha;
@@ -34,7 +34,7 @@
 
     &[aria-pressed='true'] {
       background: var(--cor);
-      color: #fff;
+      color: var(--sobre-cor, #fff);
     }
   }
 }

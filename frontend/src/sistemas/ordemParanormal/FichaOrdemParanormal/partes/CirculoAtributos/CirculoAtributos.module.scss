@@ -7,6 +7,12 @@
   display: grid;
   place-items: center;
   container-type: size;
+
+  // Celular: tamanho fixo pela largura; o painel do Agente rola se faltar altura
+  @include celular {
+    flex: none;
+    height: min(80vw, 320px);
+  }
 }
 
 // Até 290px, mas nunca mais que 34% da altura da tela (é isso que evita a rolagem)
@@ -33,7 +39,7 @@
 }
 
 .anelInterno {
-  stroke: #3a3352;
+  stroke: #3a352a;
   stroke-width: 1.2;
 }
 
@@ -41,8 +47,8 @@
   stroke: var(--cor);
   stroke-width: 0.7;
   stroke-linejoin: round;
-  opacity: 0.7;
-  filter: drop-shadow(0 0 1.5px var(--cor));
+  opacity: 0.6;
+  filter: url(#traco-a-mao);
 }
 
 /* ---------- Núcleo: anel do NEX ---------- */
@@ -54,14 +60,12 @@
   aspect-ratio: 1;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, color-mix(in srgb, var(--cor) 30%, #0b0912), #0b0912 70%);
-  box-shadow:
-    0 0 30px color-mix(in srgb, var(--cor) 45%, transparent),
-    inset 0 0 18px color-mix(in srgb, var(--cor) 40%, transparent);
+  background: #0c0b08;
+  box-shadow: inset 0 0 0 1px var(--tinta-fraca);
   cursor: pointer;
   transition: box-shadow 0.2s;
 
-  &:hover { box-shadow: 0 0 40px var(--cor), inset 0 0 22px var(--cor); }
+  &:hover { box-shadow: inset 0 0 0 1px var(--tinta-linha); }
 
   svg {
     position: absolute;
@@ -82,12 +86,11 @@
   }
 }
 
-.trilho { stroke: #26213a; }
+.trilho { stroke: #2a261e; }
 
 .progresso {
   stroke: var(--cor);
   stroke-linecap: round;
-  filter: drop-shadow(0 0 3px var(--cor));
   transition: stroke-dashoffset 0.6s ease;
 }
 
@@ -129,12 +132,11 @@
   width: 100%;
   height: 100%;
   overflow: visible;
-  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--cor) 55%, transparent));
 
   polygon {
-    fill: #17121f;
+    fill: #13110d;
     stroke: var(--cor);
-    stroke-width: 5;
+    stroke-width: 4;
     stroke-linejoin: round;   // quinas arredondadas
   }
 }
@@ -155,7 +157,10 @@
 }
 
 /* ---------- Modo de edição ---------- */
-.editando .hex { filter: drop-shadow(0 0 10px var(--cor)); }
+.editando .hex polygon {
+  fill: color-mix(in srgb, var(--cor) 18%, #13110d);
+  stroke: var(--tinta);
+}
 
 .botao {
   position: absolute;

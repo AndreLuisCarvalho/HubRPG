@@ -22,7 +22,7 @@
     display: grid;
     gap: 2px;
     padding: 6px 8px;
-    border-radius: 8px;
+    border-radius: 3px;
     background: rgba(0, 0, 0, 0.28);
     text-align: center;
   }
@@ -59,7 +59,7 @@
     gap: 2px;
     padding: 7px;
     border: 1px solid var(--borda);
-    border-radius: 10px;
+    border-radius: 3px;
     background: none;
     color: var(--texto);
     cursor: pointer;
@@ -155,7 +155,7 @@
 .esquecer,
 .conjurar {
   padding: 6px 12px;
-  border-radius: 10px;
+  border-radius: 3px;
   @include fonte-ficha;
   font-size: 0.66rem;
   letter-spacing: 0.12em;
@@ -175,10 +175,10 @@
  
 .conjurar {
   border: 1px solid var(--e);
-  background: color-mix(in srgb, var(--e) 30%, #0d0b14);
+  background: color-mix(in srgb, var(--e) 30%, #0e0d0a);
   color: #fff;
  
-  &:hover:not(:disabled) { background: color-mix(in srgb, var(--e) 45%, #0d0b14); }
+  &:hover:not(:disabled) { background: color-mix(in srgb, var(--e) 45%, #0e0d0a); }
  
   &:disabled {
     opacity: 0.35;

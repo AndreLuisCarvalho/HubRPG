@@ -8,6 +8,7 @@ import EmBreve from './secoes/EmBreve/EmBreve';
 import styles from './Campanha.module.scss';
 import DetalheFicha from './secoes/DetalheFicha/DetalheFicha';
 import { FundoOutroLado } from '../../components';
+import { obterSistema } from '../../sistemas';
 
 export default function Campanha() {
   const { id } = useParams();
@@ -41,7 +42,8 @@ export default function Campanha() {
   if (!campanha) return <main className={styles.estado}><p>Carregando…</p></main>;
 
   return (
-    <div className={styles.layout} style={{ '--cor': campanha.cor }}>
+    // A paleta do sistema (se houver) vale por cima da cor da campanha
+    <div className={styles.layout} style={{ '--cor': campanha.cor, ...obterSistema(campanha.sistema_id)?.paleta }}>
       <FundoOutroLado />
         <MenuCampanha campanha={campanha} />
 

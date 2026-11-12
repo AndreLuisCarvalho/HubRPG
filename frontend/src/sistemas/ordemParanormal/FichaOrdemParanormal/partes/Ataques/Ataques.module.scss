@@ -14,7 +14,7 @@
   padding: 8px 10px;
   border: 1px solid var(--borda);
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 10px;
+  border-radius: 3px;
 
   input {
     min-width: 0;
@@ -74,9 +74,9 @@
 
 .novo {
   padding: 8px;
-  border: 1px dashed #3a3352;
+  border: 1px dashed #3a352a;
   background: none;
-  border-radius: 10px;
+  border-radius: 3px;
   color: var(--texto-suave);
   @include fonte-ficha;
   font-size: 0.72rem;

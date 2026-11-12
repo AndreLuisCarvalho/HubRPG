@@ -1,0 +1,182 @@
+// Linha do tempo (2,4s):
+//   0,00  a tela escurece em vermelho-sangue
+//   0,10  o olho abre de uma fenda (passa um pouco do ponto, como um susto)
+//   0,30  as veias começam a crescer em direção à íris
+//   0,55  a íris, que estava desviada, vira de repente para você — e a pupila se contrai
+//   0,90  lágrimas de sangue escorrem
+//   1,90  o olho se fecha de uma vez
+//   2,10  a tela volta
+// O olho treme o tempo todo.
+
+$total: 2.4s;
+$centro: 200px 100px;   // centro do olho no viewBox
+
+// Tela inteira (fixo na janela, não só no pergaminho)
+.tela {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  // Flex (não grid): centraliza mesmo quando o olho é mais largo que a tela,
+  // cortando igual dos dois lados
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, #2a0306 0%, #0b0102 55%, #000 100%);
+  opacity: 0;
+  animation: telaMedo $total linear forwards;
+}
+
+// O desenho é 2:1. Tela deitada: cresce até cobrir tudo (sobra cortada nas bordas).
+// Tela em pé (celular): o olho inteiro de canto a canto, um pouco maior que a largura,
+// com a escuridão em cima e embaixo — antes ele era ampliado e só a íris aparecia.
+.olho {
+  flex: none;
+  width: max(100vw, 200vh);
+  aspect-ratio: 2 / 1;
+  height: auto;
+  overflow: visible;
+
+  @media (orientation: portrait) {
+    width: 130vw;
+  }
+  animation: sobressalto 0.35s ease-out 0.55s;   // tranco quando ele olha para você
+}
+
+// Tremor contínuo, pequeno e rápido
+.tremor {
+  animation: tremer 0.09s steps(1) infinite;
+}
+
+// A fenda (corte do olho) e as pálpebras abrem e fecham juntas
+.fenda,
+.palpebra,
+.borda,
+.cilios,
+.rugas {
+  transform-box: view-box;
+  transform-origin: $centro;
+  animation: abrirFechar $total cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+}
+
+.palpebra {
+  fill: none;
+  stroke: #120607;
+  stroke-width: 12;
+  stroke-linejoin: round;
+}
+
+// Borda molhada e avermelhada por dentro da pálpebra
+.borda {
+  fill: none;
+  stroke: #7a1014;
+  stroke-width: 2.5;
+  opacity: 0.85;
+}
+
+.rugas path {
+  fill: none;
+  stroke: #3a0d0c;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.cilios path {
+  fill: none;
+  stroke: #0a0303;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.veias path {
+  fill: none;
+  stroke: #9e0f14;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: crescerVeia 0.7s ease-out calc(0.3s + var(--atraso)) forwards;
+}
+
+.iris {
+  transform: translate(-70px, 16px);   // começa olhando para baixo e para o lado
+  animation: olharParaVoce 0.09s ease-in 0.55s forwards;
+}
+
+.pupila {
+  fill: #000;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(1.25);
+  animation: contrair 0.18s ease-out 0.62s forwards, pulsar 0.5s ease-in-out 1s 2;
+}
+
+.lagrimas path {
+  fill: none;
+  stroke: #8a0710;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  filter: drop-shadow(0 0 2px #3a0004);
+  animation: escorrerLagrima 0.9s ease-in var(--atraso) forwards;
+}
+
+/* ---------- Animações ---------- */
+@keyframes telaMedo {
+  0%   { opacity: 0; }
+  3%   { opacity: 1; }
+  86%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes abrirFechar {
+  0%   { transform: scaleY(0.02); }
+  4%   { transform: scaleY(0.02); }
+  13%  { transform: scaleY(1.08); }   // escancara
+  17%  { transform: scaleY(0.97); }
+  20%  { transform: scaleY(1); }
+  78%  { transform: scaleY(1); }
+  85%  { transform: scaleY(0.02); }   // fecha de uma vez
+  100% { transform: scaleY(0.02); }
+}
+
+@keyframes tremer {
+  0%  { transform: translate(0, 0); }
+  20% { transform: translate(-2.5px, 1.5px); }
+  40% { transform: translate(2px, -2px); }
+  60% { transform: translate(-1.5px, -1px); }
+  80% { transform: translate(2.5px, 1.5px); }
+}
+
+@keyframes sobressalto {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.08) translate(-6px, 4px); }
+  60%  { transform: scale(1.04) translate(5px, -3px); }
+  100% { transform: scale(1); }
+}
+
+@keyframes olharParaVoce {
+  to { transform: translate(0, 0); }
+}
+
+@keyframes contrair {
+  from { transform: scale(1.25); }
+  to   { transform: scale(0.42); }
+}
+
+@keyframes pulsar {
+  0%, 100% { transform: scale(0.42); }
+  50%      { transform: scale(0.55); }
+}
+
+@keyframes crescerVeia {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes escorrerLagrima {
+  to { stroke-dashoffset: 0; }
+}

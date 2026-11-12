@@ -10,7 +10,7 @@ $sigilo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewB
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: clamp(300px, 22vw, 440px) minmax(0, 1.45fr) minmax(0, 1.1fr);
+  grid-template-columns: clamp(270px, 22vw, 440px) minmax(0, 1fr) minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
     'agente pericias vitais'
@@ -33,6 +33,13 @@ $sigilo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewB
   }
 }
 
+// Só guarda o filtro SVG; não ocupa espaço
+.filtros {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
 .agente   { grid-area: agente; }
 .vitais   { grid-area: vitais; }
 .pericias { grid-area: pericias; }
@@ -43,12 +50,12 @@ $sigilo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewB
 // Celular: orbes no topo, uma parte por vez no meio, navegação embaixo
 @include celular {
   .ficha {
-    flex: none;
+    // Ocupa a altura que sobra abaixo da barra do menu (nunca menos que 480px)
+    min-height: 480px;
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas: 'vitais' 'conteudo' 'nav';
     gap: 10px;
-    height: calc(100dvh - 24px);
   }
 
   // ".ficha >" deixa a regra mais forte que o display do Painel
@@ -66,7 +73,7 @@ $sigilo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewB
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     border-top: 1px solid var(--borda);
-    border-radius: 12px 12px 0 0;
+    border-radius: 3px 3px 0 0;
     background: var(--superficie);
 
     button {

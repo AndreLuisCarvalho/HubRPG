@@ -1,0 +1,199 @@
+// Página de leitura de um ritual, sobre o pergaminho do Grimório (as cores vêm de lá)
+// Ocupa a mesma altura do índice e rola por dentro se o texto for longo
+.pagina {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-height: 0;
+  padding-right: 6px;
+  overflow-y: auto;
+  animation: virarPagina 0.25s ease-out;
+}
+
+.voltar {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+  font-family: var(--fonte-texto);
+  font-size: 0.95rem;
+  cursor: pointer;
+
+  &:hover { color: var(--rubrica); }
+}
+
+.cabeca {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--tinta-linha);
+}
+
+.circulo {
+  font-family: var(--fonte-titulo);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--rubrica);
+}
+
+.nome {
+  font-family: var(--fonte-titulo);
+  font-size: 1.8rem;
+  font-weight: 400;
+  line-height: 1.05;
+  color: var(--texto);
+}
+
+.elementos {
+  font-family: var(--fonte-texto);
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+// Tabela de execução, alcance etc. em duas colunas, como as fichas do livro
+.campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 18px;
+  margin: 0;
+
+  div {
+    display: flex;
+    gap: 6px;
+    min-width: 0;
+    font-size: 0.86rem;
+  }
+
+  dt {
+    flex-shrink: 0;
+    font-family: var(--fonte-titulo);
+    color: var(--rubrica);
+  }
+
+  dt::after { content: ':'; }
+
+  dd {
+    margin: 0;
+    font-family: var(--fonte-texto);
+  }
+
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
+}
+
+// Texto do efeito com capitular (primeira letra grande em vermelho)
+.efeito {
+  font-family: var(--fonte-texto);
+  font-size: 1.02rem;
+  line-height: 1.5;
+  text-align: justify;
+  hyphens: auto;
+}
+
+.capitular {
+  &::first-letter {
+    float: left;
+    margin: 4px 8px 0 0;
+    font-family: var(--fonte-titulo);
+    font-size: 3.2rem;
+    line-height: 0.8;
+    color: var(--rubrica);
+  }
+}
+
+.forma {
+  display: grid;
+  gap: 2px;
+  padding-left: 12px;
+  border-left: 2px solid color-mix(in srgb, var(--rubrica) 50%, transparent);
+
+  h4 {
+    font-family: var(--fonte-titulo);
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--rubrica);
+
+    em {
+      margin-left: 6px;
+      font-style: normal;
+      font-size: 0.85rem;
+      color: var(--texto-suave);
+    }
+  }
+
+  p {
+    font-family: var(--fonte-texto);
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  small {
+    font-family: var(--fonte-texto);
+    color: var(--texto-suave);
+  }
+}
+
+.rodape {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--tinta-linha);
+}
+
+.aprender {
+  padding: 8px 22px;
+  border: 1px solid var(--rubrica);
+  border-radius: 2px;
+  background: none;
+  color: var(--rubrica);
+  font-family: var(--fonte-titulo);
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--rubrica);
+    color: var(--superficie);
+  }
+}
+
+.conhecido {
+  font-family: var(--fonte-texto);
+  color: #3d6b3a;
+}
+
+/* ---------- O que a página inteira faz junto com o efeito ---------- */
+// Energia: um tranco com as cores separadas
+.ene { animation: virarPagina 0.25s ease-out, tranco 0.5s steps(2) 0.1s; }
+
+// Morte: começa velha e cinza e volta ao normal
+.mor { animation: virarPagina 0.25s ease-out, envelhecer 1.8s ease-out; }
+
+// Medo: a página dá um pulo de susto quando os olhos chegam
+.med { animation: virarPagina 0.25s ease-out, susto 0.3s ease-out 0.3s; }
+
+@keyframes virarPagina {
+  from { opacity: 0.4; transform: translateX(10px); }
+}
+
+@keyframes tranco {
+  0%   { transform: translate(-3px, 1px); text-shadow: 2px 0 rgba(162, 75, 255, 0.6), -2px 0 rgba(0, 200, 255, 0.4); }
+  25%  { transform: translate(3px, -1px); }
+  50%  { transform: translate(-2px, 0); text-shadow: -2px 0 rgba(162, 75, 255, 0.6), 2px 0 rgba(0, 200, 255, 0.4); }
+  75%  { transform: translate(2px, 1px); }
+  100% { transform: none; text-shadow: none; }
+}
+
+@keyframes envelhecer {
+  0% { filter: grayscale(1) sepia(0.4) brightness(0.8); }
+}
+
+@keyframes susto {
+  0%   { transform: none; }
+  25%  { transform: translate(-4px, -3px) scale(0.985); }
+  50%  { transform: translate(4px, 2px); }
+  75%  { transform: translate(-2px, 1px); }
+  100% { transform: none; }
+}

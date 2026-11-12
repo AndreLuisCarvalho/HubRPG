@@ -1,7 +1,7 @@
 @use '../../styles/mixins' as *;
 
 .modal {
-  width: min(460px, calc(100vw - 32px));
+  width: min(var(--largura, 460px), calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
   margin: auto;   // o reset global zera a margem; sem ela, o <dialog> não centraliza
   padding: 0;
@@ -16,18 +16,48 @@
   }
 
   &[open] { animation: surgir 0.25s ease-out; }
+
+  // Celular: se a caixa for mais alta que a tela, a janela rola (senão o fim ficava inalcançável)
+  @include celular { overflow-y: auto; }
 }
 
 .caixa {
+  position: relative;
   display: grid;
   gap: 16px;
   padding: 24px;
-  border: 1px solid color-mix(in srgb, var(--cor) 40%, transparent);
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(32, 25, 50, 0.98), rgba(14, 12, 22, 0.98));
+  border: 1px solid var(--tinta-linha, var(--borda));
+  border-radius: 3px;
+  background: var(--superficie);
   box-shadow:
-    0 0 40px color-mix(in srgb, var(--cor) 25%, transparent),
+    inset 0 0 0 5px var(--superficie),
+    inset 0 0 0 6px var(--tinta-fraca, transparent),   // segunda linha da moldura
     0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+// ✕ no canto superior direito
+.fechar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--borda);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    border-color: var(--cor);
+    color: var(--texto);
+  }
 }
 
 .sobretitulo {

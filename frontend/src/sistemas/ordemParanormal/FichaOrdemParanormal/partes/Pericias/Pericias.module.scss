@@ -4,12 +4,12 @@
   display: flex;
   padding: 2px;
   border: 1px solid var(--borda);
-  border-radius: 999px;
+  border-radius: 3px;
 
   button {
     padding: 3px 12px;
     border: 0;
-    border-radius: 999px;
+    border-radius: 3px;
     background: none;
     color: var(--texto-suave);
     @include fonte-ficha;
@@ -19,12 +19,15 @@
 
     &[aria-pressed='true'] {
       background: var(--cor);
-      color: #fff;
+      color: var(--sobre-cor, #fff);
     }
   }
 }
 
-// PC: 2 colunas × 14 linhas que se espremem para caber na altura
+// O layout da lista depende da largura do PAINEL, não da tela
+.painel { container-type: inline-size; }
+
+// Painel largo: 2 colunas × 14 linhas que se espremem para caber na altura
 .lista {
   flex: 1;
   min-height: 0;
@@ -36,10 +39,21 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
 
-  // Celular: 1 coluna; a lista rola dentro do painel, a página não
-  @include celular {
-    grid-template-columns: 1fr;
+// Painel estreito (notebook): 1 coluna com o nome inteiro; rola se faltar altura
+@container (max-width: 520px) {
+  .lista {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(28, minmax(22px, 1fr));
+    overflow-y: auto;
+  }
+}
+
+// Celular: 1 coluna com linhas altas (toque); a lista rola dentro do painel
+@include celular {
+  .lista {
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
     grid-auto-flow: row;
     grid-auto-rows: 40px;
@@ -54,7 +68,7 @@
   gap: 10px;
   min-height: 0;
   padding: 0 8px;
-  border-radius: 8px;
+  border-radius: 3px;
   font-size: 0.84rem;
   transition: background 0.15s;
 
@@ -127,7 +141,6 @@
 
   svg {
     stroke: var(--cor);
-    filter: drop-shadow(0 0 3px var(--cor));
   }
 }
 }
@@ -156,7 +169,7 @@
   width: 11px;
   height: 11px;
   padding: 0;
-  border: 1px solid #4a4360;
+  border: 1px solid #4a4436;
   border-radius: 2px;
   transform: rotate(45deg);
   background: transparent;
@@ -172,7 +185,6 @@
 .aceso {
   border-color: var(--cor);
   background: var(--cor);
-  box-shadow: 0 0 6px var(--cor);
 }
 
 .bonus {
@@ -191,8 +203,16 @@
   color: var(--texto-suave);
 }
 
-// Notebooks: esconde a coluna dos dados (ela continua na dica do ícone de rolar)
-@media (max-width: 1500px) and (min-width: 801px) {
+// PC com painel bem estreito (~1200px de tela): sem a coluna dos dados, o nome cabe inteiro
+@media (min-width: 801px) {
+  @container (max-width: 320px) {
+    .dados { display: none; }
+    .pericia { grid-template-columns: 16px minmax(0, 1fr) auto 30px; }
+  }
+}
+
+// 2 colunas apertadas: esconde a coluna dos dados (continua na dica do ícone de rolar)
+@container (min-width: 521px) and (max-width: 680px) {
   .dados { display: none; }
   .pericia { grid-template-columns: 16px minmax(0, 1fr) auto 30px; }
 }

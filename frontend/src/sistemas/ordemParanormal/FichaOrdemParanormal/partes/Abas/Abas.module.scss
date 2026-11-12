@@ -1,20 +1,24 @@
 @use '../../../../../styles/mixins' as *;
 
+// Sempre uma linha só: as abas dividem a largura em partes iguais
 .lista {
   display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
   border-bottom: 1px solid var(--borda);
 }
 
 .aba {
-  padding: 6px 7px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 2px;
   border: 0;
   background: none;
   color: var(--texto-suave);
   @include fonte-ficha;
   font-size: 0.7rem;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   cursor: pointer;
 
   &:hover { color: var(--texto); }
@@ -53,17 +57,4 @@
     outline: none;
     border-color: var(--cor);
   }
-}
-
-.protecao {
-  display: grid;
-  gap: 6px;
-  padding-top: 8px;
-  border-top: 1px solid var(--borda);
-}
-
-.numeros {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
 }
