@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { CLASSES, ORIGENS } from '../../../modelo';
 import {
   calcularBloqueio, calcularDefesa, calcularEsquiva,
   dadosDaOrigem, deslocamento, limitePePorTurno, periciasDaOrigem,
 } from '../../../regras';
+import CampoLinha from '../CampoLinha/CampoLinha';
 import CirculoAtributos from '../CirculoAtributos/CirculoAtributos';
 import Painel from '../Painel/Painel';
 import styles from './Agente.module.scss';
@@ -31,9 +33,21 @@ const ICONES = {
 const LISTA_ORIGENS = Object.entries(ORIGENS)
   .sort(([, a], [, b]) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
+// Cards de combate que, ao clicar, abrem os campos de defesa e deslocamento
+const EDITAVEIS = ['defesa', 'deslocamento'];
+
 export default function Agente({ ficha, onAlterarDados, className = '' }) {
   const { dados } = ficha;
   const desl = deslocamento(dados);
+  const defesa = dados.defesa ?? {};
+  const [defesasAbertas, setDefesasAbertas] = useState(false);
+
+  // Uma linha com o que estiver preenchido, para ver de relance sem abrir
+  const resumoDefesas = [
+    dados.protecao,
+    dados.resistencias && `Resist. ${dados.resistencias}`,
+    dados.proficiencias && `Profic. ${dados.proficiencias}`,
+  ].filter(Boolean).join(' · ');
 
   const esquiva = calcularEsquiva(dados);
   const bloqueio = calcularBloqueio(dados);
@@ -127,17 +141,68 @@ export default function Agente({ ficha, onAlterarDados, className = '' }) {
       </div>
 
       <div className={styles.combate}>
-        {combate.map((c) => (
-          <div
-            key={c.id}
-            className={`${styles.atributo} ${c.destaque ? styles.destaque : ''} ${c.valor === null ? styles.inativo : ''}`}
-            title={c.dica}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">{ICONES[c.id]}</svg>
-            <b>{c.valor ?? '—'}</b>
-            <span>{c.rotulo}</span>
+        {combate.map((c) => {
+          const classes = `${styles.atributo} ${c.destaque ? styles.destaque : ''} ${c.valor === null ? styles.inativo : ''}`;
+          const conteudo = (
+            <>
+              <svg viewBox="0 0 24 24" aria-hidden="true">{ICONES[c.id]}</svg>
+              <b>{c.valor ?? '—'}</b>
+              <span>{c.rotulo}</span>
+            </>
+          );
+
+          // Defesa e Deslocamento abrem os campos que alteram esses valores
+          return EDITAVEIS.includes(c.id) ? (
+            <button
+              key={c.id}
+              type="button"
+              className={`${classes} ${styles.editavel}`}
+              title={`${c.dica} (clique para editar)`}
+              aria-expanded={defesasAbertas}
+              aria-controls="defesas-agente"
+              onClick={() => setDefesasAbertas((a) => !a)}
+            >
+              {conteudo}
+            </button>
+          ) : (
+            <div key={c.id} className={classes} title={c.dica}>{conteudo}</div>
+          );
+        })}
+      </div>
+
+      <div className={styles.defesas}>
+        <button
+          type="button"
+          className={styles.resumo}
+          aria-expanded={defesasAbertas}
+          aria-controls="defesas-agente"
+          onClick={() => setDefesasAbertas((a) => !a)}
+        >
+          <span className={resumoDefesas ? '' : styles.semResumo}>
+            {resumoDefesas || 'Proteção e resistências'}
+          </span>
+          <span aria-hidden="true">{defesasAbertas ? '▴' : '▾'}</span>
+        </button>
+
+        {defesasAbertas && (
+          <div id="defesas-agente" className={styles.camposDefesa}>
+            <CampoLinha rotulo="Proteção" valor={dados.protecao} placeholder="Ex.: Proteção leve"
+              onSalvar={(protecao) => onAlterarDados({ protecao })} />
+            <CampoLinha rotulo="Resist." valor={dados.resistencias} placeholder="Ex.: Sangue 5"
+              onSalvar={(resistencias) => onAlterarDados({ resistencias })} />
+            <CampoLinha rotulo="Profic." valor={dados.proficiencias} placeholder="Ex.: Armas simples"
+              onSalvar={(proficiencias) => onAlterarDados({ proficiencias })} />
+
+            <div className={styles.numeros}>
+              <CampoLinha tipo="number" layout="centro" rotulo="Def. equip." valor={defesa.equipamento}
+                onSalvar={(v) => onAlterarDados({ defesa: { ...defesa, equipamento: v } })} />
+              <CampoLinha tipo="number" layout="centro" rotulo="Def. outros" valor={defesa.outros}
+                onSalvar={(v) => onAlterarDados({ defesa: { ...defesa, outros: v } })} />
+              <CampoLinha tipo="number" layout="centro" step="1.5" rotulo="Desl. (m)" valor={desl.metros}
+                onSalvar={(deslocamento) => onAlterarDados({ deslocamento })} />
+            </div>
           </div>
-        ))}
+        )}
       </div>
     </Painel>
   );

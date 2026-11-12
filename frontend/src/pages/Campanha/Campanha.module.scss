@@ -4,16 +4,17 @@
 // rolar (uma lista longa), rola só dentro do .conteudo.
 .layout {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);   // minmax(0, …) impede rolagem para o lado
+  // Menu encolhe um pouco em telas médias; minmax(0, …) impede rolagem para o lado
+  grid-template-columns: clamp(200px, 17vw, 260px) minmax(0, 1fr);
   height: 100dvh;
   position: relative;
   isolation: isolate;   // o fundo com z-index: -1 fica atrás só deste layout
   animation: aparecer 0.6s ease both;   // continua o mergulho saindo do preto
 
+  // Celular: barra do menu no topo e o resto da tela para o conteúdo
   @include celular {
     grid-template-columns: 1fr;
-    height: auto;
-    min-height: 100dvh;
+    grid-template-rows: auto minmax(0, 1fr);
   }
 }
 
@@ -22,13 +23,10 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  padding: 24px 32px;
+  padding: 24px clamp(16px, 2vw, 32px);
   overflow-y: auto;
 
-  @include celular {
-    padding: 16px;
-    overflow: visible;
-  }
+  @include celular { padding: 12px 12px 0; }
 }
 
 .estado { padding: 32px 16px; }

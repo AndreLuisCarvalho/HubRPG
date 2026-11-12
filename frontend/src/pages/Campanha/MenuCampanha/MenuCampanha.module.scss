@@ -12,11 +12,29 @@
   border-right: 1px solid var(--borda);
   overflow-y: auto;
 
+  // Celular: barra fina no topo; a lista abre como gaveta por cima da página
   @include celular {
-    position: static;
+    z-index: 20;
     height: auto;
+    padding: 10px 16px;
+    gap: 0;
     border-right: 0;
     border-bottom: 1px solid var(--borda);
+    overflow: visible;
+  }
+}
+
+.topo {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  @include celular {
+    position: relative;
+    z-index: 3;   // fica acima do véu, para o ✕ continuar clicável
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
   }
 }
 
@@ -26,6 +44,12 @@
   text-decoration: none;
 
   &:hover { color: var(--texto); }
+
+  @include celular {
+    flex-shrink: 0;
+
+    kbd { display: none; }   // sem teclado no celular
+  }
 }
 
 .cabecalho {
@@ -33,14 +57,92 @@
   gap: 4px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--borda);
+
+  @include celular {
+    flex: 1;
+    min-width: 0;
+    gap: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
 }
 
-.sistema { @include sobretitulo; }
+.sistema {
+  @include sobretitulo;
+
+  @include celular { font-size: 0.6rem; }
+}
 
 .nome {
   @include fonte-titulo;
   font-size: 1.3rem;
   line-height: 1.2;
+
+  @include celular {
+    overflow: hidden;
+    font-size: 1rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+
+// Botão ☰ só existe no celular
+.alternar {
+  display: none;
+
+  @include celular {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--texto);
+    font-size: 1.1rem;
+    cursor: pointer;
+
+    &[aria-expanded='true'] {
+      border-color: var(--cor);
+      color: var(--cor);
+    }
+  }
+}
+
+.itens {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  @include celular {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    display: none;
+    max-height: calc(100dvh - 70px);
+    padding: 16px;
+    overflow-y: auto;
+    background: var(--superficie);
+    border-bottom: 1px solid var(--borda);
+    box-shadow: 0 16px 32px rgb(0 0 0 / 0.5);
+
+    .aberto & { display: flex; }
+  }
+}
+
+.veu {
+  display: none;
+
+  @include celular {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    display: block;
+    background: rgb(0 0 0 / 0.5);
+  }
 }
 
 .grupo {
@@ -68,6 +170,8 @@
   transition: background 0.15s;
 
   &:hover { background: color-mix(in srgb, var(--cor) 12%, transparent); }
+
+  @include celular { padding: 11px 10px; }   // alvo de toque maior
 }
 
 .ativo {

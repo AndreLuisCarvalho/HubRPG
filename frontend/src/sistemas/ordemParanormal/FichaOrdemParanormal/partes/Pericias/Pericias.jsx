@@ -60,7 +60,7 @@ export default function Pericias({ dados, onAlterarDados, className = '' }) {
   );
 
   return (
-    <Painel rotulo="Perícias" acoes={filtro} className={className}>
+    <Painel rotulo="Perícias" acoes={filtro} className={`${styles.painel} ${className}`}>
       <ul className={styles.lista}>
         {lista.map((p) => {
           const nivel = NIVEIS.indexOf(grauDaPericia(dados, p.id));

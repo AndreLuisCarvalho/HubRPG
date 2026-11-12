@@ -26,12 +26,11 @@
   overflow: hidden;
   border-radius: 50%;
   background: radial-gradient(circle at 50% 40%, #16131f, #07060b 70%);
+  // Parada: só o anel, sem brilho (o brilho fica para os momentos de mudança)
   box-shadow:
-    0 0 0 3px #1c1828,
+    0 0 0 3px #1f1c16,
     0 0 0 4px color-mix(in srgb, var(--c) 60%, transparent),
-    0 0 20px color-mix(in srgb, var(--c) 32%, transparent),
     inset 0 -8px 18px rgba(0, 0, 0, 0.6);
-  animation: respirar 5s ease-in-out infinite;   // só a luz respira, nada se mexe
 }
 
 // Líquido liso. Ele é mais largo que a esfera para poder inclinar sem mostrar as pontas.
@@ -120,8 +119,7 @@
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--c) 70%, transparent);
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #2a2438, #0d0b14);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--c) 40%, transparent);
+  background: #0e0d0a;
   color: var(--texto);
   font-size: 1rem;
   line-height: 1;
@@ -130,7 +128,7 @@
 
   &:hover {
     transform: scale(1.12);
-    background: color-mix(in srgb, var(--c) 35%, #0d0b14);
+    background: color-mix(in srgb, var(--c) 35%, #0e0d0a);
   }
 
   &:active { transform: scale(0.9); }
@@ -146,8 +144,8 @@
   height: 20px;
   padding: 0 5px;
   border: 1px dashed color-mix(in srgb, var(--c) 50%, transparent);
-  border-radius: 999px;
-  background: #0d0b14;
+  border-radius: 3px;
+  background: #0e0d0a;
   color: var(--texto-suave);
   @include fonte-ficha;
   font-size: 0.62rem;
@@ -179,18 +177,16 @@
   .temporario {
     border-style: solid;
     border-color: var(--claro);
-    background: color-mix(in srgb, var(--c) 45%, #0d0b14);
+    background: color-mix(in srgb, var(--c) 45%, #0e0d0a);
     color: #fff;
-    box-shadow: 0 0 10px var(--c);
     opacity: 1;
   }
 
   .esfera {
     box-shadow:
-      0 0 0 3px #1c1828,
+      0 0 0 3px #1f1c16,
       0 0 0 4px var(--c),
       0 0 0 6px color-mix(in srgb, var(--claro) 70%, transparent),
-      0 0 24px color-mix(in srgb, var(--claro) 45%, transparent),
       inset 0 -8px 18px rgba(0, 0, 0, 0.6);
   }
 }
@@ -296,20 +292,10 @@
 .ganho .liquido  { animation: clarear 1.1s ease-out; }
 
 /* ---------- Animações ---------- */
-@keyframes respirar {
-  50% {
-    box-shadow:
-      0 0 0 3px #1c1828,
-      0 0 0 4px color-mix(in srgb, var(--c) 70%, transparent),
-      0 0 30px color-mix(in srgb, var(--c) 45%, transparent),
-      inset 0 -8px 18px rgba(0, 0, 0, 0.6);
-  }
-}
-
 @keyframes alerta {
   50% {
     box-shadow:
-      0 0 0 3px #1c1828,
+      0 0 0 3px #1f1c16,
       0 0 0 4px var(--c),
       0 0 34px var(--c),
       inset 0 -8px 18px rgba(0, 0, 0, 0.6);
@@ -335,7 +321,7 @@
 @keyframes brilhar {
   30% {
     box-shadow:
-      0 0 0 3px #1c1828,
+      0 0 0 3px #1f1c16,
       0 0 0 4px var(--claro),
       0 0 36px var(--claro),
       inset 0 -8px 18px rgba(0, 0, 0, 0.6);

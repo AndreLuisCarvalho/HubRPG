@@ -8,12 +8,13 @@
   height: 100%;
   min-height: 0;
   padding-top: 10px;
+  container: rituais / inline-size;   // a lista se ajusta à largura da aba
 }
- 
-/* ---------- Cabeçalho: selo da DT + números + aprender ---------- */
+
+/* ---------- Cabeçalho: selo da DT + números ---------- */
 .cabecalho {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 14px;
 }
@@ -63,13 +64,13 @@
 .anel {
   stroke: var(--cor);
   stroke-width: 2;
-  filter: drop-shadow(0 0 4px var(--cor));
 }
  
 // Dois números lado a lado, separados por uma linha fina
 .info {
   display: flex;
-  gap: 18px;
+  flex-wrap: wrap;   // aba estreita: o segundo número desce em vez de ser cortado
+  gap: 6px 18px;
   margin: 0;
  
   div {
@@ -87,6 +88,7 @@
     @include fonte-ficha;
     font-size: 0.56rem;
     letter-spacing: 0.16em;
+    white-space: nowrap;
     color: var(--texto-suave);
   }
  
@@ -107,17 +109,19 @@
 .excedeu { color: #ff8592; }
  
 .aprender {
+  margin-left: auto;
+  white-space: nowrap;
   padding: 8px 14px;
   border: 1px solid var(--cor);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--cor) 25%, #0d0b14);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--cor) 25%, #0e0d0a);
   color: #fff;
   @include fonte-ficha;
   font-size: 0.68rem;
   letter-spacing: 0.14em;
   cursor: pointer;
  
-  &:hover { background: color-mix(in srgb, var(--cor) 45%, #0d0b14); }
+  &:hover { background: color-mix(in srgb, var(--cor) 45%, #0e0d0a); }
  
   &:disabled {
     opacity: 0.4;
@@ -125,13 +129,21 @@
   }
 }
  
-/* ---------- Filtro por elemento ---------- */
+/* ---------- Filtro por elemento + Aprender ---------- */
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--borda);
+}
+
 .filtro {
   display: flex;
   gap: 6px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--borda);
- 
+
   button {
     padding: 0;
     border: 0;
@@ -158,7 +170,7 @@
 .ritual {
   position: relative;
   border: 1px solid var(--borda);
-  border-radius: 12px;
+  border-radius: 3px;
   background: linear-gradient(90deg, color-mix(in srgb, var(--e) 10%, transparent), transparent 45%);
  
   &::before {
@@ -170,13 +182,11 @@
     width: 3px;
     border-radius: 3px;
     background: var(--e);
-    box-shadow: 0 0 8px var(--e);
   }
 }
  
 .aberto {
   border-color: color-mix(in srgb, var(--e) 55%, transparent);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--e) 18%, transparent);
 }
  
 .linha {
@@ -223,7 +233,7 @@
   max-width: 130px;
   padding: 2px 8px;
   border: 1px solid color-mix(in srgb, var(--e) 55%, transparent);
-  border-radius: 999px;
+  border-radius: 3px;
   background: color-mix(in srgb, var(--e) 14%, transparent);
   color: #fff;
   @include fonte-ficha;
@@ -237,7 +247,7 @@
 .custo {
   padding: 2px 9px;
   border: 1px solid rgba(240, 180, 41, 0.45);
-  border-radius: 999px;
+  border-radius: 3px;
   background: rgba(240, 180, 41, 0.08);
   color: #ffd77a;
   @include fonte-ficha;
@@ -246,10 +256,39 @@
   white-space: nowrap;
 }
  
+// Aba estreita (celular, notebook): o dano desce para baixo do nome,
+// para o nome do ritual não ser cortado
+@container rituais (max-width: 420px) {
+  .linha {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    row-gap: 6px;
+
+    > :first-child { grid-row: 1 / span 2; }   // sigilo do elemento
+  }
+
+  // Nome longo quebra em duas linhas em vez de ser cortado
+  .titulo b {
+    white-space: normal;
+    line-height: 1.15;
+  }
+
+  .dano {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+    max-width: 100%;
+  }
+
+  .custo {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+}
+
 .vazio {
   padding: 24px 12px;
-  border: 1px dashed #3a3350;
-  border-radius: 12px;
+  border: 1px dashed #3a352a;
+  border-radius: 3px;
   text-align: center;
   font-size: 0.82rem;
   color: var(--texto-suave);

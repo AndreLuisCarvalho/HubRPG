@@ -45,6 +45,56 @@ $celular: 800px;
   }
 }
 
+/* ---------- Traço à mão ---------- */
+// Desenhos pequenos usados nos divisores (cor da --tinta, já com transparência)
+$_tinta-svg: '%23d9d3c4';
+$ponta-flecha: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10' fill='none' stroke='#{$_tinta-svg}' stroke-opacity='.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 5H1.5M5.5 1.5 1.5 5l4 3.5'/%3E%3C/svg%3E");
+$pena-flecha: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 10' fill='none' stroke='#{$_tinta-svg}' stroke-opacity='.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 5h12M8 1.5 11 5 8 8.5M4 1.5 7 5 4 8.5'/%3E%3C/svg%3E");
+$argola: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' fill='none' stroke='#{$_tinta-svg}' stroke-opacity='.6'%3E%3Ccircle cx='5' cy='5' r='3.5'/%3E%3C/svg%3E");
+$_linha: linear-gradient(rgba(217, 211, 196, 0.35), rgba(217, 211, 196, 0.35));
+
+// Divisor horizontal: ponta de flecha ← linha com argola no meio → penas
+@mixin divisor-flecha {
+  height: 10px;
+  background:
+    $ponta-flecha left center / 12px 10px no-repeat,
+    $pena-flecha right center / 14px 10px no-repeat,
+    $argola center / 10px 10px no-repeat,
+    $_linha center / calc(100% - 6px) 1px no-repeat;
+}
+
+// Meia flecha, para os dois lados de um texto ("←— AGENTE DA ORDEM —»")
+@mixin meia-flecha($lado) {
+  height: 10px;
+  @if $lado == esquerda {
+    background: $ponta-flecha left center / 12px 10px no-repeat, $_linha right center / calc(100% - 2px) 1px no-repeat;
+  } @else {
+    background: $pena-flecha right center / 14px 10px no-repeat, $_linha left center / calc(100% - 2px) 1px no-repeat;
+  }
+}
+
+// Moldura de linha dupla com traço levemente tremido (filtro #traco-a-mao da ficha).
+// O elemento precisa de position: relative.
+@mixin moldura-a-mao($recuo: 5px) {
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    filter: url(#traco-a-mao);
+  }
+
+  &::before {
+    inset: 0;
+    border: 1px solid var(--tinta-linha);
+  }
+
+  &::after {
+    inset: $recuo;
+    border: 1px solid var(--tinta-fraca);
+  }
+}
+
 // Letra condensada em caixa alta, das etiquetas de ficha
 @mixin fonte-ficha {
   font-family: 'Oswald', 'Inter', sans-serif;

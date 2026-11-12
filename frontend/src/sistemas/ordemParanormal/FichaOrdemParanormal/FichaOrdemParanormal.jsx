@@ -19,6 +19,14 @@ export default function FichaOrdemParanormal({ ficha, onAlterarDados }) {
 
   return (
     <div className={styles.ficha}>
+      {/* Filtro que "treme" de leve as linhas das molduras, como traço feito à mão */}
+      <svg className={styles.filtros} aria-hidden="true" focusable="false">
+        <filter id="traco-a-mao">
+          <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7" />
+          <feDisplacementMap in="SourceGraphic" scale="2.5" />
+        </filter>
+      </svg>
+
       <Agente ficha={ficha} onAlterarDados={onAlterarDados} className={`${styles.agente} ${visivel('agente')}`} />
       <Vitais dados={dados} onAlterarDados={onAlterarDados} className={styles.vitais} />
       <Pericias dados={dados} onAlterarDados={onAlterarDados} className={`${styles.pericias} ${visivel('pericias')}`} />

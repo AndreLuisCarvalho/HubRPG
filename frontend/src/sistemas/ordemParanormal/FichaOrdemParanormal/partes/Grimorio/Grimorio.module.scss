@@ -1,227 +1,375 @@
 @use '../../../../../styles/mixins' as *;
 
+// Grão do papel (ruído bem fraco)
+$grao: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .12 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+
+/* ---------- O pergaminho (a caixa do Modal) ---------- */
+// As variáveis mudam aqui dentro: título, ✕ e tudo do Modal passam a usar tinta sobre papel.
+// Classe dobrada para vencer o estilo padrão da caixa do Modal.
+.pergaminho.pergaminho {
+  // Fontes do grimório (troque aqui para testar outras): títulos em capitais retas,
+  // texto de máquina de escrever, como um dossiê da Ordem
+  --fonte-titulo: 'Cinzel', serif;
+  --fonte-texto: 'Special Elite', 'Courier New', monospace;
+
+  --texto: #2b2016;          // tinta
+  --texto-suave: #6e5a3f;    // tinta desbotada
+  --rubrica: #8a1f14;        // vermelho dos títulos de livro antigo
+  --cor: var(--rubrica);
+  --sobre-cor: #f1e6cc;
+  --superficie: #e8dab9;
+  --borda: rgba(70, 45, 20, 0.25);
+  --tinta-linha: rgba(70, 45, 20, 0.4);
+  --tinta-fraca: rgba(70, 45, 20, 0.18);
+
+  // Altura fixa: com 0 ou 80 rituais o livro tem o mesmo tamanho; o que sobra rola por dentro.
+  // Linhas: "Ordem Paranormal", título e o conteúdo (índice ou página), que estica.
+  height: min(700px, calc(100dvh - 32px));
+  grid-template-rows: auto auto minmax(0, 1fr);
+  padding: 28px 30px;
+  border: 0;
+  border-radius: 2px;
+  color: var(--texto);
+  background:
+    $grao,
+    radial-gradient(ellipse 60% 45% at 18% 12%, rgba(255, 250, 232, 0.6), transparent 70%),
+    radial-gradient(circle at 82% 22%, rgba(140, 95, 40, 0.14) 0 5%, transparent 5.5%),   // mancha
+    radial-gradient(ellipse 70% 50% at 85% 95%, rgba(120, 75, 25, 0.3), transparent 70%),
+    #e4d3ab;
+  // Bordas escurecidas, como papel velho e chamuscado
+  box-shadow:
+    inset 0 0 70px rgba(95, 55, 18, 0.55),
+    inset 0 0 8px rgba(60, 32, 10, 0.7),
+    0 24px 60px rgba(0, 0, 0, 0.75);
+
+  > h2 {
+    font-family: var(--fonte-titulo);
+    font-size: 2.1rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: var(--rubrica);
+  }
+
+  > span:first-of-type {
+    font-family: var(--fonte-titulo);
+    letter-spacing: 0.2em;
+  }
+
+  > button:first-child { background: transparent; }   // ✕
+}
+
+// Índice: filtros em cima, lista estica no meio, nota do limite embaixo
 .grimorio {
   width: 100%;
   min-width: 0;
+  min-height: 0;
   display: grid;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
   gap: 12px;
+  font-family: var(--fonte-texto);
 }
 
-/* ---------- Todos / Meus ---------- */
+/* ---------- Todos · Meus (links de tinta) ---------- */
 .alternar {
   display: flex;
-  width: min(340px, 100%);
-  overflow: hidden;
-  border: 1px solid var(--cor);
-  border-radius: 10px;
+  justify-content: center;
+  align-items: baseline;
+  gap: 10px;
+  color: var(--texto-suave);
 
   button {
-    flex: 1;
-    padding: 7px;
+    padding: 2px 0;
     border: 0;
     background: none;
     color: var(--texto-suave);
-    @include fonte-ficha;
-    font-size: 0.72rem;
-    letter-spacing: 0.14em;
+    font-family: var(--fonte-titulo);
+    font-size: 1rem;
     cursor: pointer;
 
     &[aria-pressed='true'] {
-      background: var(--cor);
-      color: #fff;
+      color: var(--rubrica);
+      box-shadow: inset 0 -1px 0 var(--rubrica);
     }
   }
 }
 
-/* ---------- Abas de elemento (bolinha na cor de cada um) ---------- */
+/* ---------- Elementos (palavra com um pingo de tinta da cor do elemento) ---------- */
 .elementos {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
-  border-bottom: 1px solid var(--borda);
+  justify-content: center;
+  gap: 2px 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--tinta-linha);
 
   button {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 7px 10px;
+    gap: 5px;
+    padding: 3px 2px;
     border: 0;
     background: none;
     color: var(--texto-suave);
-    @include fonte-ficha;
-    font-size: 0.68rem;
-    letter-spacing: 0.1em;
+    font-family: var(--fonte-texto);
+    font-size: 0.95rem;
     cursor: pointer;
 
     i {
-      width: 8px;
-      height: 8px;
+      width: 9px;
+      height: 9px;
+      border: 1px solid rgba(43, 32, 22, 0.55);   // contorno: Medo e Morte são claros
       border-radius: 50%;
       background: var(--e);
-      box-shadow: 0 0 6px var(--e);
     }
 
     &:hover { color: var(--texto); }
 
     &[aria-pressed='true'] {
-      color: #fff;
-      box-shadow: inset 0 -2px 0 var(--cor);
+      color: var(--texto);
+      box-shadow: inset 0 -1px 0 var(--texto);
     }
   }
 }
 
-/* ---------- Pílulas de círculo com o custo ---------- */
+/* ---------- Círculos em romanos com o custo ---------- */
 .circulos {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  justify-content: center;
+  gap: 4px 14px;
 
   button {
-    padding: 4px 12px;
-    border: 1px solid var(--borda);
-    border-radius: 999px;
+    padding: 2px 4px;
+    border: 0;
     background: none;
     color: var(--texto-suave);
-    @include fonte-ficha;
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
+    font-family: var(--fonte-titulo);
+    font-size: 1rem;
     cursor: pointer;
 
     em {
-      margin-left: 4px;
-      font-style: normal;
-      color: #ffd77a;
+      margin-left: 3px;
+      font-family: var(--fonte-texto);
+      font-size: 0.8rem;
+      color: var(--texto-suave);
     }
 
     &[aria-pressed='true'] {
-      border-color: var(--cor);
-      background: color-mix(in srgb, var(--cor) 18%, transparent);
-      color: #fff;
+      color: var(--rubrica);
+      box-shadow: inset 0 -1px 0 var(--rubrica);
     }
   }
 }
 
 .busca {
-  padding: 9px 12px;
-  border: 1px solid var(--borda);
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--tinta-linha);
+  background: transparent;
   color: var(--texto);
-  font: inherit;
-  font-size: 0.88rem;
+  font-family: var(--fonte-texto);
+  font-size: 1rem;
+
+  &::placeholder { color: var(--texto-suave); }
 
   &:focus {
     outline: none;
-    border-color: var(--cor);
+    border-bottom-color: var(--rubrica);
   }
 }
 
-/* ---------- Lista (rola dentro do modal) ---------- */
+/* ---------- Índice (rola dentro do pergaminho) ---------- */
 .lista {
   display: grid;
-  gap: 7px;
-  max-height: min(46vh, 420px);
+  align-content: start;   // poucos rituais ficam no topo, sem esticar as linhas
+  gap: 2px;
+  min-height: 0;
   margin: 0;
-  padding: 0 4px 0 0;
+  padding: 0 6px 0 0;
   overflow-y: auto;
   list-style: none;
 }
 
 .ritual {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px dotted var(--tinta-fraca);
+}
+
+// A linha inteira (menos o "+") abre a página do ritual
+.ler {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 12px;
-  padding: 9px 12px;
-  border: 1px solid var(--borda);
-  border-radius: 11px;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--e) 8%, transparent), transparent 50%);
+  width: 100%;
+  padding: 8px 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(120, 80, 30, 0.08);
+
+    b { color: var(--rubrica); }
+  }
 }
 
 .texto {
   display: grid;
-  gap: 2px;
+  gap: 1px;
+  min-width: 0;
+}
+
+// Nome ........ II
+.linhaNome {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
   min-width: 0;
 
   b {
-    @include fonte-titulo;
-    font-size: 0.9rem;
-
-    small {
-      margin-left: 6px;
-      padding: 0 6px;
-      border: 1px solid var(--borda);
-      border-radius: 999px;
-      @include fonte-ficha;
-      font-size: 0.55rem;
-      color: var(--texto-suave);
-      vertical-align: middle;
-    }
+    overflow: hidden;
+    font-family: var(--fonte-titulo);
+    font-size: 1.08rem;
+    font-weight: 400;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
-  span {
-    font-size: 0.74rem;
+  small {
+    flex-shrink: 0;
+    font-size: 0.78rem;
     color: var(--texto-suave);
   }
 }
 
+// Celular: o nome quebra linha em vez de ser cortado; sem espaço para o pontilhado
+@media (max-width: 480px) {
+  .linhaNome {
+    justify-content: space-between;
+
+    b {
+      font-size: 0.92rem;
+      line-height: 1.15;
+      white-space: normal;
+    }
+  }
+
+  .pontilhado { display: none; }
+}
+
+.pontilhado {
+  flex: 1;
+  min-width: 16px;
+  border-bottom: 2px dotted var(--tinta-linha);
+  transform: translateY(-4px);
+}
+
 .romano {
-  @include fonte-titulo;
-  font-weight: 800;
-  font-size: 0.85rem;
-  color: var(--e);
+  flex-shrink: 0;
+  font-family: var(--fonte-titulo);
+  font-size: 1rem;
+  color: var(--rubrica);
+}
+
+.resumo {
+  overflow: hidden;
+  font-size: 0.88rem;
+  color: var(--texto-suave);
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .aprender,
 .conhece {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  font-size: 1rem;
 }
 
 .aprender {
   padding: 0;
-  border: 1px solid var(--cor);
+  border: 1px solid var(--rubrica);
   background: none;
-  color: #fff;
+  color: var(--rubrica);
+  font-size: 1.1rem;
+  line-height: 1;
   cursor: pointer;
 
-  &:hover { background: color-mix(in srgb, var(--cor) 30%, transparent); }
+  &:hover {
+    background: var(--rubrica);
+    color: var(--sobre-cor);
+  }
 }
 
 .conhece {
-  border: 1px solid #4cc98c;
-  background: rgba(76, 201, 140, 0.18);
-  color: #7ff0b8;
-  font-size: 0.85rem;
+  padding: 0;
+  border: 1px solid #3d6b3a;
+  background: none;
+  color: #3d6b3a;
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  &:hover { background: rgba(61, 107, 58, 0.15); }
+}
+
+// 1º clique no ✓: vira "Purificar?" (azul de água benta)
+.confirmar {
+  width: auto;
+  padding: 0 9px;
+  border-color: #3f6f86;
+  border-radius: 3px;
+  background: rgba(63, 111, 134, 0.12);
+  color: #2f5d72;
+  font-family: var(--fonte-texto);
+  font-size: 0.78rem;
+  white-space: nowrap;
+
+  &:hover { background: rgba(63, 111, 134, 0.22); }
+}
+
+// A linha do ritual desbota como tinta lavada antes de sair da lista
+.purificando {
+  animation: lavarTinta 0.75s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes lavarTinta {
+  0%   { filter: none; opacity: 1; }
+  40%  { filter: grayscale(1) brightness(1.5) blur(0.5px); opacity: 0.8; background: rgba(255, 252, 240, 0.6); }
+  100% { filter: grayscale(1) brightness(1.8) blur(2px); opacity: 0; transform: translateX(8px); }
 }
 
 .vazio {
   padding: 24px;
   text-align: center;
-  font-size: 0.85rem;
   color: var(--texto-suave);
 }
 
-/* ---------- Aviso do limite (fica vermelho quando enche) ---------- */
+/* ---------- Nota de rodapé com o limite (fica vermelha quando enche) ---------- */
 .limite {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 6px;
-  padding: 9px 12px;
-  border: 1px solid rgba(240, 180, 41, 0.3);
-  border-radius: 10px;
-  background: rgba(240, 180, 41, 0.07);
-  font-size: 0.76rem;
-  color: #f3dc9c;
+  gap: 4px 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--tinta-linha);
+  font-size: 0.86rem;
+  color: var(--texto-suave);
+
+  b {
+    font-style: normal;
+    color: var(--texto);
+  }
 }
 
-.cheio {
-  border-color: rgba(212, 42, 60, 0.45);
-  background: rgba(212, 42, 60, 0.08);
-  color: #ffb3bb;
-}
+.cheio,
+.cheio b { color: var(--rubrica); }

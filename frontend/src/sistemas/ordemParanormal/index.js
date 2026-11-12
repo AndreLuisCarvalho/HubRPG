@@ -20,4 +20,17 @@ export default {
     .map(([id, o]) => ({ id, nome: o.nome, poder: o.poder.nome }))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
   Ficha: FichaOrdemParanormal,
+
+  // Paleta "dossiê da Ordem": carvão, pasta de arquivo (ocre), papel velho e carimbo vermelho.
+  // Vale para toda a página da campanha e fica por cima da cor escolhida para ela.
+  paleta: {
+    '--cor': '#c4974a',          // ocre de pasta de arquivo
+    '--sobre-cor': '#16130d',    // texto em cima do ocre
+    '--carimbo': '#b3362c',      // vermelho de carimbo "CONFIDENCIAL"
+    '--fundo': '#0b0a08',
+    '--superficie': '#16140f',
+    '--borda': '#2f2a21',
+    '--texto': '#ece6d6',        // papel
+    '--texto-suave': '#9c927f',
+  },
 };

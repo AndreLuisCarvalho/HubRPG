@@ -6,10 +6,7 @@
   place-items: center;
   border: 1.5px solid var(--e);
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--e) 22%, #0b0912), #0b0912 70%);
-  box-shadow:
-    0 0 10px color-mix(in srgb, var(--e) 45%, transparent),
-    inset 0 0 8px color-mix(in srgb, var(--e) 30%, transparent);
+  background: #0c0b08;
   transition: opacity 0.15s;
 
   svg {
