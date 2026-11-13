@@ -4,6 +4,8 @@ import {
   contarAprendidos, custoDoRitual, dtDeRituais, limiteDeRituais, limitePePorTurno, rituaisConhecidos,
 } from '../../../regras';
 import DetalheRitual from '../DetalheRitual/DetalheRitual';
+import BotaoRecolher from '../Recolher/BotaoRecolher';
+import useRecolhido from '../Recolher/useRecolhido';
 import SigiloElemento from '../SigiloElemento/SigiloElemento';
 import styles from './Rituais.module.scss';
  
@@ -21,17 +23,22 @@ export default function Rituais({ dados, onAlterarDados, onAbrirGrimorio }) {
  
   const aprendidos = contarAprendidos(dados);
   const limite = limiteDeRituais(dados);
- 
+  const dt = dtDeRituais(dados);
+  const pePorTurno = limitePePorTurno(dados);
+
+  // No celular o cabeçalho (DT, números, filtro) pode virar uma linha só, sobrando espaço para a lista
+  const [recolhido, alternar] = useRecolhido('hubrpg:rituais-recolhido');
+
   return (
-    <div className={styles.rituais}>
-      <header className={styles.cabecalho}>
+    <div className={`${styles.rituais} ${recolhido ? styles.recolhido : ''}`}>
+      <header id="cabecalho-rituais" className={styles.cabecalho}>
         {/* Selo da DT, no mesmo estilo do anel de NEX */}
         <div className={styles.selo} title="DT para resistir aos seus rituais: 10 + limite de PE + Presença">
           <svg viewBox="0 0 64 64" aria-hidden="true">
             <circle className={styles.pontilhado} cx="32" cy="32" r="30" />
             <circle className={styles.anel} cx="32" cy="32" r="25" />
           </svg>
-          <b>{dtDeRituais(dados)}</b>
+          <b>{dt}</b>
           <small>DT</small>
         </div>
  
@@ -44,14 +51,22 @@ export default function Rituais({ dados, onAlterarDados, onAbrirGrimorio }) {
           </div>
           <div title="Nenhum ritual pode custar mais que isso numa conjuração">
             <dt>Limite por turno</dt>
-            <dd>{limitePePorTurno(dados)}<span> PE</span></dd>
+            <dd>{pePorTurno}<span> PE</span></dd>
           </div>
         </dl>
       </header>
 
-      {/* Filtro por elemento à esquerda e "Aprender" à direita, na mesma linha */}
+      {/* Filtro por elemento à esquerda e "Aprender" à direita, na mesma linha.
+          Recolhido (celular): no lugar do filtro fica o resumo "DT 25 · 3/5 · 13 PE" */}
       <div className={styles.barra}>
-        <div className={styles.filtro} role="group" aria-label="Filtrar por elemento">
+        <button type="button" className={styles.resumoTopo} onClick={alternar} tabIndex={-1} aria-hidden="true">
+          <span><small>DT</small> {dt}</span>
+          <span className={aprendidos > limite ? styles.excedeu : ''}>{aprendidos}<small>/{limite}</small></span>
+          <span>{pePorTurno} <small>PE</small></span>
+          {filtro && <SigiloElemento elemento={filtro} tamanho={20} />}
+        </button>
+
+        <div id="filtro-rituais" className={styles.filtro} role="group" aria-label="Filtrar por elemento">
           {Object.entries(ELEMENTOS).map(([id, el]) => (
             <button key={id} onClick={() => setFiltro(filtro === id ? null : id)} title={el.nome} aria-pressed={filtro === id}>
               <SigiloElemento elemento={id} tamanho={24} apagado={filtro !== null && filtro !== id} />
@@ -62,6 +77,13 @@ export default function Rituais({ dados, onAlterarDados, onAbrirGrimorio }) {
         <button className={styles.aprender} onClick={onAbrirGrimorio} disabled={!onAbrirGrimorio}>
           + Aprender
         </button>
+
+        <BotaoRecolher
+          recolhido={recolhido}
+          onClick={alternar}
+          nome="DT, limites e filtro dos rituais"
+          controla="cabecalho-rituais filtro-rituais"
+        />
       </div>
  
       <ul className={styles.lista}>

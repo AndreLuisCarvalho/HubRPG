@@ -42,22 +42,9 @@
   &::after  { @include meia-flecha(direita); }
 }
 
+// O retrato em si (anel, foto, inicial) vem do componente EscolherFoto
 .avatar {
-  width: 72px;
-  height: 72px;
-  display: grid;
-  place-items: center;
   margin-top: 4px;
-  border-radius: 50%;
-  background: #13110d;
-  // Anel duplo de tinta, como um carimbo
-  box-shadow:
-    0 0 0 1px var(--tinta-linha),
-    0 0 0 4px #0f0e0b,
-    0 0 0 5px var(--tinta-fraca);
-  @include fonte-titulo;
-  font-size: 1.9rem;
-  font-weight: 800;
 }
 
 .nome {
@@ -111,6 +98,132 @@ input.tag {
   cursor: text;
 }
 
+// Classe/Trilha já definidas: pílula sem cara de botão
+.fixa {
+  cursor: default;
+}
+
+// Pílula da trilha "acende" quando o NEX libera uma habilidade nova
+.desperta {
+  animation: despertar 1.6s ease-out;
+}
+
+@keyframes despertar {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--cor) 70%, transparent); background: var(--cor); color: var(--sobre-cor); }
+  25%  { box-shadow: 0 0 0 8px transparent; }
+  45%  { background: var(--cor); color: var(--sobre-cor); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ---------- Cartão de habilidade nova (ao subir o NEX) ---------- */
+.novidade {
+  position: relative;
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--cor);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--cor) 8%, var(--superficie));
+  text-align: left;
+  // Entra como um papel carimbado em cima da mesa
+  animation: carimbar 0.55s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+@keyframes carimbar {
+  0%   { opacity: 0; transform: scale(1.25) rotate(-3deg); }
+  60%  { opacity: 1; transform: scale(0.97) rotate(0.5deg); }
+  100% { transform: none; }
+}
+
+.seloNovidade {
+  justify-self: start;
+  padding: 2px 8px;
+  border: 1px solid var(--carimbo, #b3362c);
+  border-radius: 2px;
+  color: var(--carimbo, #b3362c);
+  @include fonte-ficha;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  transform: rotate(-2deg);
+}
+
+.itemNovidade {
+  b {
+    @include fonte-titulo;
+    font-size: 1rem;
+    color: var(--cor);
+  }
+
+  small {
+    margin-right: 6px;
+    @include fonte-ficha;
+    font-size: 0.6rem;
+    color: var(--texto-suave);
+  }
+
+  p {
+    margin-top: 2px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--texto);
+  }
+
+  // Várias de uma vez (pulou vários NEX): cada uma entra um pouco depois
+  @for $i from 2 through 4 {
+    &:nth-of-type(#{$i}) { animation: surgirItem 0.4s ease-out #{0.25s * $i} both; }
+  }
+}
+
+@keyframes surgirItem {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
+.fecharNovidade {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 6px;
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  &:hover { color: var(--texto); }
+}
+
+// Trilha: o botão do Seletor com cara de "pílula" (mesma altura e fonte da Classe)
+.seletorTrilha {
+  text-align: left;
+
+  button.tag {
+    width: auto;
+    min-width: 9em;
+    padding: 4px 10px 4px 14px;
+    border-radius: 3px;
+    font-size: 0.74rem;
+    gap: 8px;
+    box-shadow: none;
+    // Mesmo visual da pílula da Classe (por cima do visual de formulário do Seletor)
+    border: 1px solid color-mix(in srgb, var(--cor) 45%, transparent);
+    background: color-mix(in srgb, var(--cor) 10%, transparent);
+    color: var(--cor);
+
+    &.vazia { border-style: dashed; }
+
+    span { color: inherit; }
+
+    &:disabled { cursor: default; opacity: 0.6; }
+
+    // A seta fica na cor da pílula
+    svg { width: 11px; height: 11px; stroke: currentColor; }
+  }
+
+  // A lista não precisa ser estreita como a pílula
+  ul { min-width: 220px; right: auto; }
+}
+
 .vazia { border-style: dashed; }
 
 /* ---------- Origem e Jogador ---------- */
@@ -123,16 +236,28 @@ input.tag {
   border: 1px solid var(--tinta-fraca);
   border-radius: 3px;
 
-  label {
+  > label,
+  > div {
     display: grid;
+    align-content: start;
     gap: 4px;
     min-width: 0;
     padding: 10px 8px;
+    text-align: center;
 
-    & + label { border-left: 1px solid var(--tinta-fraca); }
+    & + * { border-left: 1px solid var(--tinta-fraca); }
   }
 
-  span {
+  // Valor fixo (definido na criação): texto, sem cara de campo editável
+  b {
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  > * > span {
     @include fonte-ficha;
     font-size: 0.56rem;
     letter-spacing: 0.16em;
@@ -290,9 +415,64 @@ input.tag {
   text-align: left;
 }
 
+/* ---------- Proteção e proficiências: botões de marcar ---------- */
+.grupo {
+  display: grid;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.rotuloGrupo {
+  @include fonte-ficha;
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  color: var(--texto-suave);
+}
+
+.opcoesProtecao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  button {
+    padding: 4px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.7rem;
+    cursor: pointer;
+
+    b { color: var(--texto); font-weight: 600; }
+
+    &:hover:not(:disabled) { border-color: var(--tinta-linha); color: var(--texto); }
+
+    &[aria-pressed='true'] {
+      border-color: var(--cor);
+      background: color-mix(in srgb, var(--cor) 16%, transparent);
+      color: var(--cor);
+
+      b { color: var(--cor); }
+    }
+
+    // Proficiência que já vem da classe: marcada e fixa
+    &:disabled { cursor: default; opacity: 0.75; }
+  }
+}
+
+.nota {
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--texto-suave);
+}
+
+.alerta { color: #e0675c; }
+
 .numeros {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-flow: column;            // 2 ou 3 campos, dividindo a linha por igual
+  grid-auto-columns: minmax(0, 1fr);
   gap: 10px;
   margin-top: 4px;
 

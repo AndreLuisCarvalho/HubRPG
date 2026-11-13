@@ -49,7 +49,9 @@ export default function CardFicha({ ficha, sistema, destinos, onAbrir, onDuplica
       {estado && <span className={`${styles.estado} ${styles[estado.id]}`}>{estado.rotulo}</span>}
 
       <header className={styles.cabecalho}>
-        <span className={styles.avatar} aria-hidden="true">{ficha.nome.charAt(0)}</span>
+        <span className={styles.avatar} aria-hidden="true">
+          {ficha.imagem ? <img src={ficha.imagem} alt="" /> : ficha.nome.charAt(0)}
+        </span>
 
         <div className={styles.identidade}>
           <h2 className={styles.nome} title={ficha.nome}>{ficha.nome}</h2>

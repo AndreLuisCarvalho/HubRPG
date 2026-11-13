@@ -175,10 +175,10 @@
  
 .conjurar {
   border: 1px solid var(--e);
-  background: color-mix(in srgb, var(--e) 30%, #0e0d0a);
+  background: color-mix(in srgb, var(--e) 30%, #121315);
   color: #fff;
  
-  &:hover:not(:disabled) { background: color-mix(in srgb, var(--e) 45%, #0e0d0a); }
+  &:hover:not(:disabled) { background: color-mix(in srgb, var(--e) 45%, #121315); }
  
   &:disabled {
     opacity: 0.35;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal } from '../../../../../components';
+import { EscolherFoto, Modal, Seletor } from '../../../../../components';
 import styles from './NovaFicha.module.scss';
 
 const TEXTOS = {
@@ -17,14 +17,30 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
   const [jogador, setJogador] = useState('');
   const [origem, setOrigem] = useState('');
   const [classe, setClasse] = useState(classes[0]?.id ?? '');
+  const [trilha, setTrilha] = useState('');
+  const [imagem, setImagem] = useState('');
   const [enviando, setEnviando] = useState(false);
+
+  // Trilhas da classe escolhida (sistemas sem trilha: lista vazia, o campo nem aparece)
+  const trilhas = sistema?.trilhas?.(classe) ?? [];
+  const trilhaEscolhida = trilhas.find((t) => t.id === trilha);
+
+  // Trocar de classe apaga a trilha (cada classe tem as suas)
+  function escolherClasse(id) {
+    setClasse(id);
+    setTrilha('');
+  }
+
+  // Agente de jogador: Origem, Jogador e Trilha são definidos aqui e não mudam mais na ficha
+  const ehJogador = tipo === 'jogador';
+  const completo = nome.trim() && (!ehJogador || (jogador.trim() && origem.trim()));
 
   async function enviar(e) {
     e.preventDefault();   // impede o formulário de recarregar a página
-    if (!nome.trim()) return;
+    if (!completo) return;
     setEnviando(true);
     try {
-      await onCriar({ nome: nome.trim(), opcoes: { classe, jogador: jogador.trim(), origem: origem.trim() } });
+      await onCriar({ nome: nome.trim(), imagem, opcoes: { classe, trilha, jogador: jogador.trim(), origem: origem.trim() } });
     } finally {
       setEnviando(false);
     }
@@ -33,15 +49,18 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
   return (
     <Modal aberto={aberto} onFechar={onFechar} sobretitulo={textos.sobretitulo} titulo={textos.titulo}>
       <form className={styles.form} onSubmit={enviar}>
-        <label className={styles.campo}>
-          <span>Nome do personagem</span>
-          <input autoFocus required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Helena Vasconcelos" />
-        </label>
+        <div className={styles.identidade}>
+          <EscolherFoto imagem={imagem} inicial={nome.trim().charAt(0) || '?'} onEscolher={setImagem} tamanho={64} />
+          <label className={styles.campo}>
+            <span>Nome do personagem</span>
+            <input autoFocus required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Helena Vasconcelos" />
+          </label>
+        </div>
 
-        {tipo === 'jogador' && (
+        {ehJogador && (
           <label className={styles.campo}>
             <span>Jogador</span>
-            <input value={jogador} onChange={(e) => setJogador(e.target.value)} placeholder="Quem vai jogar com este agente" />
+            <input required value={jogador} onChange={(e) => setJogador(e.target.value)} placeholder="Quem vai jogar com este agente" />
           </label>
         )}
 
@@ -54,7 +73,7 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
                   key={c.id}
                   type="button"
                   className={`${styles.classe} ${classe === c.id ? styles.escolhida : ''}`}
-                  onClick={() => setClasse(c.id)}
+                  onClick={() => escolherClasse(c.id)}
                   aria-pressed={classe === c.id}
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d={c.icone} /></svg>
@@ -66,24 +85,64 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
           </fieldset>
         )}
 
-        <label className={styles.campo}>
-          <span>Origem</span>
-          {/* Sistema com lista de origens: escolhe da lista; senão, texto livre */}
-          {origens.length > 0 ? (
-            <select value={origem} onChange={(e) => setOrigem(e.target.value)}>
-              <option value="">Escolher depois</option>
-              {origens.map((o) => (
-                <option key={o.id} value={o.id}>{o.nome} · {o.poder}</option>
-              ))}
-            </select>
-          ) : (
+        {trilhas.length > 0 && (
+          <div className={styles.campo}>
+            <span>Trilha</span>
+            <Seletor
+              rotulo="Trilha"
+              valor={trilha}
+              onMudar={setTrilha}
+              placeholder="Escolher depois (no NEX 10%)"
+              opcoes={[
+                { valor: '', rotulo: 'Escolher depois', detalhe: 'no NEX 10%' },
+                ...trilhas.map((t) => ({ valor: t.id, rotulo: t.nome })),
+              ]}
+            />
+            {/* Prévia: o que a trilha libera em cada NEX */}
+            {trilhaEscolhida && (
+              <div className={styles.previa}>
+                <p>{trilhaEscolhida.descricao}</p>
+                <ol>
+                  {trilhaEscolhida.habilidades.map((h) => (
+                    <li key={h.nome}><small>NEX {h.nex}%</small> {h.nome}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Sistema com lista de origens: escolhe da lista (select próprio); senão, texto livre.
+            É <div> e não <label>: um label em volta faria o clique na lista reabrir o seletor. */}
+        {origens.length > 0 ? (
+          <div className={styles.campo}>
+            <span>Origem</span>
+            <Seletor
+              rotulo="Origem"
+              valor={origem}
+              onMudar={setOrigem}
+              obrigatorio={ehJogador}
+              placeholder={ehJogador ? 'Escolha a origem' : 'Escolher depois'}
+              opcoes={[
+                ...(ehJogador ? [] : [{ valor: '', rotulo: 'Escolher depois' }]),
+                ...origens.map((o) => ({ valor: o.id, rotulo: o.nome, detalhe: o.poder })),
+              ]}
+            />
+          </div>
+        ) : (
+          <label className={styles.campo}>
+            <span>Origem</span>
             <input value={origem} onChange={(e) => setOrigem(e.target.value)} placeholder="Ex.: Acadêmico, Policial, T.I." />
-          )}
-        </label>
+          </label>
+        )}
+
+        {ehJogador && (
+          <p className={styles.aviso}>Origem, jogador e trilha ficam fixos depois de escolhidos.</p>
+        )}
 
         <div className={styles.acoes}>
           <button type="button" className={styles.cancelar} onClick={onFechar}>Cancelar</button>
-          <button type="submit" className={styles.criar} disabled={enviando || !nome.trim()}>
+          <button type="submit" className={styles.criar} disabled={enviando || !completo}>
             {enviando ? 'Criando…' : 'Criar e abrir ficha'}
           </button>
         </div>

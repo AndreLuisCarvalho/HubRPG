@@ -9,7 +9,8 @@ const app = express();
  
 // Na Vercel, ORIGEM_SITE é o endereço do site (ex.: https://hubrpg.vercel.app). No PC, libera tudo.
 app.use(cors({ origin: process.env.ORIGEM_SITE ?? true }));
-app.use(express.json());
+// 1 MB: a ficha pode levar a foto do personagem (já reduzida no navegador, ~30 KB)
+app.use(express.json({ limit: '1mb' }));
  
 // Chave de acesso: enquanto não há login, só quem tem a chave mexe nos dados.
 // Se CHAVE_ACESSO não estiver definida (no seu PC), a API fica aberta.

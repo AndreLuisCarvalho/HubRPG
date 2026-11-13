@@ -39,6 +39,92 @@
   }
 }
 
+/* ---------- Recolher (só no celular) ---------- */
+// No computador o painel aparece sempre inteiro: o resumo fica escondido
+// (o botão de recolher, BotaoRecolher, já some sozinho fora do celular)
+.resumo {
+  display: none;
+}
+
+@include celular {
+  .recolhido {
+    padding-top: 12px;
+    padding-bottom: 12px;
+
+    // Sem o divisor de flecha nem o espaço embaixo do cabeçalho: fica só a linha
+    > header {
+      padding-bottom: 0;
+      &::after { display: none; }
+    }
+
+    .passo,
+    .orbes {
+      display: none;
+    }
+
+    .resumo {
+      display: flex;
+    }
+  }
+}
+
+// Linha compacta: PV 29/65 · SAN 28/64 · PE 30/65, cada um com uma barrinha
+.resumo {
+  flex: 1;
+  align-items: center;
+  gap: 14px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--texto);
+  text-align: left;
+  cursor: pointer;
+}
+
+.item {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+
+  b {
+    @include fonte-ficha;
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    color: var(--cor-recurso);
+  }
+}
+
+.valor {
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+
+  small {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--texto-suave);
+  }
+}
+
+.barra {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+
+  > span {
+    display: block;
+    height: 100%;
+    background: var(--cor-recurso);
+  }
+}
+
 /* ---------- Orbes ---------- */
 .orbes {
   display: grid;

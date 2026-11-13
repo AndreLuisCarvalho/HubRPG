@@ -28,7 +28,7 @@
   background: radial-gradient(circle at 50% 40%, #16131f, #07060b 70%);
   // Parada: só o anel, sem brilho (o brilho fica para os momentos de mudança)
   box-shadow:
-    0 0 0 3px #1f1c16,
+    0 0 0 3px #232428,
     0 0 0 4px color-mix(in srgb, var(--c) 60%, transparent),
     inset 0 -8px 18px rgba(0, 0, 0, 0.6);
 }
@@ -119,7 +119,7 @@
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--c) 70%, transparent);
   border-radius: 50%;
-  background: #0e0d0a;
+  background: #121315;
   color: var(--texto);
   font-size: 1rem;
   line-height: 1;
@@ -128,7 +128,7 @@
 
   &:hover {
     transform: scale(1.12);
-    background: color-mix(in srgb, var(--c) 35%, #0e0d0a);
+    background: color-mix(in srgb, var(--c) 35%, #121315);
   }
 
   &:active { transform: scale(0.9); }
@@ -145,7 +145,7 @@
   padding: 0 5px;
   border: 1px dashed color-mix(in srgb, var(--c) 50%, transparent);
   border-radius: 3px;
-  background: #0e0d0a;
+  background: #121315;
   color: var(--texto-suave);
   @include fonte-ficha;
   font-size: 0.62rem;
@@ -177,14 +177,14 @@
   .temporario {
     border-style: solid;
     border-color: var(--claro);
-    background: color-mix(in srgb, var(--c) 45%, #0e0d0a);
+    background: color-mix(in srgb, var(--c) 45%, #121315);
     color: #fff;
     opacity: 1;
   }
 
   .esfera {
     box-shadow:
-      0 0 0 3px #1f1c16,
+      0 0 0 3px #232428,
       0 0 0 4px var(--c),
       0 0 0 6px color-mix(in srgb, var(--claro) 70%, transparent),
       inset 0 -8px 18px rgba(0, 0, 0, 0.6);
@@ -295,7 +295,7 @@
 @keyframes alerta {
   50% {
     box-shadow:
-      0 0 0 3px #1f1c16,
+      0 0 0 3px #232428,
       0 0 0 4px var(--c),
       0 0 34px var(--c),
       inset 0 -8px 18px rgba(0, 0, 0, 0.6);
@@ -321,7 +321,7 @@
 @keyframes brilhar {
   30% {
     box-shadow:
-      0 0 0 3px #1f1c16,
+      0 0 0 3px #232428,
       0 0 0 4px var(--claro),
       0 0 36px var(--claro),
       inset 0 -8px 18px rgba(0, 0, 0, 0.6);

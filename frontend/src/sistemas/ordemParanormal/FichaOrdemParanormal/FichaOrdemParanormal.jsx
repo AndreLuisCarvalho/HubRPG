@@ -12,7 +12,7 @@ const VISTAS = [
   { id: 'combate', rotulo: 'Combate', icone: '⚔' },
 ];
 
-export default function FichaOrdemParanormal({ ficha, onAlterarDados }) {
+export default function FichaOrdemParanormal({ ficha, onAlterarDados, onAlterarFicha }) {
   const [vista, setVista] = useState('agente');
   const { dados } = ficha;
   const visivel = (id) => (vista === id ? styles.visivel : '');
@@ -27,7 +27,7 @@ export default function FichaOrdemParanormal({ ficha, onAlterarDados }) {
         </filter>
       </svg>
 
-      <Agente ficha={ficha} onAlterarDados={onAlterarDados} className={`${styles.agente} ${visivel('agente')}`} />
+      <Agente ficha={ficha} onAlterarDados={onAlterarDados} onAlterarFicha={onAlterarFicha} className={`${styles.agente} ${visivel('agente')}`} />
       <Vitais dados={dados} onAlterarDados={onAlterarDados} className={styles.vitais} />
       <Pericias dados={dados} onAlterarDados={onAlterarDados} className={`${styles.pericias} ${visivel('pericias')}`} />
       <Abas dados={dados} onAlterarDados={onAlterarDados} className={`${styles.abas} ${visivel('combate')}`} />

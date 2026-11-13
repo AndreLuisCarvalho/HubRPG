@@ -1,0 +1,150 @@
+@use '../../../../../styles/mixins' as *;
+
+.habilidades,
+.escolher {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+  padding-top: 10px;
+  overflow-y: auto;
+}
+
+.cabecalho {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--borda);
+
+  h3 {
+    @include fonte-titulo;
+    font-size: 1.3rem;
+    color: var(--cor);
+  }
+
+  p {
+    font-size: 0.82rem;
+    color: var(--texto-suave);
+  }
+}
+
+.sobre {
+  @include fonte-ficha;
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  color: var(--texto-suave);
+}
+
+.lista {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+  }
+
+  b {
+    @include fonte-titulo;
+    font-size: 1rem;
+  }
+
+  p {
+    margin-top: 3px;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--texto-suave);
+  }
+}
+
+// NEX em que a habilidade chega, como um carimbo
+.nex {
+  align-self: start;
+  padding: 3px 0;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  @include fonte-ficha;
+  font-size: 0.62rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.liberada {
+  border-left: 3px solid var(--cor) !important;
+
+  .nex { color: var(--cor); }
+  p { color: var(--texto); }
+}
+
+// Ainda não liberada: apagada
+.bloqueada {
+  opacity: 0.5;
+
+  .nex { color: var(--texto-suave); }
+}
+
+.automatico {
+  margin-left: 8px;
+  @include fonte-ficha;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: var(--cor);
+}
+
+/* ---------- Sem trilha: escolher aqui ---------- */
+.dica {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+.opcoes {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  button {
+    width: 100%;
+    display: grid;
+    gap: 3px;
+    padding: 10px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: none;
+    color: var(--texto);
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      outline: none;
+      border-color: var(--cor);
+    }
+  }
+
+  b {
+    @include fonte-titulo;
+    font-size: 1rem;
+  }
+
+  span {
+    font-size: 0.8rem;
+    color: var(--texto-suave);
+  }
+}
+
+.vazio {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}

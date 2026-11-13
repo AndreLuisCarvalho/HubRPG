@@ -1,13 +1,6 @@
 import styles from './FundoOutroLado.module.scss';
 
-/** Fundo animado do Outro Lado: névoa, veios da membrana, partículas e vinheta. Só decoração. */
+/** Fundo da campanha: cor lisa com uma textura de papel bem leve. Só decoração, sem animação. */
 export default function FundoOutroLado() {
-  return (
-    <div className={styles.fundo} aria-hidden="true">
-      <div className={styles.membrana} />
-      <div className={styles.nevoa} />
-      <div className={styles.particulas} />
-      <div className={styles.vinheta} />
-    </div>
-  );
+  return <div className={styles.fundo} aria-hidden="true" />;
 }

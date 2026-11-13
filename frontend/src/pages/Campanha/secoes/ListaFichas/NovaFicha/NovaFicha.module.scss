@@ -5,6 +5,52 @@
   gap: 14px;
 }
 
+// Foto à esquerda, nome à direita
+.identidade {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  padding-left: 5px;   // espaço para o anel da foto
+}
+
+// Prévia da trilha: descrição e as 4 habilidades por NEX
+.previa {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--cor);
+  background: rgba(0, 0, 0, 0.2);
+
+  p {
+    font-size: 0.78rem;
+    color: var(--texto-suave);
+  }
+
+  ol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.82rem;
+  }
+
+  small {
+    @include fonte-ficha;
+    font-size: 0.6rem;
+    color: var(--cor);
+  }
+}
+
+.aviso {
+  margin: -4px 0 0;
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+
 .campo {
   display: grid;
   gap: 5px;

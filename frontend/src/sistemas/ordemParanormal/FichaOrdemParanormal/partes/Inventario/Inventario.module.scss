@@ -199,7 +199,7 @@
     width: 34px;
     border: 1px solid var(--cor);
     border-radius: 3px;
-    background: color-mix(in srgb, var(--cor) 25%, #0e0d0a);
+    background: color-mix(in srgb, var(--cor) 25%, #121315);
     color: #fff;
     cursor: pointer;
 
@@ -234,7 +234,7 @@
   padding: 12px;
   border: 1px solid var(--cor);
   border-radius: 3px;
-  background: color-mix(in srgb, var(--cor) 25%, #0e0d0a);
+  background: color-mix(in srgb, var(--cor) 25%, #121315);
   color: #fff;
   @include fonte-ficha;
   font-size: 0.75rem;

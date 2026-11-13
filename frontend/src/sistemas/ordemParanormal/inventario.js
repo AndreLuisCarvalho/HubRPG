@@ -1,5 +1,6 @@
 // Regras do inventário. Funções puras, no mesmo estilo do regras.js.
 import { ITENS, PATENTES, TIPOS_DE_DANO } from './itens';
+import { efeitosDaTrilha } from './regras';
 
 const ROMANOS = ['0', 'I', 'II', 'III', 'IV'];
 export const romano = (n) => ROMANOS[n] ?? String(n);
@@ -23,9 +24,11 @@ export function resumoDoItem(item) {
 }
 
 /* ---------- Carga ---------- */
-// 5 espaços por ponto de Força; com Força 0, só 2
+// 5 espaços por ponto de Força; com Força 0, só 2.
+// Técnico (Inventário Otimizado): soma o Intelecto à Força.
 export function capacidadeDeCarga(dados) {
-  const forca = dados.atributos?.for ?? 0;
+  const intelecto = efeitosDaTrilha(dados).cargaComInt ? (dados.atributos?.int ?? 0) : 0;
+  const forca = (dados.atributos?.for ?? 0) + intelecto;
   return forca > 0 ? forca * 5 : 2;
 }
 

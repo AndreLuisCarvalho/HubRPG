@@ -1,0 +1,35 @@
+@use '../../../../../styles/mixins' as *;
+
+.botao {
+  display: none;   // só no celular
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 8px;
+  padding: 0;
+  border: 1px solid var(--tinta-linha, var(--borda));
+  border-radius: 3px;
+  background: none;
+  color: var(--cor);
+  cursor: pointer;
+
+  @include celular { display: grid; }
+
+  &:hover,
+  &:focus-visible { border-color: var(--cor); }
+
+  svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.2s ease;
+  }
+}
+
+// Recolhido: a seta vira para baixo ("abrir")
+.recolhido svg { transform: rotate(180deg); }
