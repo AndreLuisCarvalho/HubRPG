@@ -30,6 +30,9 @@ export default {
   })),
   Ficha: FichaOrdemParanormal,
 
+  // Livro do sistema (consulta do mestre): só baixa ao abrir a página do livro
+  livro: () => import('./livro').then((m) => m.secoesDoLivro()),
+
   // Paleta "dossiê da Ordem": grafite fosco (sem brilho nem degradê), pasta de arquivo (ocre),
   // papel e carimbo vermelho. Vale para toda a página da campanha.
   paleta: {

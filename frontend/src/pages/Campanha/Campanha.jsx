@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../services/api';
 import MenuCampanha from './MenuCampanha/MenuCampanha';
@@ -9,6 +9,9 @@ import styles from './Campanha.module.scss';
 import DetalheFicha from './secoes/DetalheFicha/DetalheFicha';
 import { FundoOutroLado } from '../../components';
 import { obterSistema } from '../../sistemas';
+
+// Leitor do livro: só baixa ao abrir a seção
+const Livro = lazy(() => import('./secoes/Livro/Livro'));
 
 export default function Campanha() {
   const { id } = useParams();
@@ -54,6 +57,7 @@ export default function Campanha() {
             <Route path="npcs" element={<ListaFichas key="npc" campanha={campanha} tipo="npc" titulo="NPCs" />} />
             <Route path="monstros" element={<ListaFichas key="monstro" campanha={campanha} tipo="monstro" titulo="Monstros" />} />
             <Route path="fichas/:fichaId" element={<DetalheFicha campanha={campanha} />} />
+            <Route path="livro" element={<Suspense fallback={null}><Livro campanha={campanha} /></Suspense>} />
             <Route path=":secao" element={<EmBreve />} />
           </Routes>
         </main>
