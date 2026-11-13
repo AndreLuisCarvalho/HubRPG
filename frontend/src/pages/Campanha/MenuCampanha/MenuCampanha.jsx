@@ -5,7 +5,10 @@ import styles from './MenuCampanha.module.scss';
 const GRUPOS = [
   {
     titulo: null,
-    itens: [{ caminho: '', rotulo: 'Visão geral', icone: '◈' }],
+    itens: [
+      { caminho: '', rotulo: 'Visão geral', icone: '◈' },
+      { caminho: 'sessoes', rotulo: 'Sessões', icone: '◷' },
+    ],
   },
   {
     titulo: 'Fichas',

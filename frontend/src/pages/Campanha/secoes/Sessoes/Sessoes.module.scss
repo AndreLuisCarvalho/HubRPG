@@ -1,0 +1,207 @@
+@use '../../../../styles/mixins' as *;
+
+.pagina {
+  display: grid;
+  gap: 14px;
+  max-width: 820px;
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  h1 { @include fonte-titulo; font-size: 1.8rem; }
+}
+
+.contagem {
+  padding: 0 8px;
+  border: 1px solid var(--borda);
+  border-radius: 2px;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.nova {
+  margin-left: auto;
+  padding: 8px 14px;
+  border: 1px solid var(--cor);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--cor) 25%, #121315);
+  color: var(--texto);
+  @include fonte-ficha;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.dica {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--texto-suave);
+
+  b { color: var(--texto); font-weight: 600; }
+}
+
+.vazio {
+  padding: 24px;
+  border: 1px dashed var(--borda);
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+.lista {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ---------- Cartão ---------- */
+.cartao {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  background: var(--superficie);
+
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+  time { font-size: 0.84rem; color: var(--texto-suave); }
+}
+
+// Sessão marcada (no futuro): faixa na cor da campanha
+.marcada {
+  border-left: 3px solid var(--cor);
+}
+
+.numero {
+  @include fonte-ficha;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  color: var(--cor);
+}
+
+.selo {
+  padding: 1px 8px;
+  border: 1px solid var(--cor);
+  border-radius: 2px;
+  @include fonte-ficha;
+  font-size: 0.64rem;
+  color: var(--cor);
+}
+
+.tituloSessao { @include fonte-titulo; font-size: 1.15rem; }
+
+// Notas do mestre abertas: caixa tracejada para lembrar que é coisa de bastidor
+.notasMestre {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed color-mix(in srgb, var(--carimbo, #b3362c) 60%, transparent);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.2);
+
+  .numero { color: var(--carimbo, #e76e6e); }
+}
+
+.ajuda {
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--texto-suave);
+}
+
+.semResumo { font-size: 0.86rem; color: var(--texto-suave); }
+
+.acoes {
+  display: flex;
+  gap: 14px;
+  padding-top: 4px;
+
+  button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--texto-suave);
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+
+    &:hover { color: var(--cor); }
+  }
+
+  .perigo:hover { color: var(--carimbo, #e76e6e); }
+}
+
+/* ---------- Formulário ---------- */
+.form {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--cor);
+  border-radius: 4px;
+  background: var(--superficie);
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.campo {
+  display: grid;
+  gap: 6px;
+
+  > span { @include rotulo-campo; }
+
+  input,
+  textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    color-scheme: dark;   // calendário e relógio do navegador no tema escuro
+    font: inherit;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    resize: vertical;
+
+    &:focus { outline: none; border-color: var(--cor); }
+    &:disabled { opacity: 0.5; }
+  }
+}
+
+.botoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+
+  button {
+    padding: 8px 16px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+}
+
+.primario {
+  border: 1px solid var(--cor);
+  background: color-mix(in srgb, var(--cor) 25%, #121315);
+  color: var(--texto);
+
+  &:disabled { opacity: 0.6; cursor: default; }
+}
+
+.secundario {
+  border: 1px solid var(--borda);
+  background: none;
+  color: var(--texto-suave);
+
+  &:hover { color: var(--texto); }
+}

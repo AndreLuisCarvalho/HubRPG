@@ -12,6 +12,7 @@ import { obterSistema } from '../../sistemas';
 
 // Leitor do livro: só baixa ao abrir a seção
 const Livro = lazy(() => import('./secoes/Livro/Livro'));
+const Sessoes = lazy(() => import('./secoes/Sessoes/Sessoes'));
 
 export default function Campanha() {
   const { id } = useParams();
@@ -52,7 +53,8 @@ export default function Campanha() {
 
         <main className={styles.conteudo}>
           <Routes>
-            <Route index element={<VisaoGeral campanha={campanha} />} />
+            <Route index element={<VisaoGeral campanha={campanha} onAtualizar={setCampanha} />} />
+            <Route path="sessoes" element={<Suspense fallback={null}><Sessoes campanha={campanha} /></Suspense>} />
             <Route path="jogadores" element={<ListaFichas key="jogador" campanha={campanha} tipo="jogador" titulo="Jogadores" />} />
             <Route path="npcs" element={<ListaFichas key="npc" campanha={campanha} tipo="npc" titulo="NPCs" />} />
             <Route path="monstros" element={<ListaFichas key="monstro" campanha={campanha} tipo="monstro" titulo="Monstros" />} />

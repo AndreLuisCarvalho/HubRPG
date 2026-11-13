@@ -2,36 +2,49 @@
 
 .visao {
   display: grid;
-  gap: 20px;
+  gap: 18px;
+  max-width: 1200px;
 }
 
+/* ---------- Banner ---------- */
+.cabecalho {
+  display: grid;
+  gap: 12px;
+}
+
+// Faixa baixa (3:1 na imagem enviada); sem imagem, a cor da campanha em um fundo liso
 .banner {
   position: relative;
-  height: 240px;
+  height: 190px;
   overflow: hidden;
-  border-radius: 14px;
+  border: 1px solid var(--borda);
+  border-radius: 4px;
   background:
-    radial-gradient(circle at 30% 40%, color-mix(in srgb, var(--cor) 40%, transparent), transparent 60%),
+    radial-gradient(circle at 25% 30%, color-mix(in srgb, var(--cor) 30%, transparent), transparent 65%),
     var(--superficie);
   background-size: cover;
   background-position: center;
 
   // Escurece embaixo para o texto aparecer bem
-    &::after {
+  &::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(0deg, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.4) 55%, transparent);
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.3) 60%, transparent);
+    pointer-events: none;
   }
+
+  @include celular { height: 150px; }
 }
 
 .bannerTexto {
   position: absolute;
-  left: 24px;
-  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 16px;
   z-index: 1;
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 
 .sistema {
@@ -39,10 +52,330 @@
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }
 
-.nome { font-size: clamp(1.8rem, 4vw, 2.6rem); }
+.nome {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  line-height: 1.1;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
+
+.bannerCanto {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editar {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--texto);
+  @include fonte-ficha;
+  font-size: 0.72rem;
+  cursor: pointer;
+
+  &:hover { border-color: var(--cor); color: var(--cor); }
+}
 
 .descricao {
-  max-width: 70ch;
+  max-width: 75ch;
   line-height: 1.6;
   color: var(--texto-suave);
+}
+
+/* ---------- Edição da campanha ---------- */
+.edicao {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  background: var(--superficie);
+
+  .banner {
+    height: 150px;
+    cursor: pointer;
+
+    input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+    &:hover .trocarImagem,
+    &:focus-within .trocarImagem { border-color: var(--cor); color: var(--cor); }
+  }
+}
+
+.trocarImagem {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  margin: auto;
+  width: fit-content;
+  height: fit-content;
+  padding: 6px 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.4);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.55);
+  @include fonte-ficha;
+  font-size: 0.78rem;
+}
+
+.campo {
+  display: grid;
+  gap: 6px;
+
+  > span { @include rotulo-campo; }
+
+  input,
+  textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    resize: vertical;
+
+    &:focus { outline: none; border-color: var(--cor); }
+  }
+}
+
+// Status: três botões colados, um marcado
+.opcoes {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  overflow: hidden;
+
+  button {
+    padding: 7px 14px;
+    border: 0;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.78rem;
+    cursor: pointer;
+
+    & + button { border-left: 1px solid var(--borda); }
+
+    &[aria-checked='true'] {
+      background: color-mix(in srgb, var(--cor) 22%, transparent);
+      color: var(--cor);
+      font-weight: 600;
+    }
+  }
+}
+
+.botoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+
+  button {
+    padding: 8px 16px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+}
+
+.primario {
+  border: 1px solid var(--cor);
+  background: color-mix(in srgb, var(--cor) 25%, #121315);
+  color: var(--texto);
+
+  &:disabled { opacity: 0.6; cursor: default; }
+}
+
+.secundario {
+  border: 1px solid var(--borda);
+  background: none;
+  color: var(--texto-suave);
+
+  &:hover { color: var(--texto); }
+}
+
+.linkAcao {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cor);
+  font: inherit;
+  font-size: 0.82rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* ---------- Blocos ---------- */
+// PC: sessões ocupam mais espaço; celular: um embaixo do outro
+.blocos {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+
+  @include celular { grid-template-columns: 1fr; }
+}
+
+.bloco {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  background: var(--superficie);
+}
+
+.topoBloco {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--borda);
+
+  h2 { @include fonte-titulo; font-size: 1.15rem; }
+
+  .linkAcao { margin-left: auto; }
+}
+
+.contagem {
+  padding: 0 7px;
+  border: 1px solid var(--borda);
+  border-radius: 2px;
+  font-size: 0.72rem;
+  color: var(--texto-suave);
+}
+
+.aviso { font-size: 0.88rem; color: var(--texto-suave); }
+
+.etiqueta {
+  @include fonte-ficha;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  color: var(--cor);
+}
+
+// Próxima sessão: o destaque do bloco
+.proxima {
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--cor);
+  background: color-mix(in srgb, var(--cor) 9%, transparent);
+
+  b { @include fonte-titulo; font-size: 1.15rem; }
+  time { font-size: 0.88rem; color: var(--texto-suave); }
+}
+
+.semProxima {
+  padding: 10px 14px;
+  border: 1px dashed var(--borda);
+  font-size: 0.86rem;
+  color: var(--texto-suave);
+}
+
+.ultima {
+  display: grid;
+  gap: 6px;
+
+  > b { @include fonte-titulo; font-size: 1.02rem; }
+  > b small { font-family: inherit; font-weight: 400; font-size: 0.8rem; color: var(--texto-suave); }
+}
+
+.anteriores {
+  display: grid;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--borda);
+
+  details {
+    border-bottom: 1px solid var(--borda);
+
+    &:last-child { border-bottom: 0; }
+
+    > p {
+      padding-bottom: 8px;
+      font-size: 0.88rem;
+      color: var(--texto-suave);
+    }
+  }
+
+  .resumoAnterior { padding-bottom: 10px; }
+
+  summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker { display: none; }
+
+    small { flex: none; font-size: 0.76rem; color: var(--texto-suave); }
+
+    &:hover span { color: var(--cor); }
+  }
+}
+
+/* ---------- Grupo de agentes ---------- */
+.grupo {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.18);
+  }
+}
+
+.retrato {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  overflow: hidden;
+  border: 1px solid var(--cor);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cor) 15%, var(--superficie));
+  @include fonte-titulo;
+  font-size: 1.2rem;
+  color: var(--cor);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.quem {
+  display: grid;
+  min-width: 0;
+
+  b {
+    @include fonte-titulo;
+    font-size: 1.02rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  small { font-size: 0.8rem; color: var(--texto-suave); }
 }

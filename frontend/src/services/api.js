@@ -71,5 +71,12 @@ export const api = {
     requisicao(`/campanhas/${campanhaId}/fichas`, { method: 'POST', body: ficha }),
   atualizarFicha: (id, alteracoes) => requisicao(`/fichas/${id}`, { method: 'PUT', body: alteracoes }),
   excluirFicha: (id) => requisicao(`/fichas/${id}`, { method: 'DELETE' }),
+
+  // Sessões (o número é automático: a próxima da campanha)
+  listarSessoes: (campanhaId) => requisicao(`/campanhas/${campanhaId}/sessoes`),
+  criarSessao: (campanhaId, sessao) =>
+    requisicao(`/campanhas/${campanhaId}/sessoes`, { method: 'POST', body: sessao }),
+  atualizarSessao: (id, alteracoes) => requisicao(`/sessoes/${id}`, { method: 'PUT', body: alteracoes }),
+  excluirSessao: (id) => requisicao(`/sessoes/${id}`, { method: 'DELETE' }),
 };
  
