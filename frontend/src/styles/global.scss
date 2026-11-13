@@ -1,5 +1,5 @@
-// Só fontes sem serifa: Barlow Condensed (títulos e etiquetas) e IBM Plex Sans (texto)
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+// Só fontes sem serifa: Barlow Condensed (títulos e etiquetas) e IBM Plex Sans (texto).
+// Elas são carregadas no index.html (mais cedo que um @import aqui dentro).
 
 :root {
   --fundo: #0b0b10;

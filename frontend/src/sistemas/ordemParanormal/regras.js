@@ -1,7 +1,7 @@
 // Como o sistema CALCULA. Funções puras: recebem dados, devolvem resultado.
 import {
   CLASSES, CONTAGENS, CUSTO_POR_CIRCULO, ESCUDO, GRAUS, NEX, NOMES_PROFICIENCIA, ORIGENS, PERICIAS,
-  PROTECOES, RECURSOS, RITUAIS,
+  PROTECOES, RECURSOS,
 } from './modelo';
 import { TRILHAS } from './trilhas';
 
@@ -325,13 +325,9 @@ export const limiteDeRituais = (dados) => dados.atributos?.int ?? 0;
 export const contarAprendidos = (dados) => (dados.rituais ?? []).filter((r) => !r.deClasse).length;
 export const conheceRitual = (dados, id) => (dados.rituais ?? []).some((r) => r.id === id);
  
-// Rituais que o agente conhece, juntando o que está salvo com os dados da lista
-export function rituaisConhecidos(dados) {
-  return (dados.rituais ?? [])
-    .map((salvo) => ({ ...salvo, ritual: RITUAIS.find((r) => r.id === salvo.id) }))
-    .filter((r) => r.ritual);
-}
- 
+// "rituaisConhecidos" fica em rituais.js, junto da lista: assim a lista (grande) só é
+// baixada com a ficha, e não em toda página da campanha.
+
 // Mudanças (devolvem só o pedaço de "dados" que mudou, igual às de recursos)
 export function aprenderRitual(dados, ritual) {
   if (conheceRitual(dados, ritual.id)) return {};

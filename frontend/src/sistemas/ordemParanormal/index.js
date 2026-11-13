@@ -1,6 +1,9 @@
 import * as modelo from './modelo';
 import * as regras from './regras';
-import FichaOrdemParanormal from './FichaOrdemParanormal/FichaOrdemParanormal';
+import { lazy } from 'react';
+
+// A ficha (e tudo que ela usa: grimório, inventário, efeitos) só baixa quando alguém abre uma
+const FichaOrdemParanormal = lazy(() => import('./FichaOrdemParanormal/FichaOrdemParanormal'));
 import { trilhasDaClasse } from './trilhas';
 
 // O "pacote" do sistema. Todo sistema expõe: id, nome, Ficha, fichaInicial,
