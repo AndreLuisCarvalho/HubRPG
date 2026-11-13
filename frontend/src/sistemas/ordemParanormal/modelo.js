@@ -252,5 +252,5 @@ export const ELEMENTOS = {
 // Custo em PE de cada círculo de ritual (livro p. 119)
 export const CUSTO_POR_CIRCULO = { 1: 1, 2: 3, 3: 6, 4: 10 };
 
-// A lista fica em rituais.js (é grande); daqui ela é reexportada
-export { RITUAIS } from './rituais';
+// A lista de rituais fica em rituais.js (é grande) e é importada direto de lá,
+// só pela ficha: assim não pesa nas outras páginas.

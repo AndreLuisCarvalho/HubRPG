@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../../../../services/api';
 import { obterSistema } from '../../../../sistemas';
@@ -49,7 +49,10 @@ export default function DetalheFicha({ campanha }) {
       {erro && <p className="erro">{erro}</p>}
 
       {sistema ? (
-        <sistema.Ficha ficha={ficha} onAlterarDados={alterarDados} onAlterarFicha={alterarFicha} />
+        // A ficha do sistema é carregada sob demanda (arquivo separado)
+        <Suspense fallback={<p className={styles.aviso}>Carregando ficha…</p>}>
+          <sistema.Ficha ficha={ficha} onAlterarDados={alterarDados} onAlterarFicha={alterarFicha} />
+        </Suspense>
       ) : (
         <p className={styles.aviso}>
           A ficha do sistema “{campanha.sistema_id || 'não definido'}” ainda não está disponível.

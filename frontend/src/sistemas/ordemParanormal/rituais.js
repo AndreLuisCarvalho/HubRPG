@@ -1,4 +1,5 @@
-// Rituais de Ordem Paranormal (livro p. 122–143). Separado do modelo.js por tamanho; o modelo reexporta.
+// Rituais de Ordem Paranormal (livro p. 122–143). Separado do modelo.js por tamanho:
+// só a ficha importa este arquivo, então ele não pesa nas outras páginas.
 // Os textos são resumos escritos por nós (a mecânica — dados, alcance, DT — segue o livro).
 //
 // Cada ritual:
@@ -519,3 +520,10 @@ export const RITUAIS = [
     efeito: 'Ao conjurar e no início de cada turno seu, quem estiver na área sofre 5d8 de dano mental e 5d8 de Medo (Vontade reduz ambos à metade). Quem falhar fica atordoado por 1 rodada (1×/cena).',
   }),
 ];
+
+// Rituais que o agente conhece, juntando o que está salvo na ficha com os dados da lista
+export function rituaisConhecidos(dados) {
+  return (dados.rituais ?? [])
+    .map((salvo) => ({ ...salvo, ritual: RITUAIS.find((r) => r.id === salvo.id) }))
+    .filter((r) => r.ritual);
+}

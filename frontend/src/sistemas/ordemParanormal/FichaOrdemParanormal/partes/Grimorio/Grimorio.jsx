@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal } from '../../../../../components';
-import { CUSTO_POR_CIRCULO, ELEMENTOS, RITUAIS } from '../../../modelo';
+import { CUSTO_POR_CIRCULO, ELEMENTOS } from '../../../modelo';
+import { RITUAIS } from '../../../rituais';
 import {
   aprenderRitual, conheceRitual, contarAprendidos, esquecerRitual, limiteDeRituais,
 } from '../../../regras';

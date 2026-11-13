@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { ELEMENTOS } from '../../../modelo';
 import {
-  contarAprendidos, custoDoRitual, dtDeRituais, limiteDeRituais, limitePePorTurno, rituaisConhecidos,
+  contarAprendidos, custoDoRitual, dtDeRituais, limiteDeRituais, limitePePorTurno,
 } from '../../../regras';
+import { rituaisConhecidos } from '../../../rituais';
 import DetalheRitual from '../DetalheRitual/DetalheRitual';
 import BotaoRecolher from '../Recolher/BotaoRecolher';
 import useRecolhido from '../Recolher/useRecolhido';

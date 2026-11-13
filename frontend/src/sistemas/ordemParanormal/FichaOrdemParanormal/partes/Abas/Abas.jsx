@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import Ataques from '../Ataques/Ataques';
-import Grimorio from '../Grimorio/Grimorio';
+
+// O grimório (lista de rituais, página de leitura, efeitos e o olho do Medo) só baixa ao abrir
+const Grimorio = lazy(() => import('../Grimorio/Grimorio'));
 import Habilidades from '../Habilidades/Habilidades';
 import Inventario from '../Inventario/Inventario';
 import Painel from '../Painel/Painel';
@@ -66,12 +68,16 @@ export default function Abas({ dados, onAlterarDados, className = '' }) {
       </div>
 
       {/* Modal para aprender rituais (fica fora do conteúdo para não ser cortado pela rolagem) */}
-      <Grimorio
-        aberto={grimorioAberto}
-        onFechar={() => setGrimorioAberto(false)}
-        dados={dados}
-        onAlterarDados={onAlterarDados}
-      />
+      {grimorioAberto && (
+        <Suspense fallback={null}>
+          <Grimorio
+            aberto
+            onFechar={() => setGrimorioAberto(false)}
+            dados={dados}
+            onAlterarDados={onAlterarDados}
+          />
+        </Suspense>
+      )}
     </Painel>
   );
 }
