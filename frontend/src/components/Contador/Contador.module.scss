@@ -1,7 +1,7 @@
 // Mesmo visual dos campos de texto: borda fina, fundo escuro, foco na cor da campanha
 .contador {
   display: inline-grid;
-  grid-template-columns: 30px 34px 30px;
+  grid-template-columns: 30px auto 30px;   // o meio acompanha o tamanho do número
   align-items: stretch;
   height: 34px;
   border: 1px solid var(--borda);
@@ -25,8 +25,7 @@
   }
 
   input {
-    width: 100%;
-    min-width: 0;
+    min-width: 34px;
     padding: 0;
     border: 0;
     border-inline: 1px solid var(--borda);

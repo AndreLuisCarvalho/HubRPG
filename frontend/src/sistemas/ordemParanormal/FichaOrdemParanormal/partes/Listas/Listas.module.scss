@@ -1,0 +1,202 @@
+@use '../../../../../styles/mixins' as *;
+
+// Visual de bloco do livro: rótulos em caixa alta, números em linha, ✎ discreto à direita
+.lista {
+  display: grid;
+  gap: 10px;
+
+  h3 {
+    padding: 3px 8px;
+    justify-self: start;
+    background: var(--texto);
+    color: var(--fundo);
+    @include fonte-ficha;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+
+    small { margin-left: 6px; font-weight: 400; opacity: 0.7; }
+  }
+}
+
+.vazio { font-size: 0.84rem; color: var(--texto-suave); }
+
+.linha {
+  display: grid;
+  gap: 3px;
+  padding-left: 10px;
+  border-left: 2px solid color-mix(in srgb, var(--cor) 45%, transparent);
+}
+
+.cabeca {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+
+  b {
+    @include fonte-ficha;
+    font-size: 0.86rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+
+  i { font-size: 0.82rem; color: var(--texto-suave); }
+}
+
+.tipo {
+  @include fonte-ficha;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--cor);
+}
+
+.numeros {
+  font-size: 0.86rem;
+
+  span {
+    @include fonte-ficha;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--texto-suave);
+  }
+
+  .barra { font-weight: 400; margin: 0 2px; }
+}
+
+.texto {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--texto) 85%, transparent);
+}
+
+.lapis {
+  margin-left: auto;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  &:hover, &:focus-visible { color: var(--cor); }
+}
+
+.adicionar {
+  justify-self: start;
+  padding: 6px 12px;
+  border: 1px dashed var(--borda);
+  border-radius: 3px;
+  background: none;
+  color: var(--texto-suave);
+  @include fonte-ficha;
+  font-size: 0.74rem;
+  cursor: pointer;
+
+  &:hover { border-color: var(--cor); color: var(--cor); }
+}
+
+/* ---------- Edição de uma linha ---------- */
+.formulario {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--cor);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.tipos {
+  display: flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  overflow: hidden;
+  justify-self: start;
+
+  button {
+    padding: 5px 10px;
+    border: 0;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.72rem;
+    cursor: pointer;
+
+    & + button { border-left: 1px solid var(--borda); }
+
+    &[aria-checked='true'] {
+      background: color-mix(in srgb, var(--cor) 22%, transparent);
+      color: var(--cor);
+      font-weight: 600;
+    }
+  }
+}
+
+// Campos: nome e alcance inteiros; teste e dano lado a lado
+.campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.campo {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 4px;
+
+  > span { @include rotulo-campo; }
+
+  input,
+  textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 7px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    resize: vertical;
+
+    &:focus { outline: none; border-color: var(--cor); }
+  }
+}
+
+.curto { grid-column: auto; }
+
+.botoes {
+  display: flex;
+  gap: 8px;
+
+  button {
+    padding: 6px 12px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.74rem;
+    cursor: pointer;
+  }
+}
+
+.apagar {
+  margin-right: auto;
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+
+  &:hover { color: var(--carimbo, #e76e6e); }
+}
+
+.cancelar {
+  border: 1px solid var(--borda);
+  background: none;
+  color: var(--texto-suave);
+}
+
+.salvar {
+  border: 1px solid var(--cor);
+  background: color-mix(in srgb, var(--cor) 25%, #121315);
+  color: var(--texto);
+}

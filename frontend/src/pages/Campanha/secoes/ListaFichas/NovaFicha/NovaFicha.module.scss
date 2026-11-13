@@ -151,6 +151,73 @@
   small { font-size: 0.72rem; line-height: 1.35; }
 }
 
+// Catálogo de monstros do livro: busca + lista rolável
+.catalogo {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+
+  input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.9rem;
+
+    &:focus { outline: none; border-color: var(--cor); }
+  }
+
+  ul {
+    display: grid;
+    gap: 4px;
+    max-height: 220px;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+  }
+
+  li button {
+    --el: var(--cor);
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 0 10px;
+    padding: 7px 10px;
+    border: 1px solid var(--borda);
+    border-left: 3px solid var(--el);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--texto);
+    text-align: left;
+    cursor: pointer;
+
+    b { font-size: 0.9rem; }
+    small { grid-column: 1; font-size: 0.72rem; color: var(--texto-suave); }
+
+    &:hover { border-color: var(--el); }
+
+    &[aria-selected='true'] {
+      border-color: var(--el);
+      background: color-mix(in srgb, var(--el) 16%, transparent);
+    }
+  }
+}
+
+.vdMonstro {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  @include fonte-ficha;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--el);
+}
+
 .escolhida {
   border-color: var(--cor);
   background: color-mix(in srgb, var(--cor) 16%, transparent);

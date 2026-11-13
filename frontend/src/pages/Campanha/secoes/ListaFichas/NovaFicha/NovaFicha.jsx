@@ -43,20 +43,45 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
   const [modelo, setModelo] = useState('simples');
   const [papel, setPapel] = useState('');
   const simples = ehNpc && modelo === 'simples';
-  const completo = nome.trim() && (!ehJogador || (jogador.trim() && origem.trim()));
+
+  // Monstro: feito do zero ou copiado do catálogo oficial (que só baixa ao escolher "Do livro")
+  const ehMonstro = tipo === 'monstro';
+  const [deOnde, setDeOnde] = useState('zero');
+  const [catalogo, setCatalogo] = useState(null);
+  const [buscaMonstro, setBuscaMonstro] = useState('');
+  const [escolhido, setEscolhido] = useState(null);
+
+  function escolherDeOnde(id) {
+    setDeOnde(id);
+    if (id === 'livro' && !catalogo) sistema?.monstros?.().then(setCatalogo).catch(() => setCatalogo([]));
+  }
+
+  // Escolher um oficial preenche o nome (se ainda não foi mudado à mão)
+  function escolherMonstro(m) {
+    if (!nome.trim() || nome === escolhido?.nome) setNome(m.nome);
+    setEscolhido(m);
+  }
+
+  const termo = buscaMonstro.trim().toLocaleLowerCase('pt-BR');
+  const listaMonstros = (catalogo ?? []).filter((m) => !termo || m.nome.toLocaleLowerCase('pt-BR').includes(termo));
+
+  const semClasse = simples || ehMonstro;
+  const completo = nome.trim()
+    && (!ehJogador || (jogador.trim() && origem.trim()))
+    && (!ehMonstro || deOnde === 'zero' || escolhido);
+
+  function opcoesDaFicha() {
+    if (ehMonstro) return { modelo: 'monstro', base: deOnde === 'livro' ? escolhido : undefined };
+    if (simples) return { modelo: 'simples', papel: papel.trim() };
+    return { classe, trilha, jogador: jogador.trim(), origem: origem.trim(), ...(ehNpc && { modelo: 'agente', papel: papel.trim() }) };
+  }
 
   async function enviar(e) {
     e.preventDefault();   // impede o formulário de recarregar a página
     if (!completo) return;
     setEnviando(true);
     try {
-      await onCriar({
-        nome: nome.trim(),
-        imagem,
-        opcoes: simples
-          ? { modelo: 'simples', papel: papel.trim() }
-          : { classe, trilha, jogador: jogador.trim(), origem: origem.trim(), ...(ehNpc && { modelo: 'agente', papel: papel.trim() }) },
-      });
+      await onCriar({ nome: nome.trim(), imagem, opcoes: opcoesDaFicha() });
     } finally {
       setEnviando(false);
     }
@@ -68,8 +93,14 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
         <div className={styles.identidade}>
           <EscolherFoto imagem={imagem} inicial={nome.trim().charAt(0) || '?'} onEscolher={setImagem} tamanho={64} />
           <label className={styles.campo}>
-            <span>Nome do personagem</span>
-            <input autoFocus required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Helena Vasconcelos" />
+            <span>{ehMonstro ? 'Nome da ameaça' : 'Nome do personagem'}</span>
+            <input
+              autoFocus
+              required
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder={ehMonstro ? 'Ex.: Zumbi de Sangue' : 'Ex.: Helena Vasconcelos'}
+            />
           </label>
         </div>
 
@@ -78,6 +109,60 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
             <span>Jogador</span>
             <input required value={jogador} onChange={(e) => setJogador(e.target.value)} placeholder="Quem vai jogar com este agente" />
           </label>
+        )}
+
+        {ehMonstro && (
+          <fieldset className={styles.campo}>
+            <legend>De onde vem</legend>
+            <div className={styles.modelos}>
+              {[
+                { id: 'zero', nome: 'Do zero', descricao: 'Uma ameaça sua: começa em branco e você preenche.' },
+                { id: 'livro', nome: 'Do livro', descricao: 'Copia um monstro oficial; depois dá para mudar tudo.' },
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={`${styles.modelo} ${deOnde === m.id ? styles.escolhida : ''}`}
+                  onClick={() => escolherDeOnde(m.id)}
+                  aria-pressed={deOnde === m.id}
+                >
+                  <b>{m.nome}</b>
+                  <small>{m.descricao}</small>
+                </button>
+              ))}
+            </div>
+
+            {deOnde === 'livro' && (
+              <div className={styles.catalogo}>
+                <input
+                  type="search"
+                  value={buscaMonstro}
+                  onChange={(e) => setBuscaMonstro(e.target.value)}
+                  placeholder="Buscar monstro…"
+                  aria-label="Buscar monstro do livro"
+                />
+                {!catalogo && <p className={styles.aviso}>Abrindo o livro…</p>}
+                {catalogo && listaMonstros.length === 0 && <p className={styles.aviso}>Nenhum monstro encontrado.</p>}
+                <ul role="listbox" aria-label="Monstros do livro">
+                  {listaMonstros.map((m) => (
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={escolhido?.id === m.id}
+                        style={m.cor ? { '--el': m.cor } : undefined}
+                        onClick={() => escolherMonstro(m)}
+                      >
+                        <b>{m.nome}</b>
+                        <small>{m.nomeElemento} · {m.nomeTamanho}</small>
+                        <span className={styles.vdMonstro}>VD {m.vd}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </fieldset>
         )}
 
         {ehNpc && (
@@ -107,7 +192,7 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
           </>
         )}
 
-        {!simples && classes.length > 0 && (
+        {!semClasse && classes.length > 0 && (
           <fieldset className={styles.campo}>
             <legend>Classe</legend>
             <div className={styles.classes}>
@@ -128,7 +213,7 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
           </fieldset>
         )}
 
-        {!simples && trilhas.length > 0 && (
+        {!semClasse && trilhas.length > 0 && (
           <div className={styles.campo}>
             <span>Trilha</span>
             <Seletor
@@ -157,7 +242,7 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
 
         {/* Sistema com lista de origens: escolhe da lista (select próprio); senão, texto livre.
             É <div> e não <label>: um label em volta faria o clique na lista reabrir o seletor. */}
-        {simples ? null : origens.length > 0 ? (
+        {semClasse ? null : origens.length > 0 ? (
           <div className={styles.campo}>
             <span>Origem</span>
             <Seletor

@@ -1,7 +1,7 @@
 // Como o sistema CALCULA. Funções puras: recebem dados, devolvem resultado.
 import {
   CLASSES, CONTAGENS, CUSTO_POR_CIRCULO, ESCUDO, GRAUS, NEX, NOMES_PROFICIENCIA, ORIGENS, PERICIAS,
-  PROTECOES, RECURSOS,
+  PROTECOES, RECURSOS, ELEMENTOS, TAMANHOS,
 } from './modelo';
 import { TRILHAS } from './trilhas';
 
@@ -42,7 +42,51 @@ export function npcParaAgente(dados) {
   };
 }
 
-export function fichaInicial({ classe = 'combatente', jogador = '', origem = '', trilha = '', modelo, papel } = {}) {
+/* ---------- Monstro (ameaça) ---------- */
+// Ficha no formato do bloco do livro. "base" é um monstro do catálogo (monstros.js) ou nada (do zero).
+export const ehMonstro = (dados) => dados?.modelo === 'monstro';
+
+// Linhas importadas ganham uma chave fixa (as novas usam novoUid, aleatório: não colidem)
+const comUid = (lista = [], prefixo) => lista.map((item, i) => ({ uid: `${prefixo}${i}`, ...item }));
+
+export function monstroInicial(base = {}) {
+  return {
+    modelo: 'monstro',
+    elemento: base.elemento ?? '',
+    descritores: base.descritores ?? [],
+    tipo: base.tipo ?? 'Criatura',
+    tamanho: base.tamanho ?? 'medio',
+    vd: base.vd ?? 20,
+    descricao: base.descricao ?? '',
+    presenca: base.presenca ?? { dt: 15, dano: '2d6', nex: '' },
+    sentidos: base.sentidos ?? { percepcao: '1d20', iniciativa: '1d20', extra: '' },
+    defesa: base.defesa ?? 15,
+    fortitude: base.fortitude ?? '1d20',
+    reflexos: base.reflexos ?? '1d20',
+    vontade: base.vontade ?? '1d20',
+    pvMax: base.pv ?? 30,
+    pv: base.pv ?? 30,
+    resistencias: base.resistencias ?? '',
+    vulnerabilidades: base.vulnerabilidades ?? '',
+    imunidades: base.imunidades ?? '',
+    atributos: base.atributos ?? { agi: 1, for: 1, int: 1, pre: 1, vig: 1 },
+    pericias: base.pericias ?? '',
+    deslocamento: base.deslocamento ?? '9m (6q)',
+    habilidades: comUid(base.habilidades, 'h'),
+    ataques: comUid(base.ataques, 'a'),
+    acoes: comUid(base.acoes, 'c'),
+    enigma: base.enigma ?? '',
+    // De onde veio (para mostrar "Livro p. 182"); monstro feito do zero não tem
+    fonte: base.id ? { catalogo: base.id, pagina: base.pagina } : null,
+  };
+}
+
+const vidaSimples = (dados) => (ehMonstro(dados)
+  ? { pv: dados.pv ?? 0, pvMax: dados.pvMax ?? 0 }
+  : { pv: dados.npc?.pv ?? 0, pvMax: dados.npc?.pvMax ?? 0 });
+
+export function fichaInicial({ classe = 'combatente', jogador = '', origem = '', trilha = '', modelo, papel, base } = {}) {
+  if (modelo === 'monstro') return monstroInicial(base);
   if (modelo === 'simples') return npcSimplesInicial({ papel });
   return {
     ...(papel && { papel }),
@@ -163,9 +207,9 @@ export function calcularAtuais(dados) {
 // Formato comum a todos os sistemas: lista de recursos prontos para desenhar
 // "temporario" = pontos temporários (podem passar do máximo e são gastos primeiro)
 export function recursos(dados) {
-  // NPC simples: só PV, digitado na ficha
-  if (ehNpcSimples(dados)) {
-    const { pv = 0, pvMax = 0 } = dados.npc ?? {};
+  // NPC simples e monstro: só PV, digitado na ficha
+  if (ehNpcSimples(dados) || ehMonstro(dados)) {
+    const { pv, pvMax } = vidaSimples(dados);
     return [{ ...RECURSOS[0], atual: pv, maximo: pvMax, temporario: 0 }];
   }
   const maximos = calcularMaximos(dados);
@@ -315,6 +359,7 @@ export const calcularBloqueio = (dados) =>
 
 export function resumo(dados) {
   if (ehNpcSimples(dados)) return dados.papel || 'NPC';
+  if (ehMonstro(dados)) return `VD ${dados.vd ?? '—'} · ${ELEMENTOS[dados.elemento]?.nome ?? 'Mundano'}`;
   const classe = CLASSES[dados.classe];
   return `${classe?.nome ?? 'Sem classe'} · NEX ${dados.nex ?? 5}%`;
 }
@@ -325,9 +370,9 @@ export function resumo(dados) {
 // Livro p. 88: PV 0 = morrendo · SAN 0 = enlouquecendo (3 turnos/rodadas = morto/insano)
 //              PV abaixo da metade = machucado · SAN abaixo da metade = perturbado
 export function estado(dados) {
-  if (ehNpcSimples(dados)) {
-    const { pv = 0, pvMax = 0 } = dados.npc ?? {};
-    if (pvMax > 0 && pv === 0) return { id: 'morrendo', rotulo: 'Morrendo' };
+  if (ehNpcSimples(dados) || ehMonstro(dados)) {
+    const { pv, pvMax } = vidaSimples(dados);
+    if (pvMax > 0 && pv === 0) return { id: 'morrendo', rotulo: ehMonstro(dados) ? 'Derrotado' : 'Morrendo' };
     if (pv < pvMax / 2) return { id: 'machucado', rotulo: 'Machucado' };
     return null;
   }
@@ -351,6 +396,13 @@ export function estado(dados) {
 
 // Três informações de destaque para o card
 export function destaques(dados) {
+  if (ehMonstro(dados)) {
+    return [
+      { rotulo: 'Defesa', valor: dados.defesa ?? '—' },
+      { rotulo: 'VD', valor: dados.vd ?? '—' },
+      { rotulo: 'Tamanho', valor: TAMANHOS.find((t) => t.id === dados.tamanho)?.nome ?? '—' },
+    ];
+  }
   if (ehNpcSimples(dados)) {
     return [
       { rotulo: 'Defesa', valor: dados.npc?.defesa ?? 10 },

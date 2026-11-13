@@ -1,0 +1,210 @@
+@use '../../../../styles/mixins' as *;
+
+// PC largo: três colunas (identificação · combate · paranormal); médio: duas; celular: uma.
+// --el é a cor do elemento (Sangue vermelho, Energia roxo…); sem elemento, a cor da campanha.
+.monstro {
+  --el: var(--cor);
+  position: relative;
+  flex: 1 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;   // painéis da mesma linha com a mesma altura (bordas alinhadas)
+  gap: 14px;
+
+  @media (max-width: 1200px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @include celular { grid-template-columns: 1fr; align-items: start; gap: 10px; }
+}
+
+.painel { gap: 14px; }
+
+/* ---------- Identificação ---------- */
+// Faixa na cor do elemento, como o cabeçalho vermelho das fichas do livro
+.faixa {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin: -4px -4px 0;
+  padding: 5px 10px;
+  background: color-mix(in srgb, var(--el) 30%, transparent);
+  border-left: 3px solid var(--el);
+  @include fonte-ficha;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+
+  small { font-size: 0.66rem; color: var(--texto-suave); letter-spacing: 0.08em; }
+}
+
+.quem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.nomes {
+  flex: 1;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+
+  h1 {
+    @include fonte-titulo;
+    font-size: 1.6rem;
+    line-height: 1.1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.vd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  > span {
+    @include fonte-titulo;
+    font-size: 1.1rem;
+    color: var(--el);
+  }
+}
+
+.grupo {
+  display: grid;
+  gap: 5px;
+  align-content: start;
+}
+
+.rotulo { @include rotulo-campo; }
+
+// Mundano · Conhecimento · Energia · Morte · Sangue · Medo
+.elementos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+
+  button {
+    --el: var(--texto-suave);
+    padding: 4px 9px;
+    border: 1px solid var(--borda);
+    border-radius: 2px;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.72rem;
+    cursor: pointer;
+
+    &:hover { border-color: var(--el); }
+
+    &[aria-checked='true'] {
+      border-color: var(--el);
+      background: color-mix(in srgb, var(--el) 18%, transparent);
+      color: var(--el);
+      font-weight: 600;
+    }
+  }
+}
+
+.dupla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+// Subtítulo preto, como na ficha do livro
+.bloco {
+  display: grid;
+  gap: 8px;
+
+  h3 {
+    justify-self: start;
+    padding: 3px 8px;
+    background: var(--texto);
+    color: var(--fundo);
+    @include fonte-ficha;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+  }
+}
+
+.linhaNumeros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px 16px;
+}
+
+.atributos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.atributo {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+
+  > span {
+    @include fonte-ficha;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--el);
+  }
+}
+
+/* ---------- Combate ---------- */
+.pv {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  small { color: var(--texto-suave); }
+}
+
+.machucado { font-size: 0.74rem; color: var(--texto-suave); }
+
+.testes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+/* ---------- Campos de texto ---------- */
+.campo {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+
+  input,
+  textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 7px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    resize: vertical;
+
+    &:focus { outline: none; border-color: var(--el); }
+  }
+}
+
+.curto {
+  flex: 1 1 90px;
+
+  input { height: 34px; }
+}
+
+// Enigma de Medo: caixa escura com borda tracejada (como o quadro preto do livro)
+.enigma {
+  padding: 12px;
+  border: 1px dashed color-mix(in srgb, var(--el) 60%, transparent);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.3);
+}
