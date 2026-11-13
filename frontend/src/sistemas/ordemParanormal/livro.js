@@ -180,6 +180,6 @@ export function secoesDoLivro() {
     secao.outroLado, secaoElementos(),
     secao.regrasRituais, secaoRituais(),
     secao.personagem, secaoOrigens(), secaoTrilhas(), secaoEquipamento(),
-    secao.ameacas,
+    secao.ameacas, secao.habilidadesAmeacas,
   ];
 }

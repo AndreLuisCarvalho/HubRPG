@@ -241,6 +241,16 @@ export const RECURSOS = [
 
 
 // Elementos do Outro Lado (livro p. 118). "forte" = contra qual elemento ele é efetivo
+// Categorias de tamanho dos seres (livro p. 179)
+export const TAMANHOS = [
+  { id: 'minusculo', nome: 'Minúsculo' },
+  { id: 'pequeno', nome: 'Pequeno' },
+  { id: 'medio', nome: 'Médio' },
+  { id: 'grande', nome: 'Grande' },
+  { id: 'enorme', nome: 'Enorme' },
+  { id: 'colossal', nome: 'Colossal' },
+];
+
 export const ELEMENTOS = {
   con: { nome: 'Conhecimento', cor: '#f0b429', forte: 'ene' },
   ene: { nome: 'Energia', cor: '#a24bff', forte: 'mor' },

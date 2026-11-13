@@ -33,6 +33,14 @@ export default {
   // Livro do sistema (consulta do mestre): só baixa ao abrir a página do livro
   livro: () => import('./livro').then((m) => m.secoesDoLivro()),
 
+  // Catálogo de monstros oficiais: só baixa ao escolher "Do livro" na criação de monstro
+  monstros: () => import('./monstros').then((m) => m.MONSTROS.map((mo) => ({
+    ...mo,
+    nomeElemento: modelo.ELEMENTOS[mo.elemento]?.nome ?? 'Mundano',
+    cor: modelo.ELEMENTOS[mo.elemento]?.cor,
+    nomeTamanho: modelo.TAMANHOS.find((t) => t.id === mo.tamanho)?.nome ?? '',
+  }))),
+
   // Paleta "dossiê da Ordem": grafite fosco (sem brilho nem degradê), pasta de arquivo (ocre),
   // papel e carimbo vermelho. Vale para toda a página da campanha.
   paleta: {

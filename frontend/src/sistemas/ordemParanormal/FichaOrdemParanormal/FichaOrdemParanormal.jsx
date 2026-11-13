@@ -5,7 +5,8 @@ import Pericias from './partes/Pericias/Pericias';
 import Abas from './partes/Abas/Abas';
 import FichaNpc from './FichaNpc/FichaNpc';
 import FiltroTraco from './partes/FiltroTraco/FiltroTraco';
-import { ehNpcSimples } from '../regras';
+import { ehMonstro, ehNpcSimples } from '../regras';
+import FichaMonstro from './FichaMonstro/FichaMonstro';
 import styles from './FichaOrdemParanormal.module.scss';
 
 // No celular, só uma dessas aparece por vez (as orbes ficam sempre no topo)
@@ -21,6 +22,10 @@ export default function FichaOrdemParanormal({ ficha, onAlterarDados, onAlterarF
   const visivel = (id) => (vista === id ? styles.visivel : '');
 
   // NPC simples (gente comum): ficha curta, sem classe, NEX ou atributos
+  // Monstro (ameaça): ficha no formato do bloco do livro
+  if (ehMonstro(dados)) {
+    return <FichaMonstro ficha={ficha} onAlterarDados={onAlterarDados} onAlterarFicha={onAlterarFicha} />;
+  }
   if (ehNpcSimples(dados)) {
     return <FichaNpc ficha={ficha} onAlterarDados={onAlterarDados} onAlterarFicha={onAlterarFicha} />;
   }
