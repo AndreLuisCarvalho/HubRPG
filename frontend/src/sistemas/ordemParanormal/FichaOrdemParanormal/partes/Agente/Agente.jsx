@@ -42,6 +42,8 @@ const EDITAVEIS = ['defesa', 'deslocamento'];
 
 export default function Agente({ ficha, onAlterarDados, onAlterarFicha, className = '' }) {
   const { dados } = ficha;
+  // NPC agente: é o mestre quem controla, então classe, trilha e origem nunca travam
+  const livre = ficha.tipo !== 'jogador';
   const desl = deslocamento(dados);
   const defesa = dados.defesa ?? {};
   const [defesasAbertas, setDefesasAbertas] = useState(false);
@@ -119,7 +121,7 @@ export default function Agente({ ficha, onAlterarDados, onAlterarFicha, classNam
   return (
     <Painel className={className} classeCorpo={styles.agente}>
       <header className={styles.credencial}>
-        <span className={styles.selo}>Agente da Ordem</span>
+        <span className={styles.selo}>{livre ? 'NPC · Agente' : 'Agente da Ordem'}</span>
         <EscolherFoto
           className={styles.avatar}
           imagem={ficha.imagem}
@@ -130,7 +132,7 @@ export default function Agente({ ficha, onAlterarDados, onAlterarFicha, classNam
 
         <div className={styles.tags}>
           {/* Com trilha escolhida, a classe também fica fixa (a trilha pertence à classe) */}
-          {trilha ? (
+          {trilha && !livre ? (
             <span className={`${styles.tag} ${styles.fixa}`} title="Classe definida junto com a trilha">
               {CLASSES[dados.classe]?.nome}
             </span>
@@ -138,7 +140,8 @@ export default function Agente({ ficha, onAlterarDados, onAlterarFicha, classNam
             <select
               className={styles.tag}
               value={dados.classe ?? ''}
-              onChange={(e) => onAlterarDados({ classe: e.target.value })}
+              // Cada classe tem as suas trilhas: trocar de classe tira a trilha
+              onChange={(e) => onAlterarDados({ classe: e.target.value, ...(dados.trilha && { trilha: '' }) })}
               aria-label="Classe"
             >
               {Object.entries(CLASSES).map(([id, classe]) => (
@@ -149,7 +152,20 @@ export default function Agente({ ficha, onAlterarDados, onAlterarFicha, classNam
 
           {/* Trilha: escolhida na criação (ou uma única vez aqui, em fichas antigas) e depois fixa.
               key={novidade.n}: a pílula "acende" de novo a cada habilidade liberada */}
-          {trilha ? (
+          {livre ? (
+            <Seletor
+              className={styles.seletorTrilha}
+              classeBotao={`${styles.tag} ${trilha ? '' : styles.vazia}`}
+              rotulo="Trilha"
+              valor={dados.trilha ?? ''}
+              onMudar={(id) => onAlterarDados({ trilha: id })}
+              placeholder="+ Trilha"
+              opcoes={[
+                { valor: '', rotulo: 'Sem trilha' },
+                ...trilhasDaClasse(dados.classe).map((t) => ({ valor: t.id, rotulo: t.nome })),
+              ]}
+            />
+          ) : trilha ? (
             <span
               key={novidade?.n ?? 0}
               className={`${styles.tag} ${styles.fixa} ${novidade ? styles.desperta : ''}`}
@@ -195,7 +211,18 @@ export default function Agente({ ficha, onAlterarDados, onAlterarFicha, classNam
       {/* Origem e Jogador são definidos na criação e ficam fixos.
           Fichas antigas sem eles podem escolher uma única vez aqui. */}
       <div className={styles.dossie}>
-        {dados.origem ? (
+        {livre ? (
+          <label title={origem ? `${origem.poder.nome}: ${origem.poder.descricao}` : 'Origem do NPC'}>
+            <span>Origem</span>
+            <select value={origem ? dados.origem : ''} onChange={(e) => trocarOrigem(e.target.value)}>
+              <option value="">Sem origem</option>
+              {LISTA_ORIGENS.map(([id, o]) => (
+                <option key={id} value={id}>{o.nome}</option>
+              ))}
+            </select>
+            {origem && <small className={styles.poder}>✦ {origem.poder.nome}</small>}
+          </label>
+        ) : dados.origem ? (
           <div title={origem ? `${origem.poder.nome}: ${origem.poder.descricao}` : 'Origem definida na criação'}>
             <span>Origem</span>
             <b>{origem?.nome ?? origemAntiga}</b>
@@ -213,7 +240,19 @@ export default function Agente({ ficha, onAlterarDados, onAlterarFicha, classNam
           </label>
         )}
 
-        {dados.jogador ? (
+        {livre ? (
+          // NPC não tem jogador: no lugar, o papel dele na história
+          <label title="O papel do NPC na história">
+            <span>Papel</span>
+            <input
+              key={dados.papel ?? ''}
+              defaultValue={dados.papel ?? ''}
+              placeholder="Escrever…"
+              onBlur={salvarTexto('papel')}
+              onKeyDown={sairNoEnter}
+            />
+          </label>
+        ) : dados.jogador ? (
           <div title="Jogador definido na criação">
             <span>Jogador</span>
             <b>{dados.jogador}</b>
