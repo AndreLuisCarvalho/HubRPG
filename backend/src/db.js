@@ -101,6 +101,8 @@ async function iniciar() {
   await adicionarColuna('campanhas', 'mapa', "TEXT DEFAULT ''");
   await adicionarColuna('campanhas', 'tema', "TEXT DEFAULT 'padrao'");
   await adicionarColuna('campanhas', 'sistema_id', "TEXT DEFAULT ''");
+  // Anotações da sessão que não aparecem na Visão geral (vista pelos jogadores)
+  await adicionarColuna('sessoes', 'notas_mestre', "TEXT DEFAULT ''");
  
   // Dados iniciais, só se o banco estiver vazio
   const { total } = await db.get('SELECT COUNT(*) AS total FROM campanhas');

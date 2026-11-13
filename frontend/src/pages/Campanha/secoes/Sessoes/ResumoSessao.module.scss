@@ -1,0 +1,153 @@
+@use '../../../../styles/mixins' as *;
+
+.resumo {
+  display: grid;
+  gap: 10px;
+
+  p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+}
+
+// "O Caso: Eclipse Eterno…" logo no começo: a manchete do resumo
+.intro {
+  display: grid;
+  gap: 6px;
+
+  dt { color: var(--cor); }
+}
+
+// Texto sem tópicos na prévia: só as primeiras linhas
+.cortado {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  overflow: hidden;
+}
+
+/* ---------- Tópicos numerados ---------- */
+.topicos {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  > li {
+    padding: 10px 0;
+    border-top: 1px solid var(--borda);
+
+    &:last-child { padding-bottom: 0; }
+  }
+}
+
+.cabeca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+
+  &:is(button) { cursor: pointer; }
+  &:is(button):hover .titulo { color: var(--cor); }
+}
+
+.numero {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--cor);
+  border-radius: 2px;
+  @include fonte-ficha;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cor);
+}
+
+.titulo {
+  flex: 1;
+  @include fonte-ficha;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.seta {
+  flex: none;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+// Tópico fechado: só a primeira frase, mais apagada
+.previa {
+  padding: 4px 0 0 32px;
+  color: var(--texto-suave);
+
+  .resumo & { font-size: 0.86rem; }
+}
+
+.corpo {
+  display: grid;
+  gap: 8px;
+  padding: 8px 0 0 32px;
+
+  @include celular { padding-left: 0; }
+}
+
+/* ---------- Termos ("Relógios Parados: …") e listas ---------- */
+.termos {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+
+  div {
+    padding-left: 12px;
+    border-left: 2px solid color-mix(in srgb, var(--cor) 55%, transparent);
+  }
+
+  dt {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--texto-suave);
+  }
+}
+
+.lista {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+
+  li::marker { color: var(--cor); }
+}
+
+.alternar {
+  justify-self: start;
+  padding: 6px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  background: none;
+  color: var(--cor);
+  @include fonte-ficha;
+  font-size: 0.74rem;
+  cursor: pointer;
+
+  &:hover { border-color: var(--cor); }
+}

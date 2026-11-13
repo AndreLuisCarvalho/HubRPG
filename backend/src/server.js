@@ -31,7 +31,7 @@ app.use('/api', fichasRouter);
  
 app.use('/api', criarRotasDeItens({
   tabela: 'sessoes',
-  campos: { numero: null, titulo: '', data: '', resumo: '' },
+  campos: { numero: null, titulo: '', data: '', resumo: '', notas_mestre: '' },
   ordem: 'numero, id',
   // Se não informar o número, vira a próxima sessão da campanha
   preparar: async (dados, campanhaId) => {
