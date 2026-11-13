@@ -1,5 +1,6 @@
 @use '../../../../../styles/mixins' as *;
 
+// Corpo do painel (a moldura fica no Painel, por fora: só isto rola no celular)
 .agente {
   align-items: center;
   justify-content: space-between;
@@ -8,6 +9,7 @@
 
   @include celular {
     overflow-y: auto;
+    overscroll-behavior: contain;
 
     > * { flex-shrink: 0; }   // rola em vez de esmagar o conteúdo
   }

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import {
   adicionarItem, capacidadeDeCarga, cargaMaxima, espacosUsados, estaSobrecarregado, itensPorCategoria,
   patenteAtual, removerItem, resumoDoItem, romano,
 } from '../../../inventario';
+import Contador from '../../../../../components/Contador/Contador';
 import Arsenal from '../Arsenal/Arsenal';
 import styles from './Inventario.module.scss';
 
@@ -12,6 +13,7 @@ const ITEM_VAZIO = { nome: '', categoria: 0, espacos: 1 };
 export default function Inventario({ dados, onAlterarDados }) {
   const [novo, setNovo] = useState(ITEM_VAZIO);
   const [noLivro, setNoLivro] = useState(false);
+  const idCategoria = useId();
 
   // "+ Livro" troca a lista pelo catálogo, dentro da própria aba
   if (noLivro) {
@@ -89,13 +91,41 @@ export default function Inventario({ dados, onAlterarDados }) {
         {itens.length === 0 && <li className={styles.vazio}>Mochila vazia.</li>}
       </ul>
 
+      {/* Item escrito à mão: nome + adicionar em cima, categoria e espaços embaixo */}
       <form className={styles.novo} onSubmit={adicionar}>
-        <input value={novo.nome} onChange={(e) => setNovo({ ...novo, nome: e.target.value })} placeholder="Novo item" />
-        <select value={novo.categoria} onChange={(e) => setNovo({ ...novo, categoria: e.target.value })} title="Categoria">
-          {[0, 1, 2, 3, 4].map((c) => <option key={c} value={c}>{romano(c)}</option>)}
-        </select>
-        <input type="number" min="0" value={novo.espacos} onChange={(e) => setNovo({ ...novo, espacos: e.target.value })} title="Espaços" />
-        <button type="submit" disabled={!novo.nome.trim()}>+</button>
+        <div className={styles.linhaNome}>
+          <input
+            value={novo.nome}
+            onChange={(e) => setNovo({ ...novo, nome: e.target.value })}
+            placeholder="Novo item"
+            aria-label="Nome do novo item"
+          />
+          <button type="submit" disabled={!novo.nome.trim()} aria-label="Adicionar item">+</button>
+        </div>
+
+        <div className={styles.detalhes}>
+          <div className={styles.campo}>
+            <span id={idCategoria}>Categoria</span>
+            <div className={styles.categoriasNovo} role="radiogroup" aria-labelledby={idCategoria}>
+              {[0, 1, 2, 3, 4].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={novo.categoria === c}
+                  onClick={() => setNovo({ ...novo, categoria: c })}
+                >
+                  {romano(c)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.campo}>
+            <span>Espaços</span>
+            <Contador valor={novo.espacos} onMudar={(espacos) => setNovo({ ...novo, espacos })} min={0} max={20} rotulo="Espaços" />
+          </div>
+        </div>
       </form>
 
       <button className={styles.livro} onClick={() => setNoLivro(true)}>+ Adicionar do livro</button>

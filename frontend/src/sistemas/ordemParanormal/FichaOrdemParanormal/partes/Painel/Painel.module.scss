@@ -45,3 +45,12 @@
 }
 
 .centralizado .topo { justify-content: center; }
+
+// Área de conteúdo que pode rolar sem levar a moldura junto
+.corpo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
