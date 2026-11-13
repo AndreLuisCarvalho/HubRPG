@@ -5,6 +5,7 @@ import Ataques from '../Ataques/Ataques';
 const Grimorio = lazy(() => import('../Grimorio/Grimorio'));
 import Habilidades from '../Habilidades/Habilidades';
 import Inventario from '../Inventario/Inventario';
+import Notas from '../Notas/Notas';
 import Painel from '../Painel/Painel';
 import Rituais from '../Rituais/Rituais';
 import styles from './Abas.module.scss';
@@ -22,11 +23,6 @@ export default function Abas({ dados, onAlterarDados, className = '' }) {
   const [ativa, setAtiva] = useState(ABAS[0].id);
   const [grimorioAberto, setGrimorioAberto] = useState(false);
   const aba = ABAS.find((a) => a.id === ativa);
-
-  function salvarNotas(e) {
-    const texto = e.target.value;
-    if (texto !== (dados.descricao ?? '')) onAlterarDados({ descricao: texto });
-  }
 
   return (
     <Painel className={className}>
@@ -56,14 +52,7 @@ export default function Abas({ dados, onAlterarDados, className = '' }) {
           <Rituais dados={dados} onAlterarDados={onAlterarDados} onAbrirGrimorio={() => setGrimorioAberto(true)} />
         )}
         {aba.id === 'inventario' && <Inventario dados={dados} onAlterarDados={onAlterarDados} />}
-        {aba.id === 'notas' && (
-          <textarea
-            className={styles.notas}
-            defaultValue={dados.descricao ?? ''}
-            onBlur={salvarNotas}
-            placeholder="Aparência, personalidade, história, objetivos…"
-          />
-        )}
+        {aba.id === 'notas' && <Notas dados={dados} onAlterarDados={onAlterarDados} />}
         {aba.emBreve && <p className={styles.vazio}>{aba.emBreve}</p>}
       </div>
 

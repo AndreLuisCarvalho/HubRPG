@@ -117,7 +117,7 @@ export default function Agente({ ficha, onAlterarDados, onAlterarFicha, classNam
   }
 
   return (
-    <Painel className={`${styles.agente} ${className}`}>
+    <Painel className={className} classeCorpo={styles.agente}>
       <header className={styles.credencial}>
         <span className={styles.selo}>Agente da Ordem</span>
         <EscolherFoto

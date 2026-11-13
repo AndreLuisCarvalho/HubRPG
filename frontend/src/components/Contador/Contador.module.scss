@@ -1,0 +1,42 @@
+// Mesmo visual dos campos de texto: borda fina, fundo escuro, foco na cor da campanha
+.contador {
+  display: inline-grid;
+  grid-template-columns: 30px 34px 30px;
+  align-items: stretch;
+  height: 34px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.3);
+
+  &:focus-within { border-color: var(--cor); }
+
+  button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--texto-suave);
+    font: inherit;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover:not(:disabled) { color: var(--cor); }
+    &:disabled { opacity: 0.35; cursor: default; }
+  }
+
+  input {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-inline: 1px solid var(--borda);
+    background: none;
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+
+    &:focus { outline: none; }
+  }
+}

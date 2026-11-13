@@ -179,31 +179,89 @@
 
 .novo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 56px 56px auto;
+  gap: 10px;
+}
+
+.linhaNome {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
   gap: 6px;
 
-  input,
-  select {
-    padding: 6px 8px;
+  input {
+    height: 34px;
+    padding: 6px 10px;
     border: 1px solid var(--borda);
     border-radius: 3px;
     background: rgba(0, 0, 0, 0.3);
     color: var(--texto);
     font: inherit;
-    font-size: 0.82rem;
+    font-size: 0.86rem;
+
+    &:focus { outline: none; border-color: var(--cor); }
   }
 
-  option { background: var(--superficie); }
-
   button {
-    width: 34px;
     border: 1px solid var(--cor);
     border-radius: 3px;
     background: color-mix(in srgb, var(--cor) 25%, #121315);
     color: #fff;
+    font-size: 1rem;
     cursor: pointer;
 
-    &:disabled { opacity: 0.4; }
+    &:disabled { opacity: 0.4; cursor: default; }
+  }
+}
+
+// Categoria à esquerda, espaços à direita; quebram de linha se faltar largura
+.detalhes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10px 16px;
+}
+
+.campo {
+  display: grid;
+  gap: 5px;
+
+  > span {
+    @include fonte-ficha;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    color: var(--texto-suave);
+  }
+}
+
+// 0 · I · II · III · IV como botões colados (um só marcado)
+.categoriasNovo {
+  display: flex;
+  height: 34px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  overflow: hidden;
+
+  button {
+    min-width: 32px;
+    padding: 0 8px;
+    border: 0;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.8rem;
+    cursor: pointer;
+
+    & + button { border-left: 1px solid var(--borda); }
+
+    &:hover { color: var(--texto); }
+
+    &[aria-checked='true'] {
+      background: color-mix(in srgb, var(--cor) 22%, transparent);
+      color: var(--cor);
+      font-weight: 600;
+    }
+
+    &:focus-visible { outline: 1px solid var(--cor); outline-offset: -2px; }
   }
 }
 

@@ -26,7 +26,7 @@ export function fichaInicial({ classe = 'combatente', jogador = '', origem = '',
     protecao: '',
     resistencias: '',
     proficiencias: '',
-    descricao: '',
+    notas: { aparencia: '', personalidade: '', historia: '', objetivos: '' },
   };
 }
 
