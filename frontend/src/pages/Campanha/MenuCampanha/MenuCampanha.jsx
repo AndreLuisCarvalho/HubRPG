@@ -21,7 +21,7 @@ const GRUPOS = [
       { caminho: 'mapas', rotulo: 'Mapas', icone: '▦', emBreve: true },
       { caminho: 'arquivos', rotulo: 'Arquivos', icone: '▤', emBreve: true },
       { caminho: 'itens', rotulo: 'Itens', icone: '⚔', emBreve: true },
-      { caminho: 'livro', rotulo: 'Livro do sistema', icone: '❖', emBreve: true },
+      { caminho: 'livro', rotulo: 'Livro do sistema', icone: '❖' },
       { caminho: 'dados', rotulo: 'Dados', icone: '⚄', emBreve: true },
     ],
   },
