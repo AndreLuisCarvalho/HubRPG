@@ -3,6 +3,9 @@ import Agente from './partes/Agente/Agente';
 import Vitais from './partes/Vitais/Vitais';
 import Pericias from './partes/Pericias/Pericias';
 import Abas from './partes/Abas/Abas';
+import FichaNpc from './FichaNpc/FichaNpc';
+import FiltroTraco from './partes/FiltroTraco/FiltroTraco';
+import { ehNpcSimples } from '../regras';
 import styles from './FichaOrdemParanormal.module.scss';
 
 // No celular, só uma dessas aparece por vez (as orbes ficam sempre no topo)
@@ -17,15 +20,14 @@ export default function FichaOrdemParanormal({ ficha, onAlterarDados, onAlterarF
   const { dados } = ficha;
   const visivel = (id) => (vista === id ? styles.visivel : '');
 
+  // NPC simples (gente comum): ficha curta, sem classe, NEX ou atributos
+  if (ehNpcSimples(dados)) {
+    return <FichaNpc ficha={ficha} onAlterarDados={onAlterarDados} onAlterarFicha={onAlterarFicha} />;
+  }
+
   return (
     <div className={styles.ficha}>
-      {/* Filtro que "treme" de leve as linhas das molduras, como traço feito à mão */}
-      <svg className={styles.filtros} aria-hidden="true" focusable="false">
-        <filter id="traco-a-mao">
-          <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7" />
-          <feDisplacementMap in="SourceGraphic" scale="2.5" />
-        </filter>
-      </svg>
+      <FiltroTraco />
 
       <Agente ficha={ficha} onAlterarDados={onAlterarDados} onAlterarFicha={onAlterarFicha} className={`${styles.agente} ${visivel('agente')}`} />
       <Vitais dados={dados} onAlterarDados={onAlterarDados} className={styles.vitais} />

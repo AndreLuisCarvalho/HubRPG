@@ -5,8 +5,47 @@ import {
 } from './modelo';
 import { TRILHAS } from './trilhas';
 
-export function fichaInicial({ classe = 'combatente', jogador = '', origem = '', trilha = '' } = {}) {
+/* ---------- NPC simples ---------- */
+// Gente comum: identidade, personalidade e um combate resumido (sem classe, NEX ou atributos).
+// Tudo do combate fica em dados.npc, separado dos campos da ficha completa.
+export const ehNpcSimples = (dados) => dados?.modelo === 'simples';
+
+export function npcSimplesInicial({ papel = '' } = {}) {
   return {
+    modelo: 'simples',
+    papel,
+    local: '',
+    personalidade: '',
+    motivacao: '',
+    npc: { pv: 10, pvMax: 10, defesa: 10, ataques: [], pericias: [] },
+  };
+}
+
+// "Transformar em agente": a ficha completa nasce mantendo o que já foi escrito.
+// Personalidade e motivação vão para as Notas; os ataques vão para a aba Ataques;
+// papel e local continuam em dados.
+export function npcParaAgente(dados) {
+  const base = fichaInicial();
+  const ataques = (dados.npc?.ataques ?? [])
+    .filter((a) => a.nome || a.dano)
+    .map((a, i) => ({ id: a.uid ?? `npc-${i}`, nome: a.nome, teste: a.teste, dano: a.dano, especial: '' }));
+  return {
+    ...base,
+    ...dados,
+    modelo: 'agente',
+    ataques: dados.ataques?.length ? dados.ataques : ataques,
+    notas: {
+      ...base.notas,
+      personalidade: dados.personalidade ?? '',
+      objetivos: dados.motivacao ?? '',
+    },
+  };
+}
+
+export function fichaInicial({ classe = 'combatente', jogador = '', origem = '', trilha = '', modelo, papel } = {}) {
+  if (modelo === 'simples') return npcSimplesInicial({ papel });
+  return {
+    ...(papel && { papel }),
     classe,
     nex: 5,
     origem,
@@ -124,6 +163,11 @@ export function calcularAtuais(dados) {
 // Formato comum a todos os sistemas: lista de recursos prontos para desenhar
 // "temporario" = pontos temporários (podem passar do máximo e são gastos primeiro)
 export function recursos(dados) {
+  // NPC simples: só PV, digitado na ficha
+  if (ehNpcSimples(dados)) {
+    const { pv = 0, pvMax = 0 } = dados.npc ?? {};
+    return [{ ...RECURSOS[0], atual: pv, maximo: pvMax, temporario: 0 }];
+  }
   const maximos = calcularMaximos(dados);
   const atuais = calcularAtuais(dados);
   return RECURSOS.map((r) => ({
@@ -270,6 +314,7 @@ export const calcularBloqueio = (dados) =>
   ehTreinada(dados, 'fortitude') ? bonusPericia(dados, 'fortitude') : null;
 
 export function resumo(dados) {
+  if (ehNpcSimples(dados)) return dados.papel || 'NPC';
   const classe = CLASSES[dados.classe];
   return `${classe?.nome ?? 'Sem classe'} · NEX ${dados.nex ?? 5}%`;
 }
@@ -280,6 +325,12 @@ export function resumo(dados) {
 // Livro p. 88: PV 0 = morrendo · SAN 0 = enlouquecendo (3 turnos/rodadas = morto/insano)
 //              PV abaixo da metade = machucado · SAN abaixo da metade = perturbado
 export function estado(dados) {
+  if (ehNpcSimples(dados)) {
+    const { pv = 0, pvMax = 0 } = dados.npc ?? {};
+    if (pvMax > 0 && pv === 0) return { id: 'morrendo', rotulo: 'Morrendo' };
+    if (pv < pvMax / 2) return { id: 'machucado', rotulo: 'Machucado' };
+    return null;
+  }
   const lista = recursos(dados);
   const pv = lista.find((r) => r.id === 'pv');
   const san = lista.find((r) => r.id === 'san');
@@ -300,6 +351,12 @@ export function estado(dados) {
 
 // Três informações de destaque para o card
 export function destaques(dados) {
+  if (ehNpcSimples(dados)) {
+    return [
+      { rotulo: 'Defesa', valor: dados.npc?.defesa ?? 10 },
+      { rotulo: 'Onde', valor: dados.local || '—' },
+    ];
+  }
   return [
     { rotulo: 'Defesa', valor: calcularDefesa(dados) },
     { rotulo: 'Origem', valor: nomeDaOrigem(dados) || '—' },

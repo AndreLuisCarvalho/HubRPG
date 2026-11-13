@@ -134,6 +134,23 @@
   &:hover { border-color: color-mix(in srgb, var(--cor) 50%, transparent); }
 }
 
+// NPC: Simples × Agente, lado a lado (mesmo visual das classes, com texto à esquerda)
+.modelos {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.modelo {
+  @extend .classe;
+  justify-items: start;
+  padding: 10px 12px;
+  text-align: left;
+
+  small { font-size: 0.72rem; line-height: 1.35; }
+}
+
 .escolhida {
   border-color: var(--cor);
   background: color-mix(in srgb, var(--cor) 16%, transparent);

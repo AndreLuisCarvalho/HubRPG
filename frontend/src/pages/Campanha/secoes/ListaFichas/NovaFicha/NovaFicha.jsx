@@ -8,6 +8,11 @@ const TEXTOS = {
   monstro: { sobretitulo: 'Nova ameaça', titulo: 'Criar monstro' },
 };
 
+const MODELOS_NPC = [
+  { id: 'simples', nome: 'Simples', descricao: 'Gente comum: quem é, como age e o básico de combate.' },
+  { id: 'agente', nome: 'Agente', descricao: 'Ficha completa, com classe, NEX, atributos e rituais.' },
+];
+
 export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) {
   const classes = sistema?.classes ?? [];
   const origens = sistema?.origens ?? [];
@@ -33,6 +38,11 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
 
   // Agente de jogador: Origem, Jogador e Trilha são definidos aqui e não mudam mais na ficha
   const ehJogador = tipo === 'jogador';
+  // NPC: "simples" (gente comum, ficha curta) ou "agente" (ficha completa, sem travas)
+  const ehNpc = tipo === 'npc';
+  const [modelo, setModelo] = useState('simples');
+  const [papel, setPapel] = useState('');
+  const simples = ehNpc && modelo === 'simples';
   const completo = nome.trim() && (!ehJogador || (jogador.trim() && origem.trim()));
 
   async function enviar(e) {
@@ -40,7 +50,13 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
     if (!completo) return;
     setEnviando(true);
     try {
-      await onCriar({ nome: nome.trim(), imagem, opcoes: { classe, trilha, jogador: jogador.trim(), origem: origem.trim() } });
+      await onCriar({
+        nome: nome.trim(),
+        imagem,
+        opcoes: simples
+          ? { modelo: 'simples', papel: papel.trim() }
+          : { classe, trilha, jogador: jogador.trim(), origem: origem.trim(), ...(ehNpc && { modelo: 'agente', papel: papel.trim() }) },
+      });
     } finally {
       setEnviando(false);
     }
@@ -64,7 +80,34 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
           </label>
         )}
 
-        {classes.length > 0 && (
+        {ehNpc && (
+          <>
+            <fieldset className={styles.campo}>
+              <legend>Tipo de NPC</legend>
+              <div className={styles.modelos}>
+                {MODELOS_NPC.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={`${styles.modelo} ${modelo === m.id ? styles.escolhida : ''}`}
+                    onClick={() => setModelo(m.id)}
+                    aria-pressed={modelo === m.id}
+                  >
+                    <b>{m.nome}</b>
+                    <small>{m.descricao}</small>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <label className={styles.campo}>
+              <span>Papel</span>
+              <input value={papel} onChange={(e) => setPapel(e.target.value)} placeholder="Ex.: delegado da cidade, dona da pensão" />
+            </label>
+          </>
+        )}
+
+        {!simples && classes.length > 0 && (
           <fieldset className={styles.campo}>
             <legend>Classe</legend>
             <div className={styles.classes}>
@@ -85,7 +128,7 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
           </fieldset>
         )}
 
-        {trilhas.length > 0 && (
+        {!simples && trilhas.length > 0 && (
           <div className={styles.campo}>
             <span>Trilha</span>
             <Seletor
@@ -114,7 +157,7 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
 
         {/* Sistema com lista de origens: escolhe da lista (select próprio); senão, texto livre.
             É <div> e não <label>: um label em volta faria o clique na lista reabrir o seletor. */}
-        {origens.length > 0 ? (
+        {simples ? null : origens.length > 0 ? (
           <div className={styles.campo}>
             <span>Origem</span>
             <Seletor
@@ -138,6 +181,9 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
 
         {ehJogador && (
           <p className={styles.aviso}>Origem, jogador e trilha ficam fixos depois de escolhidos.</p>
+        )}
+        {simples && (
+          <p className={styles.aviso}>Dá para transformar em agente depois, na própria ficha.</p>
         )}
 
         <div className={styles.acoes}>
