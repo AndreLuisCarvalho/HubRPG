@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Ataques from '../Ataques/Ataques';
 import Grimorio from '../Grimorio/Grimorio';
+import Habilidades from '../Habilidades/Habilidades';
 import Inventario from '../Inventario/Inventario';
 import Painel from '../Painel/Painel';
 import Rituais from '../Rituais/Rituais';
@@ -8,7 +9,7 @@ import styles from './Abas.module.scss';
 
 const ABAS = [
   { id: 'ataques', rotulo: 'Ataques' },
-  { id: 'habilidades', rotulo: 'Habilid.', nome: 'Habilidades', emBreve: 'Habilidades de classe e trilha em breve.' },
+  { id: 'habilidades', rotulo: 'Habilid.', nome: 'Habilidades' },
   { id: 'rituais', rotulo: 'Rituais' },
   { id: 'inventario', rotulo: 'Itens', nome: 'Inventário' },
   { id: 'notas', rotulo: 'Notas' },
@@ -48,6 +49,7 @@ export default function Abas({ dados, onAlterarDados, className = '' }) {
         {aba.id === 'ataques' && (
           <Ataques ataques={dados.ataques} onAlterar={(ataques) => onAlterarDados({ ataques })} />
         )}
+        {aba.id === 'habilidades' && <Habilidades dados={dados} onAlterarDados={onAlterarDados} />}
         {aba.id === 'rituais' && (
           <Rituais dados={dados} onAlterarDados={onAlterarDados} onAbrirGrimorio={() => setGrimorioAberto(true)} />
         )}

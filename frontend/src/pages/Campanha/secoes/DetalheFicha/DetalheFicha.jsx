@@ -27,6 +27,13 @@ export default function DetalheFicha({ campanha }) {
       .catch((e) => setErro(`Não foi possível salvar: ${e.message}`));
   }
 
+  // Campos da própria ficha, fora de "dados" (ex.: { imagem })
+  function alterarFicha(parcial) {
+    setFicha((atual) => ({ ...atual, ...parcial }));
+    api.atualizarFicha(fichaId, parcial)
+      .catch((e) => setErro(`Não foi possível salvar: ${e.message}`));
+  }
+
   if (!ficha) {
     return <p className={erro ? 'erro' : styles.aviso}>{erro || 'Carregando…'}</p>;
   }
@@ -42,7 +49,7 @@ export default function DetalheFicha({ campanha }) {
       {erro && <p className="erro">{erro}</p>}
 
       {sistema ? (
-        <sistema.Ficha ficha={ficha} onAlterarDados={alterarDados} />
+        <sistema.Ficha ficha={ficha} onAlterarDados={alterarDados} onAlterarFicha={alterarFicha} />
       ) : (
         <p className={styles.aviso}>
           A ficha do sistema “{campanha.sistema_id || 'não definido'}” ainda não está disponível.

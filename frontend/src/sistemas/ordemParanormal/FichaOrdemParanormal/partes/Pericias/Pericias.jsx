@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ATRIBUTOS, GRAUS, PERICIAS } from '../../../modelo';
 import {
-  bonusPericia, dadosDoAtributo, dadosDoTeste, grauDaPericia, PENALIDADE_SEM_KIT, temKit,
+  bonusPericia, dadosDoAtributo, dadosDoTeste, grauDaPericia, PENALIDADE_SEM_KIT, penalidadeDeCarga, temKit,
 } from '../../../regras';
 import Painel from '../Painel/Painel';
 import styles from './Pericias.module.scss';
@@ -64,7 +64,9 @@ export default function Pericias({ dados, onAlterarDados, className = '' }) {
       <ul className={styles.lista}>
         {lista.map((p) => {
           const nivel = NIVEIS.indexOf(grauDaPericia(dados, p.id));
-          const bonus = bonusPericia(dados, p.id);
+          // Proteção pesada: −5 nas perícias de carga (Acrobacia, Crime, Furtividade)
+          const carga = p.carga ? penalidadeDeCarga(dados) : 0;
+          const bonus = bonusPericia(dados, p.id) - carga;
           const comKit = temKit(dados, p.id);
 
           return (
@@ -113,7 +115,12 @@ export default function Pericias({ dados, onAlterarDados, className = '' }) {
                 ))}
               </span>
 
-              <span className={styles.bonus}>{bonus > 0 ? `+${bonus}` : bonus}</span>
+              <span
+                className={`${styles.bonus} ${carga ? styles.penalizado : ''}`}
+                title={carga ? `Inclui −${carga} da proteção pesada` : undefined}
+              >
+                {bonus > 0 ? `+${bonus}` : bonus}
+              </span>
             </li>
           );
         })}

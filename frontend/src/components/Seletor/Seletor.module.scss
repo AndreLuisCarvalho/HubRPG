@@ -1,0 +1,109 @@
+// Mesmo visual dos campos de texto do formulário (borda, fundo e foco)
+.seletor {
+  position: relative;
+  min-width: 0;
+}
+
+.botao {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;   // o mesmo respiro dos dois lados: texto à esquerda, seta à direita
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--texto);
+  font: inherit;
+  font-size: 0.92rem;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible,
+  .aberto & {
+    outline: none;
+    border-color: var(--cor);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor) 20%, transparent);
+  }
+}
+
+.valor,
+.placeholder {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  small {
+    font-size: 0.75rem;
+    color: var(--cor);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.placeholder { color: color-mix(in srgb, var(--texto-suave) 70%, transparent); }
+
+.seta {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--texto-suave);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s;
+
+  .aberto & {
+    transform: rotate(180deg);
+    stroke: var(--cor);
+  }
+}
+
+// Lista aberta, logo abaixo do botão
+.lista {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--tinta-linha, var(--borda));
+  border-radius: 6px;
+  background: var(--superficie);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+
+  li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+
+    small {
+      font-size: 0.72rem;
+      color: var(--texto-suave);
+      text-align: right;
+    }
+
+    &[aria-selected='true'] {
+      color: var(--cor);
+
+      small { color: var(--cor); }
+    }
+  }
+
+  .destacada { background: color-mix(in srgb, var(--cor) 14%, transparent); }
+}

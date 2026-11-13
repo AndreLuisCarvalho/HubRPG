@@ -5,6 +5,8 @@ import {
 import Contagem from '../Contagem/Contagem';
 import Orbe from '../Orbe/Orbe';
 import Painel from '../Painel/Painel';
+import BotaoRecolher from '../Recolher/BotaoRecolher';
+import useRecolhido from '../Recolher/useRecolhido';
 import styles from './Vitais.module.scss';
 
 const PASSOS = [1, 5, 10];
@@ -22,6 +24,8 @@ function lerPasso() {
 
 export default function Vitais({ dados, onAlterarDados, className = '' }) {
   const [passo, setPasso] = useState(lerPasso);
+  // No celular o painel pode ficar recolhido numa linha só
+  const [recolhido, alternar] = useRecolhido('hubrpg:vitais-recolhido');
   const lista = recursos(dados);
 
   function escolherPasso(novo) {
@@ -45,6 +49,32 @@ export default function Vitais({ dados, onAlterarDados, className = '' }) {
     );
   }
 
+  // Resumo de uma linha (só aparece no celular com o painel recolhido): toque para abrir
+  const resumo = (
+    <button
+      type="button"
+      className={styles.resumo}
+      onClick={alternar}
+      aria-expanded="false"
+      aria-controls="orbes-vitais"
+      title="Mostrar Vida, Sanidade e Esforço"
+    >
+      {lista.map((r) => (
+        <span key={r.id} className={styles.item} style={{ '--cor-recurso': r.cor }}>
+          <span className={styles.linha}>
+            <b>{r.sigla}</b>
+            <span className={styles.valor}>
+              {r.atual + r.temporario}<small>/{r.maximo}</small>
+            </span>
+          </span>
+          <span className={styles.barra}>
+            <span style={{ width: `${r.maximo ? Math.min(100, (r.atual / r.maximo) * 100) : 0}%` }} />
+          </span>
+        </span>
+      ))}
+    </button>
+  );
+
   const seletor = (
     <div className={styles.passo} role="group" aria-label="Quanto cada clique tira ou soma">
       <span>Passo</span>
@@ -59,8 +89,17 @@ export default function Vitais({ dados, onAlterarDados, className = '' }) {
   );
 
   return (
-    <Painel acoes={seletor} className={className}>
-      <div className={styles.orbes}>
+    <Painel
+      acoes={(
+        <>
+          {resumo}
+          {seletor}
+          <BotaoRecolher recolhido={recolhido} onClick={alternar} nome="Vida, Sanidade e Esforço" controla="orbes-vitais" />
+        </>
+      )}
+      className={`${className} ${recolhido ? styles.recolhido : ''}`}
+    >
+      <div id="orbes-vitais" className={styles.orbes}>
         {lista.map((r) => (
           <Orbe
             key={r.id}

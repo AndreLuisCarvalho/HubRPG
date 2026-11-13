@@ -1,15 +1,17 @@
 // Como o sistema CALCULA. Funções puras: recebem dados, devolvem resultado.
 import {
-  CLASSES, CONTAGENS, CUSTO_POR_CIRCULO, GRAUS, NEX, ORIGENS, PERICIAS, RECURSOS, RITUAIS,
+  CLASSES, CONTAGENS, CUSTO_POR_CIRCULO, ESCUDO, GRAUS, NEX, NOMES_PROFICIENCIA, ORIGENS, PERICIAS,
+  PROTECOES, RECURSOS, RITUAIS,
 } from './modelo';
+import { TRILHAS } from './trilhas';
 
-export function fichaInicial({ classe = 'combatente', jogador = '', origem = '' } = {}) {
+export function fichaInicial({ classe = 'combatente', jogador = '', origem = '', trilha = '' } = {}) {
   return {
     classe,
     nex: 5,
     origem,
     jogador,
-    trilha: '',
+    trilha: TRILHAS[trilha]?.classe === classe ? trilha : '',
     atributos: { agi: 1, for: 1, int: 1, pre: 1, vig: 1 },
     pericias: periciasDaOrigem({}, '', origem),   // já nasce com as perícias da origem
     periciasOutros: {},
@@ -30,6 +32,30 @@ export function fichaInicial({ classe = 'combatente', jogador = '', origem = '' 
 
 // NEX 5% = 0 níveis extras, 10% = 1, ..., 99% = 19
 const niveisExtras = (nex) => Math.max(NEX.indexOf(nex), 0);
+
+/* ---------- Trilha ---------- */
+// Só vale trilha da classe atual e a partir do NEX 10% (fichas antigas podem ter texto livre)
+export function dadosDaTrilha(dados) {
+  const trilha = TRILHAS[dados.trilha];
+  return trilha && trilha.classe === dados.classe ? trilha : null;
+}
+
+// Habilidades da trilha, marcando quais o NEX atual já liberou
+export function habilidadesDaTrilha(dados) {
+  const nex = dados.nex ?? 5;
+  return (dadosDaTrilha(dados)?.habilidades ?? []).map((hab) => ({ ...hab, liberada: nex >= hab.nex }));
+}
+
+// Soma dos efeitos numéricos das habilidades já liberadas
+export function efeitosDaTrilha(dados) {
+  const total = { pvPorNex: 0, pericias: {}, cargaComInt: false };
+  habilidadesDaTrilha(dados).filter((hab) => hab.liberada && hab.efeitos).forEach(({ efeitos: e }) => {
+    total.pvPorNex += e.pvPorNex ?? 0;
+    total.cargaComInt ||= Boolean(e.cargaComInt);
+    Object.entries(e.pericias ?? {}).forEach(([id, v]) => { total.pericias[id] = (total.pericias[id] ?? 0) + v; });
+  });
+  return total;
+}
 
 /* ---------- Origem ---------- */
 export const dadosDaOrigem = (dados) => ORIGENS[dados.origem] ?? null;
@@ -77,8 +103,11 @@ export function calcularMaximos(dados) {
   const origem = bonusDaOrigem(dados);
   const sanInicial = origem.sanInicialMetade ? Math.floor(classe.san.inicial / 2) : classe.san.inicial;
 
+  // Trilha (ex.: Casca Grossa): +PV para cada 5% de NEX
+  const pvTrilha = efeitosDaTrilha(dados).pvPorNex * (extras + 1);
+
   return {
-    pv: classe.pv.inicial + vig + extras * (classe.pv.porNex + vig) + origem.pv,
+    pv: classe.pv.inicial + vig + extras * (classe.pv.porNex + vig) + origem.pv + pvTrilha,
     pe: classe.pe.inicial + pre + extras * (classe.pe.porNex + pre) + origem.pe,
     san: sanInicial + extras * classe.san.porNex + origem.san,
   };
@@ -157,7 +186,8 @@ export const ehTreinada = (dados, id) => grauDaPericia(dados, id) !== 'destreina
 export function bonusPericia(dados, id) {
   const treino = GRAUS[grauDaPericia(dados, id)]?.bonus ?? 0;
   const outros = Math.max(0, dados.periciasOutros?.[id] ?? 0);
-  return treino + outros;
+  const trilha = efeitosDaTrilha(dados).pericias[id] ?? 0;   // ex.: Gatuno, Iniciativa Aprimorada
+  return treino + outros + trilha;
 }
 
 // Atributo 0 rola 2d20 e fica com o menor (↓)
@@ -175,17 +205,59 @@ export const PENALIDADE_SEM_KIT = 5;
 export function dadosDoTeste(dados, periciaId) {
   const pericia = PERICIAS.find((p) => p.id === periciaId);
   const semKit = precisaDeKit(periciaId) && !temKit(dados, periciaId);
-  const bonus = bonusPericia(dados, periciaId) - (semKit ? PENALIDADE_SEM_KIT : 0);
+  const carga = pericia.carga ? penalidadeDeCarga(dados) : 0;   // proteção pesada: −5
+  const bonus = bonusPericia(dados, periciaId) - (semKit ? PENALIDADE_SEM_KIT : 0) - carga;
   const base = dadosDoAtributo(dados, pericia.atributo);
   if (!bonus) return base;
   return bonus > 0 ? `${base}+${bonus}` : `${base}${bonus}`;
 }
 
+/* ---------- Proteção e proficiências (livro p. 54 e 62) ---------- */
+// Proteção vestida: 'leve', 'pesada' ou '' (nenhuma).
+// Fichas antigas tinham só o texto em "protecao": tenta reconhecer "leve"/"pesada" nele.
+export function protecaoVestida(dados) {
+  if (dados.armadura !== undefined) return PROTECOES[dados.armadura] ? dados.armadura : '';
+  const texto = (dados.protecao ?? '').toLowerCase();
+  if (texto.includes('pesada')) return 'pesada';
+  if (texto.includes('leve')) return 'leve';
+  return '';
+}
+
+export const usaEscudo = (dados) => Boolean(dados.escudo);
+
+// Proficiências da classe + as marcadas a mais (poderes como "Proteção Pesada")
+export function proficiencias(dados) {
+  const daClasse = CLASSES[dados.classe]?.proficiencias ?? { armas: [], protecoes: [] };
+  const extras = dados.proficienciasExtras ?? [];
+  return [...new Set([...daClasse.armas, ...daClasse.protecoes, ...extras])];
+}
+
+export const nomesDasProficiencias = (dados) =>
+  proficiencias(dados).map((id) => NOMES_PROFICIENCIA[id]).filter(Boolean);
+
+// Sem proficiência na proteção (escudo conta como pesada): −2d20 em testes de Força e Agilidade
+export function semProficienciaNaProtecao(dados) {
+  const sabe = proficiencias(dados);
+  const vestida = protecaoVestida(dados);
+  return Boolean((vestida && !sabe.includes(vestida)) || (usaEscudo(dados) && !sabe.includes('pesada')));
+}
+
+// Defesa que vem da proteção + escudo
+export const defesaDaProtecao = (dados) =>
+  (PROTECOES[protecaoVestida(dados)]?.defesa ?? 0) + (usaEscudo(dados) ? ESCUDO.defesa : 0);
+
+// RD da proteção pesada (balístico, corte, impacto e perfuração)
+export const rdDaProtecao = (dados) => PROTECOES[protecaoVestida(dados)]?.rd ?? 0;
+
+// Penalidade nas perícias afetadas por carga (Acrobacia, Crime, Furtividade)
+export const penalidadeDeCarga = (dados) => PROTECOES[protecaoVestida(dados)]?.penalidadeCarga ?? 0;
+
 /* ---------- Defesa ---------- */
+// 10 + AGI + proteção/escudo + outros (+ "equipamento" de fichas antigas, digitado à mão)
 export function calcularDefesa(dados) {
   const { equipamento = 0, outros = 0 } = dados.defesa ?? {};
-  return 10 + (dados.atributos?.agi ?? 0) + Math.max(0, equipamento) + Math.max(0, outros)
-    + bonusDaOrigem(dados).defesa;
+  return 10 + (dados.atributos?.agi ?? 0) + defesaDaProtecao(dados)
+    + Math.max(0, equipamento) + Math.max(0, outros) + bonusDaOrigem(dados).defesa;
 }
 
 // Reações de defesa (livro p. 88). Só existem com a perícia treinada; senão devolvem null.

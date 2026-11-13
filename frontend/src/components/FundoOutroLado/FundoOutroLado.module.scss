@@ -1,5 +1,10 @@
-// Veios da membrana (rachaduras na realidade). O desenho vira "máscara",
-// e a cor vem do background: assim os veios ficam na cor da campanha.
+// Fundo da campanha: grafite liso com detalhes de "mesa de investigação".
+// Tudo parado e desenhado em CSS/SVG pequeno: nada de animação, blur ou imagem pesada.
+
+// Grão de papel bem fraco (ruído)
+$grao: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
+
+// Veios do Outro Lado (rachaduras na realidade): usados como máscara, na cor da campanha
 $veios: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600' fill='none' stroke='white' stroke-width='.8'%3E%3Cpath d='M0 420 C80 400 120 330 200 320 S320 360 380 300 S470 180 600 160'/%3E%3Cpath d='M200 320 C210 360 190 410 230 460 S260 560 240 600'/%3E%3Cpath d='M380 300 C420 330 470 330 520 380'/%3E%3Cpath d='M90 0 C110 60 80 120 140 170 S200 230 200 320'/%3E%3Cpath d='M470 180 C460 120 500 70 480 0'/%3E%3Cpath d='M140 170 C100 190 60 180 0 220'/%3E%3C/svg%3E");
 
 .fundo {
@@ -9,61 +14,30 @@ $veios: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width=
   overflow: hidden;
   pointer-events: none;
   background:
-    // Tons tirados da --cor (antes eram roxos fixos), para o fundo seguir a paleta
-    radial-gradient(ellipse 70% 55% at 15% 0%, color-mix(in srgb, var(--cor) 18%, transparent), transparent 70%),
-    radial-gradient(ellipse 55% 45% at 95% 100%, rgba(170, 35, 30, 0.14), transparent 70%),
-    radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--cor) 6%, #0a0908) 0%, #060505 75%);
-}
+    $grao,
+    // Quadriculado de papel milimetrado, quase apagado (linha a cada 32px, mais forte a cada 160px)
+    linear-gradient(rgba(230, 227, 220, 0.035) 1px, transparent 1px) 0 0 / 160px 160px,
+    linear-gradient(90deg, rgba(230, 227, 220, 0.035) 1px, transparent 1px) 0 0 / 160px 160px,
+    linear-gradient(rgba(230, 227, 220, 0.016) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, rgba(230, 227, 220, 0.016) 1px, transparent 1px) 0 0 / 32px 32px,
+    var(--fundo);
 
-.membrana {
-  position: absolute;
-  inset: 0;
-  background: var(--cor);
-  opacity: 0.14;
-  -webkit-mask: $veios center / 600px repeat;
-  mask: $veios center / 600px repeat;
-  animation: pulsar 8s ease-in-out infinite;
-}
+  // Veios parados, bem discretos
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--cor);
+    opacity: 0.07;
+    -webkit-mask: $veios center / 700px repeat;
+    mask: $veios center / 700px repeat;
+  }
 
-.nevoa {
-  position: absolute;
-  inset: -20%;
-  filter: blur(40px);
-  opacity: 0.55;
-  background:
-    radial-gradient(circle at 30% 60%, color-mix(in srgb, var(--cor) 25%, transparent), transparent 30%),
-    radial-gradient(circle at 70% 30%, color-mix(in srgb, var(--cor) 14%, transparent), transparent 28%),
-    radial-gradient(circle at 55% 85%, rgba(170, 30, 60, 0.15), transparent 25%);
-  animation: derivar 40s ease-in-out infinite alternate;
-}
-
-// Dois "tapetes" de pontinhos subindo em velocidades diferentes
-.particulas {
-  position: absolute;
-  inset: 0;
-  opacity: 0.7;
-  background-image:
-    radial-gradient(circle, color-mix(in srgb, var(--cor) 45%, rgba(255, 255, 255, 0.8)) 0 1px, transparent 1.5px),
-    radial-gradient(circle, rgba(255, 255, 255, 0.5) 0 0.8px, transparent 1.2px);
-  background-size: 140px 160px, 90px 110px;
-  animation: subir 60s linear infinite;
-}
-
-.vinheta {
-  position: absolute;
-  inset: 0;
-  box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.85);
-}
-
-@keyframes pulsar {
-  50% { opacity: 0.22; }
-}
-
-@keyframes derivar {
-  to { transform: translate(6%, -4%) scale(1.1); }
-}
-
-// Desloca múltiplos exatos do tamanho do padrão: o loop emenda sem "pulo"
-@keyframes subir {
-  to { background-position: 0 -1600px, 0 -1100px; }
+  // Cantos escurecidos, como luz de luminária no meio da mesa
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 85% 75% at 50% 40%, transparent 55%, rgba(0, 0, 0, 0.45));
+  }
 }

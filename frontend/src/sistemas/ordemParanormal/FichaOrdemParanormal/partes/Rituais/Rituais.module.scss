@@ -114,14 +114,14 @@
   padding: 8px 14px;
   border: 1px solid var(--cor);
   border-radius: 3px;
-  background: color-mix(in srgb, var(--cor) 25%, #0e0d0a);
+  background: color-mix(in srgb, var(--cor) 25%, #121315);
   color: #fff;
   @include fonte-ficha;
   font-size: 0.68rem;
   letter-spacing: 0.14em;
   cursor: pointer;
  
-  &:hover { background: color-mix(in srgb, var(--cor) 45%, #0e0d0a); }
+  &:hover { background: color-mix(in srgb, var(--cor) 45%, #121315); }
  
   &:disabled {
     opacity: 0.4;
@@ -153,6 +153,69 @@
   }
 }
  
+/* ---------- Celular: cabeçalho mais baixo e recolhível ---------- */
+// Resumo de uma linha: só aparece recolhido, no celular
+.resumoTopo {
+  display: none;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--texto);
+  @include fonte-titulo;
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+
+  > span { white-space: nowrap; }
+
+  > span + span {
+    padding-left: 12px;
+    border-left: 1px solid var(--borda);
+  }
+
+  small {
+    @include fonte-ficha;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    color: var(--texto-suave);
+  }
+}
+
+@include celular {
+  .rituais { gap: 8px; padding-top: 6px; }
+
+  .cabecalho { gap: 12px; }
+
+  .selo {
+    width: 46px;
+    height: 46px;
+
+    b { font-size: 1.05rem; }
+  }
+
+  .info dd { font-size: 1rem; }
+
+  .barra { gap: 8px; padding-bottom: 8px; }
+
+  .aprender {
+    padding: 6px 10px;
+    font-size: 0.62rem;
+  }
+
+  .recolhido {
+    .cabecalho,
+    .filtro {
+      display: none;
+    }
+
+    .resumoTopo { display: flex; }
+  }
+}
+
 /* ---------- Lista ---------- */
 .lista {
   flex: 1;

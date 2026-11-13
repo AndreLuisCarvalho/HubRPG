@@ -19,19 +19,47 @@ export const CLASSES = {
     descricao: 'Linha de frente',
     icone: 'M5 19 19 5M14 5h5v5M5 14l5 5M3 21l3-3',
     pv: { inicial: 20, porNex: 4 }, pe: { inicial: 2, porNex: 2 }, san: { inicial: 12, porNex: 3 },
+    // O que a classe já sabe usar (quadro "Características" de cada classe; Combatente: p. 25)
+    proficiencias: { armas: ['simples', 'taticas'], protecoes: ['leve'] },
   },
   especialista: {
     nome: 'Especialista',
     descricao: 'Perícias e versatilidade',
     icone: 'M11 5a6 6 0 1 0 0 12a6 6 0 1 0 0-12M20 20l-4.5-4.5',
     pv: { inicial: 16, porNex: 3 }, pe: { inicial: 3, porNex: 3 }, san: { inicial: 16, porNex: 4 },
+    proficiencias: { armas: ['simples'], protecoes: ['leve'] },
   },
   ocultista: {
     nome: 'Ocultista',
     descricao: 'Rituais do Outro Lado',
     icone: 'M12 3 20 18H4ZM12 10.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5',
     pv: { inicial: 12, porNex: 2 }, pe: { inicial: 4, porNex: 4 }, san: { inicial: 20, porNex: 5 },
+    proficiencias: { armas: ['simples'], protecoes: [] },
   },
+};
+
+// Nomes curtos para mostrar as proficiências
+export const NOMES_PROFICIENCIA = {
+  simples: 'Armas simples', taticas: 'Armas táticas', pesadas: 'Armas pesadas',
+  leve: 'Proteções leves', pesada: 'Proteções pesadas',
+};
+
+// Proteções vestidas (livro p. 62). A escolhida vai na ficha e já mexe nos números.
+// Escudo soma com uma proteção e, para proficiência, conta como proteção pesada.
+export const PROTECOES = {
+  leve: {
+    nome: 'Proteção leve', defesa: 5, categoria: 1, espacos: 2,
+    descricao: 'Jaqueta de couro pesada ou colete de kevlar.',
+  },
+  pesada: {
+    nome: 'Proteção pesada', defesa: 10, categoria: 2, espacos: 5,
+    rd: 2, penalidadeCarga: 5,
+    descricao: 'Capacete, ombreiras, joelheiras e colete de kevlar. RD 2 a balístico, corte, impacto e perfuração; −5 em Acrobacia, Crime e Furtividade.',
+  },
+};
+export const ESCUDO = {
+  nome: 'Escudo', defesa: 2, categoria: 1, espacos: 2,
+  descricao: 'Empunhado numa mão. A Defesa dele soma com a de uma proteção.',
 };
 
 // 5%, 10%, ..., 95%, 99%

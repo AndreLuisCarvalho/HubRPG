@@ -196,6 +196,9 @@
 
 .treinada .bonus { color: #fff; }
 
+// Penalidade da proteção pesada aplicada: número em vermelho de carimbo
+.bonus.penalizado { color: #e0675c; cursor: help; }
+
 .vazio {
   grid-column: 1 / -1;
   padding: 24px 0;

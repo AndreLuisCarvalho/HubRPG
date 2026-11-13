@@ -9,8 +9,8 @@ $grao: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='
 .pergaminho.pergaminho {
   // Fontes do grimório (troque aqui para testar outras): títulos em capitais retas,
   // texto de máquina de escrever, como um dossiê da Ordem
-  --fonte-titulo: 'Cinzel', serif;
-  --fonte-texto: 'Special Elite', 'Courier New', monospace;
+  --fonte-titulo: 'Barlow Condensed', sans-serif;
+  --fonte-texto: 'IBM Plex Sans', sans-serif;
 
   --texto: #2b2016;          // tinta
   --texto-suave: #6e5a3f;    // tinta desbotada

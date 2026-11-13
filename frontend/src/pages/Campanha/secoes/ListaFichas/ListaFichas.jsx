@@ -29,11 +29,12 @@ export default function ListaFichas({ campanha, tipo, titulo }) {
 
   const abrir = (ficha) => navigate(`/campanha/${campanha.id}/fichas/${ficha.id}`);
 
-  async function criar({ nome, opcoes }) {
+  async function criar({ nome, imagem, opcoes }) {
     try {
       const nova = await api.criarFicha(campanha.id, {
         nome,
         tipo,
+        imagem,
         dados: sistema?.fichaInicial(opcoes) ?? {},
       });
       abrir(nova);

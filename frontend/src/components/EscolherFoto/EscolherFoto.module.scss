@@ -1,0 +1,69 @@
+// Retrato redondo com anel duplo de tinta (como um carimbo) e um selinho de câmera
+.foto {
+  position: relative;
+  width: var(--tamanho, 72px);
+  height: var(--tamanho, 72px);
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #17181b;
+  box-shadow:
+    0 0 0 1px var(--tinta-linha, rgba(217, 211, 196, 0.38)),
+    0 0 0 4px #141518,
+    0 0 0 5px var(--tinta-fraca, rgba(217, 211, 196, 0.16));
+  cursor: pointer;
+
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    // Um pouco envelhecida, como foto de dossiê
+    filter: sepia(0.25) contrast(1.05);
+  }
+
+  // O input fica escondido; o label inteiro abre o seletor
+  input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:focus-within { outline: 1px solid var(--cor); outline-offset: 6px; }
+
+  &:hover .selo { border-color: var(--cor); }
+}
+
+.inicial {
+  font-family: var(--fonte-titulo, 'Barlow Condensed', sans-serif);
+  font-size: calc(var(--tamanho, 72px) * 0.42);
+  font-weight: 800;
+  color: var(--texto);
+}
+
+// Selinho da câmera no canto de baixo
+.selo {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--tinta-linha, rgba(217, 211, 196, 0.38));
+  border-radius: 50%;
+  background: var(--superficie, #1b1c1f);
+  color: var(--cor);
+
+  svg {
+    width: 13px;
+    height: 13px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linejoin: round;
+  }
+}
