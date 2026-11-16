@@ -208,6 +208,35 @@
   }
 }
 
+// Badges de elemento: borda na cor do elemento; o escolhido fica preenchido
+.filtroElemento {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+
+  button {
+    --el: var(--cor);
+    padding: 3px 9px;
+    border: 1px solid color-mix(in srgb, var(--el) 45%, var(--borda));
+    border-radius: 2px;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+
+    &:hover { color: var(--el); }
+
+    &[aria-pressed='true'] {
+      border-color: var(--el);
+      background: color-mix(in srgb, var(--el) 20%, transparent);
+      color: var(--el);
+      font-weight: 600;
+    }
+  }
+}
+
 .vdMonstro {
   grid-column: 2;
   grid-row: 1 / span 2;
