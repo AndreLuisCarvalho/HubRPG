@@ -10,6 +10,16 @@ const acao = (tipo, nome, texto) => ({ tipo, nome, texto });
 const hab = (nome, texto) => ({ nome, texto });
 const attr = (agi, forca, int, pre, vig) => ({ agi, for: forca, int, pre, vig });
 
+// Ameaças da Realidade (pessoas e animais): sem elemento e sem Presença Perturbadora
+const SEM_PRESENCA = { dt: 0, dano: '', nex: '' };
+const mundano = (dados) => ({
+  elemento: '', descritores: [], tipo: 'Pessoa', tamanho: 'medio', presenca: SEM_PRESENCA,
+  resistencias: '', vulnerabilidades: '', imunidades: '', pericias: '', habilidades: [], acoes: [], enigma: '',
+  ...dados,
+});
+// Conjuradores (cultistas): rituais à escolha, sem pagar PE até um limite por conjuração
+const conjurador = (rituais, limite, dt) => hab('Conjurador', `Escolha ${rituais}. Conjura esses rituais sem pagar o custo em PE, até ${limite} PE por conjuração, usando a ação de cada ritual. DT para resistir: ${dt}.`);
+
 export const MONSTROS = [
   /* ======================= Sangue ======================= */
   {
@@ -1008,4 +1018,257 @@ export const MONSTROS = [
     ],
     enigma: 'Personificação do caos e da irracionalidade. A única forma justa de enfrentá-lo é sob a proteção do Equilíbrio, algo que só a Máscara do Desespero, que rege as correntes da Realidade, pode oferecer.',
   },
+
+  /* ======================= Medo ======================= */
+  {
+    id: 'degolificada', nome: 'Degolificada', pagina: 280, vd: 320,
+    elemento: 'med', descritores: ['ene', 'con', 'san', 'mor'], tipo: 'Criatura', tamanho: 'medio',
+    descricao: 'Uma das criaturas mais temidas, feita de todos os elementos: figura de pele cinzenta que flutua rente ao chão, com um cabelo preto enorme que se move sozinho e esconde um rosto de boca costurada. Ligada a jovens mortos em rituais. "Se você vir longos cabelos pretos flutuando em sua direção… CORRA."',
+    presenca: { dt: 40, dano: '9d6', nex: '95%' },
+    sentidos: { percepcao: '4d20+15', iniciativa: '3d20', extra: 'Percepção às cegas' },
+    defesa: 45, fortitude: '4d20+20', reflexos: '3d20+15', vontade: '4d20+25',
+    pv: 850, resistencias: '', vulnerabilidades: '', imunidades: 'Dano',
+    atributos: attr(3, 5, 3, 4, 4), pericias: '', deslocamento: '6m (4q)',
+    habilidades: [
+      hab('Criatura de Medo', 'Imune a dano até que se resolva o mistério da sua origem.'),
+      hab('Metamorfose (Sangue)', 'Se matar um alvo e mantê-lo agarrado até o próximo turno, absorve o corpo e vira a Degolificada Devoradora: forma de Sangue maior e mais agressiva, com uma mordida extra (5d20+35, 10d10+20 de Sangue) e resistência a Sangue 20.'),
+      hab('Metamorfose (Morte)', 'Após 3 erros seguidos de ataques contra ela, vira a Degolificada Decrépita: esquelética e retorcida, com Lodo; deslocamento 12m, resistência a Morte 20, e com uma ação de movimento os cabelos de Lodo agarram uma criatura em alcance curto (Reflexos DT 35 evita).'),
+      hab('Metamorfose (Energia)', 'Se enlouquecer um alvo, vira a Degolificada Conturbada: espectro de chamas, atravessa paredes, ignora coberturas, seus ataques causam dano de Energia e ganha resistência a Energia 20.'),
+      hab('Metamorfose (Conhecimento)', 'Se receber uma resposta errada a seu enigma, vira a Degolificada Gnóstica: no fim de cada turno, o alvo visível mais próximo sofre 4d8 mental e fica atordoado até o fim do próximo turno, vendo uma ilusão ligada ao enigma (Vontade DT 35 reduz à metade e evita).'),
+    ],
+    ataques: [atq('Pancada', 'Corpo a corpo ×2', '5d20+35', '8d8+20 impacto')],
+    acoes: [
+      acao('Livre', 'Agarrar e estrangular', 'Ao acertar a pancada num ser Médio ou menor, pode agarrá-lo (teste 5d20+35); o agarrado também fica asfixiado. Segura até dois.'),
+      acao('Livre', 'Grito rasgado', 'Uma vez por cena, rompe a costura da boca: todos em alcance médio sofrem 4d10+10 mental e rolam 1d4 (Vontade DT 35 reduz à metade e evita o efeito): 1, surdo dos dois ouvidos para sempre; 2, surdo de um ouvido para sempre; 3, surdo dos dois até o fim da cena; 4, surdo de um até o fim da cena.'),
+      acao('Movimento', 'Desfiguramento capilar', 'Os cabelos entram pelos orifícios dos agarrados: 10d6+20 de perfuração (Fortitude DT 35 reduz à metade) e 6d10 mental (Vontade DT 35 reduz à metade).'),
+    ],
+    enigma: 'É preciso investigar e descobrir a causa da sua morte, para que ela não possa fugir desse confronto. Confrontada com a verdade, perde a imunidade a dano.',
+  },
+
+  /* ======================= Ameaças da Realidade ======================= */
+  mundano({
+    id: 'bandido', nome: 'Bandido', pagina: 284, vd: 10,
+    descricao: 'Um criminoso típico, como um ladrão ou assaltante.',
+    sentidos: { percepcao: '1d20', iniciativa: '2d20+5', extra: '' },
+    defesa: 14, fortitude: '1d20', reflexos: '2d20+5', vontade: '1d20', pv: 8,
+    atributos: attr(2, 2, 1, 1, 1), pericias: 'Crime 2d20+5, Furtividade 2d20+5', deslocamento: '9m (6q)',
+    ataques: [atq('Faca', 'Corpo a corpo', '2d20+5', '1d4+2 perfuração')],
+    acoes: [acao('Livre', 'Ataque furtivo', 'Uma vez por rodada, +1d6 de dano corpo a corpo, ou à distância em alcance curto, contra alvo desprevenido ou flanqueado.')],
+  }),
+  mundano({
+    id: 'capanga', nome: 'Capanga', pagina: 284, vd: 20,
+    descricao: 'Gente embrutecida que vive pela violência: executores da máfia, leões de chácara de boate.',
+    sentidos: { percepcao: '1d20+5', iniciativa: '1d20+5', extra: '' },
+    defesa: 13, fortitude: '2d20+5', reflexos: '2d20+5', vontade: '1d20', pv: 17,
+    atributos: attr(1, 2, 1, 1, 2), pericias: 'Intimidação 1d20+5', deslocamento: '9m (6q)',
+    ataques: [
+      atq('Bastão', 'Corpo a corpo', '2d20+5', '1d8+7 impacto'),
+      atq('Revólver', 'Distância (curto), crítico 19/×3', '1d20+5', '2d6+5 balístico'),
+    ],
+    acoes: [acao('Livre', 'Ataque furtivo', 'Uma vez por rodada, +2d6 de dano corpo a corpo, ou à distância em alcance curto, contra alvo desprevenido ou flanqueado.')],
+  }),
+  mundano({
+    id: 'soldado-de-aluguel', nome: 'Soldado de Aluguel', pagina: 284, vd: 40,
+    descricao: 'Combatente profissional que trabalha para quem pagar mais.',
+    sentidos: { percepcao: '1d20+5', iniciativa: '2d20+10', extra: '' },
+    defesa: 18, fortitude: '2d20+5', reflexos: '2d20+5', vontade: '1d20', pv: 25,
+    atributos: attr(2, 2, 1, 1, 2), deslocamento: '9m (6q)',
+    ataques: [
+      atq('Machete', 'Corpo a corpo, crítico 19', '2d20+10', '1d6+9 corte'),
+      atq('Fuzil de assalto', 'Distância (médio), crítico 19/×3', '2d20+10', '2d8+9 balístico'),
+    ],
+    acoes: [acao('Completa', 'Ataque em movimento', 'Percorre seu deslocamento e ataca em qualquer ponto do movimento.')],
+  }),
+  mundano({
+    id: 'assassino', nome: 'Assassino', pagina: 285, vd: 80,
+    descricao: 'Matador habilidoso e furtivo, chamado quando alguém precisa sumir de forma discreta.',
+    sentidos: { percepcao: '3d20+10', iniciativa: '4d20+15', extra: '' },
+    defesa: 26, fortitude: '2d20+5', reflexos: '4d20+10', vontade: '3d20+10', pv: 90,
+    atributos: attr(4, 2, 3, 3, 2), pericias: 'Crime 4d20+10, Enganação 3d20+10, Furtividade 4d20+10', deslocamento: '9m (6q)',
+    habilidades: [hab('Evasão', 'Quando um ataque permite Reflexos para reduzir o dano à metade, não sofre dano algum se passar.')],
+    ataques: [
+      atq('Faca', 'Corpo a corpo ×2, crítico 19', '4d20+17', '1d4+11 corte'),
+      atq('Pistola', 'Distância ×2 (curto), crítico 16/×4', '4d20+15', '1d12+14 balístico'),
+    ],
+    acoes: [
+      acao('Livre', 'Ataque furtivo', 'Uma vez por rodada, +4d6 de dano corpo a corpo, ou à distância em alcance curto, contra alvo desprevenido ou flanqueado.'),
+      acao('Livre', 'Mão na boca', 'Ao fazer um ataque furtivo corpo a corpo contra alguém desprevenido, pode tentar agarrar (teste 2d20+15). Agarrada, a vítima não consegue falar.'),
+      acao('Movimento', 'Assassinar', 'Analisa uma criatura em alcance curto: até o fim do próximo turno, o primeiro Ataque furtivo que causar dano a ela tem os dados extras dobrados.'),
+    ],
+  }),
+  mundano({
+    id: 'comandante-mercenario', nome: 'Comandante Mercenário', pagina: 285, vd: 120,
+    descricao: 'Veterano endurecido por anos de conflito: oficial competente que lidera os subordinados e luta bem por conta própria.',
+    sentidos: { percepcao: '2d20+10', iniciativa: '3d20+15', extra: '' },
+    defesa: 29, fortitude: '3d20+10', reflexos: '3d20+10', vontade: '2d20+5', pv: 145,
+    resistencias: 'Balístico, corte, impacto e perfuração 5',
+    atributos: attr(3, 3, 2, 2, 3), pericias: 'Intimidação 2d20+10, Tática 2d20+10', deslocamento: '6m (4q)',
+    habilidades: [hab('Sadismo', 'Se causar dano a um inimigo, o próximo ataque contra ele tem +1d20 e, se acertar, um dado de dano extra do mesmo tipo.')],
+    ataques: [
+      atq('Machete', 'Corpo a corpo ×2, crítico 19', '3d20+17', '1d6+15 corte'),
+      atq('Metralhadora', 'Distância ×2 (médio), crítico 19/×3', '2d20+17', '3d12+15 balístico'),
+    ],
+    acoes: [
+      acao('Completa', 'Ataque em movimento', 'Percorre seu deslocamento e ataca em qualquer ponto; pode fazer seus dois ataques corpo a corpo ou à distância.'),
+      acao('Movimento', 'Ordens', 'Aliados em alcance médio recebem +1d20 em testes de perícia e um dado de dano extra do mesmo tipo até o fim da cena.'),
+    ],
+  }),
+  mundano({
+    id: 'cultista-iniciado', nome: 'Cultista Iniciado', pagina: 286, vd: 20,
+    descricao: 'Ainda no começo da adoração às entidades, mas já capaz de conjurar rituais: perigoso para agentes inexperientes.',
+    sentidos: { percepcao: '2d20+5', iniciativa: '1d20', extra: '' },
+    defesa: 16, fortitude: '1d20', reflexos: '1d20', vontade: '2d20+5', pv: 15,
+    atributos: attr(1, 1, 2, 2, 1), pericias: 'Enganação 2d20+5, Ocultismo 2d20+5', deslocamento: '9m (6q)',
+    habilidades: [conjurador('dois rituais de 1º círculo de um elemento', 3, 15)],
+    ataques: [atq('Faca', 'Corpo a corpo, crítico 19', '1d20', '1d4+1 corte')],
+  }),
+  mundano({
+    id: 'cultista-investido', nome: 'Cultista Investido', pagina: 286, vd: 40,
+    descricao: 'Já passou pelos ritos de admissão e provou sua lealdade ao Elemento: comprometido com as entidades.',
+    sentidos: { percepcao: '2d20+5', iniciativa: '2d20+5', extra: '' },
+    defesa: 17, fortitude: '1d20', reflexos: '2d20', vontade: '2d20+5', pv: 35,
+    atributos: attr(2, 1, 2, 2, 1), pericias: 'Enganação 2d20+10, Ocultismo 2d20+10', deslocamento: '9m (6q)',
+    habilidades: [conjurador('dois rituais de 1º círculo e dois de 2º círculo, de até dois elementos', 5, 17)],
+    ataques: [
+      atq('Faca', 'Corpo a corpo, crítico 19', '2d20+5', '1d4+1 corte'),
+      atq('Revólver', 'Distância (curto), crítico 19/×3', '2d20', '2d6 balístico'),
+    ],
+  }),
+  mundano({
+    id: 'lider-de-culto', nome: 'Líder de Culto', pagina: 286, vd: 140,
+    descricao: 'Conjurador experiente que subiu no culto. Disfarçado de bom cidadão, pode ser qualquer um, até alguém muito próximo dos agentes.',
+    sentidos: { percepcao: '3d20+10', iniciativa: '2d20+10', extra: '' },
+    defesa: 27, fortitude: '2d20+10', reflexos: '2d20+5', vontade: '3d20+15', pv: 150,
+    atributos: attr(2, 1, 3, 3, 2), pericias: 'Enganação 3d20+15, Ocultismo 3d20+15', deslocamento: '9m (6q)',
+    habilidades: [conjurador('dois rituais de 1º círculo, dois de 2º e dois de 3º, de até dois elementos', 10, 25)],
+    ataques: [
+      atq('Faca', 'Corpo a corpo, crítico 19', '2d20+10', '1d4+1 corte'),
+      atq('Revólver', 'Distância (curto), crítico 19/×3', '2d20+5', '2d6 balístico'),
+    ],
+  }),
+  mundano({
+    id: 'policial', nome: 'Policial', pagina: 287, vd: 20,
+    descricao: 'O policial de patrulha, que provavelmente nunca viu o paranormal e vai tratar monstros como piada ou desculpa. Serve também para vigias e seguranças.',
+    sentidos: { percepcao: '1d20+5', iniciativa: '2d20+5', extra: '' },
+    defesa: 19, fortitude: '2d20+5', reflexos: '2d20+5', vontade: '1d20', pv: 15,
+    atributos: attr(2, 2, 1, 1, 2), deslocamento: '9m (6q)',
+    ataques: [
+      atq('Bastão', 'Corpo a corpo', '2d20+5', '1d8+7 impacto'),
+      atq('Pistola', 'Distância (curto), crítico 18', '2d20+5', '1d12+5 balístico'),
+    ],
+  }),
+  mundano({
+    id: 'policial-de-elite', nome: 'Policial de Elite', pagina: 287, vd: 60,
+    descricao: 'Tropa treinada e equipada para situações extremas: os primeiros a aparecer quando uma investigação discreta vira confronto armado.',
+    sentidos: { percepcao: '1d20+10', iniciativa: '3d20+15', extra: '' },
+    defesa: 27, fortitude: '3d20+10', reflexos: '3d20+10', vontade: '1d20+10', pv: 40,
+    resistencias: 'Balístico, corte, impacto e perfuração 5',
+    atributos: attr(3, 3, 1, 1, 3), deslocamento: '6m (4q)',
+    habilidades: [hab('Fortificação', 'Pelo equipamento, 50% de chance de ignorar o dano extra de um acerto crítico ou ataque furtivo.')],
+    ataques: [
+      atq('Bastão', 'Corpo a corpo ×2', '3d20+10', '1d8+13 impacto'),
+      atq('Fuzil de assalto', 'Distância (médio), crítico 17/×3', '3d20+10', '2d8+13 balístico'),
+    ],
+    acoes: [
+      acao('Padrão', 'Lança-granadas', 'Uma vez por cena, granada em alcance médio: quem estiver a até 6m do ponto sofre 8d6 de impacto (Reflexos DT 19 reduz à metade).'),
+      acao('Completa', 'Empurrar e atirar', 'Empurra alguém adjacente 3m (Fortitude DT 19 evita) e atira com o fuzil à queima-roupa. Se empurrou, +1d20 no ataque e +2d8 de dano se acertar.'),
+    ],
+  }),
+  mundano({
+    id: 'chefe-de-policia', nome: 'Chefe de Polícia', pagina: 287, vd: 100,
+    descricao: 'Delegado ou coronel que já passou por situações difíceis e não se intimida fácil.',
+    sentidos: { percepcao: '3d20+15', iniciativa: '2d20+10', extra: '' },
+    defesa: 25, fortitude: '3d20+10', reflexos: '2d20+10', vontade: '3d20+15', pv: 105,
+    atributos: attr(2, 3, 2, 3, 3), deslocamento: '9m (6q)',
+    ataques: [
+      atq('Bastão', 'Corpo a corpo ×2', '3d20+15', '1d8+8 impacto'),
+      atq('Espingarda', 'Distância ×2 (curto), crítico ×3', '2d20+17', '4d6+12 balístico'),
+    ],
+    acoes: [acao('Reação', 'Teimoso', 'Uma vez por cena, ignora um efeito que exija teste de resistência ou reduz à metade um dano que acabou de sofrer.')],
+  }),
+
+  /* ---------- Animais ---------- */
+  mundano({
+    id: 'cao-de-guarda', nome: 'Cão de Guarda', pagina: 288, vd: 10, tipo: 'Animal',
+    descricao: 'Cão treinado para guarda, um problema para quem precisa ser furtivo. Serve também para cães policiais ou lobos.',
+    sentidos: { percepcao: '1d20+10', iniciativa: '2d20+5', extra: 'Faro, visão na penumbra' },
+    defesa: 14, fortitude: '2d20+5', reflexos: '2d20+5', vontade: '1d20', pv: 12,
+    atributos: attr(2, 2, 0, 1, 2), pericias: 'Sobrevivência 1d20+10', deslocamento: '12m (8q)',
+    ataques: [atq('Mordida', 'Corpo a corpo', '2d20+5', '1d6+2 corte')],
+    acoes: [acao('Livre', 'Derrubar', 'Ao acertar a mordida, pode fazer a manobra derrubar (bônus 2d20+5).')],
+  }),
+  mundano({
+    id: 'enxame-de-abelhas', nome: 'Enxame de Abelhas', pagina: 288, vd: 10, tipo: 'Animal (enxame)',
+    descricao: 'Normalmente pacíficas, as abelhas atacam quando a colmeia é ameaçada. Comuns em zonas rurais, parques e casas abandonadas.',
+    sentidos: { percepcao: '1d20+5', iniciativa: '1d20+5', extra: 'Visão na penumbra' },
+    defesa: 15, fortitude: '−2d20', reflexos: '1d20+5', vontade: '1d20', pv: 10,
+    atributos: attr(1, 0, 0, 0, 0), deslocamento: '3m (2q) · voo 9m',
+    habilidades: [
+      hab('Enxame', 'Pode entrar no espaço de outro ser. No fim do turno, causa 2d6 de perfuração em quem estiver no seu espaço, automaticamente. Imune a manobras e a efeitos de alvo único que não causem dano; sofre metade do dano de ataques com armas, mas 50% a mais de efeitos de área.'),
+      hab('Zumbido nauseante', 'Quem sofre dano do enxame fica enjoado por 1 rodada (Fortitude DT 15 evita).'),
+    ],
+    ataques: [],
+  }),
+  mundano({
+    id: 'enxame-de-ratos', nome: 'Enxame de Ratos', pagina: 288, vd: 10, tipo: 'Animal (enxame)',
+    descricao: 'Ratos estão em quase todo lugar habitado. Tímidos, mas viram enxames perigosos movidos por fome intensa ou energias paranormais.',
+    sentidos: { percepcao: '1d20+5', iniciativa: '1d20+5', extra: 'Faro, visão na penumbra' },
+    defesa: 13, fortitude: '1d20+5', reflexos: '1d20+5', vontade: '1d20', pv: 15,
+    atributos: attr(1, 0, 0, 1, 1), deslocamento: '9m (6q) · escalar/nadar 6m',
+    habilidades: [
+      hab('Enxame', 'Pode entrar no espaço de outro ser. No fim do turno, causa 2d6 de perfuração em quem estiver no seu espaço, automaticamente. Imune a manobras e a efeitos de alvo único que não causem dano; sofre metade do dano de ataques com armas, mas 50% a mais de efeitos de área.'),
+      hab('Doença', 'Quem sofre dano do enxame contrai febre hemorrágica (Fortitude DT 15 evita; veja Perigos no Livro).'),
+    ],
+    ataques: [],
+  }),
+  mundano({
+    id: 'jacare', nome: 'Jacaré', pagina: 288, vd: 40, tipo: 'Animal', tamanho: 'grande',
+    descricao: 'Algumas espécies aparecem até em áreas urbanas. Esta ficha é de um espécime grande, perigoso para agentes.',
+    sentidos: { percepcao: '1d20+5', iniciativa: '1d20+5', extra: 'Visão na penumbra' },
+    defesa: 16, fortitude: '2d20+5', reflexos: '1d20+5', vontade: '1d20', pv: 40,
+    atributos: attr(1, 3, 0, 1, 2), pericias: 'Furtividade 1d20+8', deslocamento: '6m (4q) · nadar 9m (6q)',
+    habilidades: [hab('Giro da morte', 'Agarrando alguém dentro da água, se fizer a manobra agarrar de novo para causar dano, causa +2d8.')],
+    ataques: [
+      atq('Mordida', 'Corpo a corpo', '3d20+5', '1d8+8 corte'),
+      atq('Cauda', 'Corpo a corpo', '3d20+5', '1d12 impacto'),
+    ],
+    acoes: [acao('Livre', 'Agarrão', 'Ao acertar a mordida num ser Médio ou menor, pode agarrá-lo (teste 3d20+7).')],
+  }),
+  mundano({
+    id: 'javaporco', nome: 'Javaporco', pagina: 289, vd: 20, tipo: 'Animal',
+    descricao: 'Cruzamento de javali com porco doméstico, praga em muitas regiões rurais. Agentes numa fazenda ou esconderijo no mato podem dar de cara com um bando.',
+    sentidos: { percepcao: '1d20+5', iniciativa: '1d20+5', extra: 'Faro, visão na penumbra' },
+    defesa: 14, fortitude: '3d20+5', reflexos: '1d20+5', vontade: '1d20', pv: 35,
+    atributos: attr(1, 2, 0, 1, 3), deslocamento: '12m (8q)',
+    habilidades: [hab('Ferocidade', 'Se sofrer dano, recebe +1d20 nos ataques e um dado de dano extra até o fim da cena.')],
+    ataques: [atq('Mordida', 'Corpo a corpo', '2d20+5', '1d8+4 corte')],
+    acoes: [acao('Reação', 'Mordida final', 'Ao chegar a 0 PV, morde um oponente aleatório ao alcance antes de morrer.')],
+  }),
+  mundano({
+    id: 'onca-pintada', nome: 'Onça-Pintada', pagina: 289, vd: 40, tipo: 'Animal', tamanho: 'grande',
+    descricao: 'O maior felino das Américas e principal predador das matas brasileiras. Raramente sai do seu território, mas é mortal para quem entra nele.',
+    sentidos: { percepcao: '1d20+10', iniciativa: '3d20+10', extra: 'Faro, visão na penumbra' },
+    defesa: 16, fortitude: '2d20+5', reflexos: '3d20+5', vontade: '1d20+5', pv: 55,
+    atributos: attr(3, 3, 0, 1, 2), pericias: 'Furtividade 3d20+13', deslocamento: '12m (8q) · escalar/nadar 6m',
+    ataques: [
+      atq('Mordida', 'Corpo a corpo', '3d20+10', '1d8+5 corte'),
+      atq('Garras', 'Corpo a corpo ×2, crítico 19', '3d20+10', '1d6+5 corte'),
+    ],
+    acoes: [
+      acao('Livre', 'Agarrão', 'Ao acertar a mordida num ser Médio ou menor, pode agarrá-lo (teste 3d20+7).'),
+      acao('Completa', 'Bote', 'Faz uma investida e ataca com a mordida e as duas garras, todas contra o mesmo alvo e com o bônus da investida.'),
+    ],
+  }),
+  mundano({
+    id: 'sucuri', nome: 'Sucuri', pagina: 289, vd: 40, tipo: 'Animal', tamanho: 'grande',
+    descricao: 'Grande cobra constritora da Amazônia. Pode estar com colecionadores de animais exóticos ou ser o mascote perigoso de cultistas excêntricos.',
+    sentidos: { percepcao: '1d20+5', iniciativa: '2d20+5', extra: 'Faro, visão na penumbra' },
+    defesa: 16, fortitude: '3d20+5', reflexos: '2d20+5', vontade: '1d20', pv: 68,
+    atributos: attr(2, 3, 0, 1, 3), pericias: 'Furtividade 2d20+8', deslocamento: '6m (4q) · escalar/nadar 9m',
+    ataques: [atq('Mordida', 'Corpo a corpo', '3d20+10', '1d6+8 corte')],
+    acoes: [
+      acao('Livre', 'Agarrão', 'Ao acertar a mordida num ser Médio ou menor, pode agarrá-lo (teste 4d20+12).'),
+      acao('Livre', 'Constrição', 'No início de cada turno, causa 2d6+8 de impacto em quem estiver agarrando.'),
+    ],
+  }),
 ];
