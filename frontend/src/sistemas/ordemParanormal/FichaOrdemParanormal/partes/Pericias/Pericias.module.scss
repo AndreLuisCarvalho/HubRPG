@@ -86,6 +86,8 @@
   border: 0;
   background: none;
   color: var(--texto-suave);
+  cursor: pointer;
+  transition: color 0.15s, transform 0.15s;
 
   svg {
     width: 100%;
@@ -96,7 +98,9 @@
     stroke-linejoin: round;
   }
 
-  &:disabled { cursor: default; }
+  // Abre a mesa de dados
+  &:hover { color: var(--texto); transform: rotate(-12deg) scale(1.15); }
+  &:focus-visible { outline: 1px solid var(--cor); outline-offset: 2px; }
 }
 
 .treinada .rolar { color: var(--cor); }

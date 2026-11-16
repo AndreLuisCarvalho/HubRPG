@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useRolagem } from '../../../../../components/Dados/rolagem';
+import { pedidoAtaque, pedidoDano } from '../../../rolagens';
 import styles from './Listas.module.scss';
 
 /*
@@ -55,6 +57,7 @@ function useEdicao(itens, onMudar, vazio) {
 /* ---------------------------------------------------------------- */
 export function ListaAtaques({ ataques = [], onMudar }) {
   const ed = useEdicao(ataques, onMudar, { nome: '', alcance: 'Corpo a corpo', teste: '', dano: '' });
+  const { rolar } = useRolagem();
 
   return (
     <section className={styles.lista}>
@@ -81,8 +84,11 @@ export function ListaAtaques({ ataques = [], onMudar }) {
             {a.alcance && <i>{a.alcance}</i>}
             <Lapis onClick={() => ed.abrir(a.uid)} rotulo={`Editar ${a.nome || 'ataque'}`} />
           </div>
+          {/* Clicar no número rola: teste → ataque (com "Rolar dano" no fim); dano → direto */}
           <p className={styles.numeros}>
-            <span>TESTE</span> {a.teste || '—'} <span className={styles.barra}>|</span> <span>DANO</span> {a.dano || '—'}
+            <span>TESTE</span> <Rolavel pedido={pedidoAtaque(a)} rolar={rolar} texto={a.teste} />
+            {' '}<span className={styles.barra}>|</span>{' '}
+            <span>DANO</span> <Rolavel pedido={pedidoDano(a)} rolar={rolar} texto={a.dano} dano />
           </p>
         </div>
       )))}
@@ -140,6 +146,21 @@ function ListaDeTextos({ titulo, itens, onMudar, comTipo = false, rotuloNovo }) 
 /* ---------------------------------------------------------------- */
 /* Peças                                                            */
 /* ---------------------------------------------------------------- */
+// Número do bloco que vira botão de rolar (se der para ler a fórmula)
+export function Rolavel({ pedido, rolar, texto, dano = false }) {
+  if (!pedido) return <>{texto || '—'}</>;
+  return (
+    <button
+      type="button"
+      className={`${styles.rolavel} ${dano ? styles.rolavelDano : ''}`}
+      onClick={() => rolar(pedido)}
+      title={`Rolar ${pedido.subtitulo.toLowerCase()}: ${pedido.formula}`}
+    >
+      {texto}
+    </button>
+  );
+}
+
 function Lapis({ onClick, rotulo }) {
   return (
     <button type="button" className={styles.lapis} onClick={onClick} aria-label={rotulo} title="Editar">✎</button>

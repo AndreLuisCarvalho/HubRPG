@@ -1,4 +1,7 @@
 import Contador from '../../../../components/Contador/Contador';
+import BotaoRolar from '../../../../components/Dados/BotaoRolar';
+import { useRolagem } from '../../../../components/Dados/rolagem';
+import { pedidoAtaque, pedidoTeste } from '../../rolagens';
 import EscolherFoto from '../../../../components/EscolherFoto/EscolherFoto';
 import Seletor from '../../../../components/Seletor/Seletor';
 import { PERICIAS } from '../../modelo';
@@ -24,6 +27,7 @@ export default function FichaNpc({ ficha, onAlterarDados, onAlterarFicha }) {
   const { dados } = ficha;
   const npc = { pv: 10, pvMax: 10, defesa: 10, ataques: [], pericias: [], ...dados.npc };
   const mudarNpc = (parcial) => onAlterarDados({ npc: { ...npc, ...parcial } });
+  const { rolar } = useRolagem();
 
   // Texto salvo ao sair do campo (não grava a cada letra)
   const salvarAoSair = (campo) => (e) => {
@@ -132,6 +136,8 @@ export default function FichaNpc({ ficha, onAlterarDados, onAlterarFicha }) {
           {npc.ataques.length === 0 && <p className={styles.vazio}>Nenhum ataque.</p>}
           {npc.ataques.map((a, i) => (
             <div key={a.uid ?? i} className={styles.ataque}>
+              {/* Teste "+5" vira 1d20+5 */}
+              <BotaoRolar pedido={pedidoAtaque(a)} rolar={rolar} rotulo={`Atacar com ${a.nome || 'ataque'}`} />
               <input defaultValue={a.nome} onBlur={(e) => mudarAtaque(i, 'nome', e.target.value.trim())} placeholder="Arma" aria-label="Arma" />
               <input defaultValue={a.teste} onBlur={(e) => mudarAtaque(i, 'teste', e.target.value.trim())} placeholder="Teste (+5)" aria-label="Teste de ataque" />
               <input defaultValue={a.dano} onBlur={(e) => mudarAtaque(i, 'dano', e.target.value.trim())} placeholder="Dano (1d6)" aria-label="Dano" />
@@ -146,6 +152,10 @@ export default function FichaNpc({ ficha, onAlterarDados, onAlterarFicha }) {
           {npc.pericias.length === 0 && <p className={styles.vazio}>Nenhuma perícia em destaque.</p>}
           {npc.pericias.map((p, i) => (
             <div key={p.id} className={styles.pericia}>
+              <BotaoRolar
+                pedido={pedidoTeste(nomePericia(p.id), 'Teste de perícia', `1d20${p.bonus < 0 ? '' : '+'}${p.bonus}`)}
+                rolar={rolar}
+              />
               <span>{nomePericia(p.id)}</span>
               <Contador valor={p.bonus} onMudar={(bonus) => mudarPericia(i, { bonus })} min={-10} max={40} rotulo={`Bônus de ${nomePericia(p.id)}`} />
               <button type="button" className={styles.remover} onClick={() => removerPericia(i)} aria-label={`Remover ${nomePericia(p.id)}`}>×</button>

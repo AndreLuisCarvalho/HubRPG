@@ -156,6 +156,25 @@
   color: var(--texto-suave);
 }
 
+// Fora da edição, o hexágono inteiro rola o atributo
+.rolarAtributo {
+  position: absolute;
+  inset: 8%;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 30%;
+  background: none;
+  cursor: pointer;
+
+  &:focus-visible { outline: 1px solid var(--cor); outline-offset: 2px; }
+}
+
+.no:has(.rolarAtributo:hover) .hex polygon {
+  fill: color-mix(in srgb, var(--cor) 22%, #17181b);
+  transition: fill 0.15s;
+}
+
 /* ---------- Modo de edição ---------- */
 .editando .hex polygon {
   fill: color-mix(in srgb, var(--cor) 18%, #17181b);
