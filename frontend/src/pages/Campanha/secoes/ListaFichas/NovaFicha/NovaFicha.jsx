@@ -64,12 +64,14 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
 
   // Filtro por elemento: só aparecem os elementos que existem no catálogo
   const [elementoMonstro, setElementoMonstro] = useState('');
-  const elementosDoCatalogo = [...new Map((catalogo ?? []).map((m) => [m.elemento, { id: m.elemento, nome: m.nomeElemento, cor: m.cor }])).values()];
+  // Ameaças sem elemento (pessoas, animais) ganham o filtro próprio "mundano" ('' já é "Todos")
+  const chaveElemento = (m) => m.elemento || 'mundano';
+  const elementosDoCatalogo = [...new Map((catalogo ?? []).map((m) => [chaveElemento(m), { id: chaveElemento(m), nome: m.nomeElemento, cor: m.cor }])).values()];
 
   const termo = buscaMonstro.trim().toLocaleLowerCase('pt-BR');
   const listaMonstros = (catalogo ?? []).filter((m) =>
     (!termo || m.nome.toLocaleLowerCase('pt-BR').includes(termo))
-    && (!elementoMonstro || m.elemento === elementoMonstro));
+    && (!elementoMonstro || chaveElemento(m) === elementoMonstro));
 
   const semClasse = simples || ehMonstro;
   const completo = nome.trim()
