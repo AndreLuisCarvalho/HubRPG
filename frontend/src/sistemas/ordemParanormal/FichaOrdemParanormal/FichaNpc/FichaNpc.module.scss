@@ -165,7 +165,9 @@
 // Arma · teste · dano · ×
 .ataque {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) 28px;
+  // d20 (ataque → dano) · arma · teste · dano · ×
+  grid-template-columns: 24px minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) 28px;
+  align-items: center;
   gap: 6px;
 
   input {

@@ -45,7 +45,7 @@ export default function Abas({ dados, onAlterarDados, className = '' }) {
       {/* Listas longas rolam aqui dentro, nunca a página */}
       <div className={styles.conteudo} role="tabpanel">
         {aba.id === 'ataques' && (
-          <Ataques ataques={dados.ataques} onAlterar={(ataques) => onAlterarDados({ ataques })} />
+          <Ataques dados={dados} ataques={dados.ataques} onAlterar={(ataques) => onAlterarDados({ ataques })} />
         )}
         {aba.id === 'habilidades' && <Habilidades dados={dados} onAlterarDados={onAlterarDados} />}
         {aba.id === 'rituais' && (

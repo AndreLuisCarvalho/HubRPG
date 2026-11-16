@@ -1,0 +1,161 @@
+// Dado em CSS 3D. Cada camada tem um papel:
+//  .voo   → de onde o dado vem (translação)
+//  .giro  → as voltas que vão freando até zero
+//  .corpo → a posição final (face sorteada virada para a frente)
+// Mesma duração e curva nas duas animações: o dado chega e para de girar juntos, sem tranco.
+$duracao: 1.7s;
+$freio: cubic-bezier(0.16, 1, 0.3, 1);        // começa rápido e freia macio até parar
+$chegada: cubic-bezier(0.3, 1.25, 0.55, 1);   // passa um tiquinho do ponto e assenta
+
+.dado {
+  // Cor sólida e fosca, números claros (como um d20 de resina)
+  --dado: #a3181b;   // mesmo vermelho dos dados em WebGL
+  --tinta: #f7f2e8;
+  position: relative;
+  width: var(--tam);
+  height: var(--tam);
+  transform-style: preserve-3d;
+}
+
+
+.voo {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.giro,
+.corpo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+
+.giro { will-change: transform; }
+
+.face {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  backface-visibility: hidden;
+  // O que sobra em volta do miolo vira a aresta chanfrada, mais clara
+  background: color-mix(in srgb, var(--dado) 62%, #fff);
+
+  b {
+    position: relative;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    color: var(--tinta);
+    // Número levemente gravado na face
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.35), 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  // Escurece os dados que não contam (sem filter, que pesa no 3D)
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #0b0c0e;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.miolo {
+  position: absolute;
+  inset: 0;
+
+  // Brilho suave de cima, como plástico fosco
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), transparent 55%, rgba(0, 0, 0, 0.12));
+  }
+}
+
+// 6 e 9 sublinhados para não confundir
+.sublinhado {
+  text-decoration: underline;
+  text-underline-offset: 0.08em;
+  text-decoration-thickness: 0.06em;
+}
+
+.sombra {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -12%;
+  height: 20%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.6), transparent);
+}
+
+// O d20 que conta: brilho na cor do dado
+.destaque .sombra {
+  left: -12%;
+  right: -12%;
+  bottom: -20%;
+  height: 34%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--cor, #c4974a) 75%, transparent), transparent);
+  animation: acender 0.45s ease-out both;
+  animation-delay: calc(var(--atraso) + #{$duracao} - 0.15s);
+}
+
+.apagado .face::after {
+  animation: apagar 0.45s ease-out both;
+  animation-delay: calc(var(--atraso) + #{$duracao} - 0.15s);
+}
+
+/* ---------- Esperando ---------- */
+.ocioso .voo { animation: flutuar 3s ease-in-out infinite alternate; }
+.ocioso .giro { animation: ocioso 10s linear infinite; }
+
+/* ---------- Rolando ---------- */
+.rolando .voo { animation: voo $duracao $chegada var(--atraso) both; }
+.rolando .giro { animation: giro $duracao $freio var(--atraso) both; }
+.rolando .sombra { animation: sombra $duracao ease-out var(--atraso) both; }
+
+@keyframes voo {
+  from { transform: translate3d(var(--dx), 55vh, 0) scale(0.8); }
+  to { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes giro {
+  from { transform: rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)); }
+  to { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+}
+
+@keyframes sombra {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes ocioso {
+  from { transform: rotateY(0deg) rotateX(0deg); }
+  to { transform: rotateY(360deg) rotateX(360deg); }
+}
+
+@keyframes flutuar {
+  from { transform: translateY(-5px); }
+  to { transform: translateY(5px); }
+}
+
+@keyframes acender { from { opacity: 0; } }
+@keyframes apagar { to { opacity: 0.55; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rolando .voo,
+  .rolando .giro,
+  .rolando .sombra { animation-duration: 1ms; }
+  .destaque .sombra,
+  .apagado .face::after { animation-delay: 0s; }
+  .ocioso .voo,
+  .ocioso .giro { animation: none; }
+}

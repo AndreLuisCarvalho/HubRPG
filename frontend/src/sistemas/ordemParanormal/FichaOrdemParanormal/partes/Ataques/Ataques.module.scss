@@ -8,7 +8,8 @@
 
 .ataque {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 70px 24px;
+  // d20 do ataque · nome · dano · d20 do dano · ×
+  grid-template-columns: 24px minmax(0, 1fr) 70px 24px 24px;
   align-items: center;
   gap: 4px 8px;
   padding: 8px 10px;

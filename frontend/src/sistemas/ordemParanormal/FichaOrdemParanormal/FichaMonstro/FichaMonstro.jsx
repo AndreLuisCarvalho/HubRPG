@@ -1,4 +1,7 @@
 import Contador from '../../../../components/Contador/Contador';
+import BotaoRolar, { IconeD20 } from '../../../../components/Dados/BotaoRolar';
+import { useRolagem } from '../../../../components/Dados/rolagem';
+import { formulaDoAtributo, lerListaDeTestes, pedidoAtributo, pedidoTeste } from '../../rolagens';
 import EscolherFoto from '../../../../components/EscolherFoto/EscolherFoto';
 import Seletor from '../../../../components/Seletor/Seletor';
 import { ELEMENTOS, TAMANHOS } from '../../modelo';
@@ -9,6 +12,8 @@ import styles from './FichaMonstro.module.scss';
 
 const ATRIBUTOS = [['agi', 'AGI'], ['for', 'FOR'], ['int', 'INT'], ['pre', 'PRE'], ['vig', 'VIG']];
 const OPCOES_TAMANHO = TAMANHOS.map((t) => ({ valor: t.id, rotulo: t.nome }));
+const teste = { subtitulo: 'Teste' };
+const resistencia = { subtitulo: 'Teste de resistência' };
 
 /**
  * Ficha de ameaça no formato do bloco do livro (cap. 7):
@@ -19,6 +24,9 @@ export default function FichaMonstro({ ficha, onAlterarDados, onAlterarFicha }) 
   const { dados } = ficha;
   const cor = ELEMENTOS[dados.elemento]?.cor;
   const tamanho = TAMANHOS.find((t) => t.id === dados.tamanho)?.nome;
+
+  const { rolar } = useRolagem();
+  const periciasRolaveis = lerListaDeTestes(dados.pericias).filter((p) => pedidoTeste(p.nome, '', p.formula));
 
   // Campos aninhados (presença, sentidos, atributos): troca só uma chave
   const mudarEm = (grupo, chave, valor) => onAlterarDados({ [grupo]: { ...dados[grupo], [chave]: valor } });
@@ -91,8 +99,8 @@ export default function FichaMonstro({ ficha, onAlterarDados, onAlterarFicha }) 
 
         <Bloco titulo="Sentidos">
           <div className={styles.linhaNumeros}>
-            <Texto rotulo="Percepção" valor={dados.sentidos?.percepcao} dica="1d20+5" curto onSalvar={(v) => mudarEm('sentidos', 'percepcao', v)} />
-            <Texto rotulo="Iniciativa" valor={dados.sentidos?.iniciativa} dica="1d20" curto onSalvar={(v) => mudarEm('sentidos', 'iniciativa', v)} />
+            <Texto rotulo="Percepção" valor={dados.sentidos?.percepcao} dica="1d20+5" curto rolavel={teste} onSalvar={(v) => mudarEm('sentidos', 'percepcao', v)} />
+            <Texto rotulo="Iniciativa" valor={dados.sentidos?.iniciativa} dica="1d20" curto rolavel={teste} onSalvar={(v) => mudarEm('sentidos', 'iniciativa', v)} />
           </div>
           <Texto valor={dados.sentidos?.extra} dica="Percepção às cegas, visão no escuro…" onSalvar={(v) => mudarEm('sentidos', 'extra', v)} rotulo="Outros sentidos" />
         </Bloco>
@@ -101,7 +109,13 @@ export default function FichaMonstro({ ficha, onAlterarDados, onAlterarFicha }) 
           <div className={styles.atributos}>
             {ATRIBUTOS.map(([id, sigla]) => (
               <div key={id} className={styles.atributo}>
-                <span>{sigla}</span>
+                <button
+                  type="button"
+                  onClick={() => rolar(pedidoAtributo(id, dados.atributos?.[id] ?? 0))}
+                  title={`Rolar ${sigla}: ${formulaDoAtributo(dados.atributos?.[id] ?? 0)}`}
+                >
+                  {sigla}
+                </button>
                 <Contador valor={dados.atributos?.[id] ?? 0} onMudar={(v) => mudarEm('atributos', id, v)} min={0} max={9} rotulo={sigla} />
               </div>
             ))}
@@ -109,6 +123,21 @@ export default function FichaMonstro({ ficha, onAlterarDados, onAlterarFicha }) 
         </Bloco>
 
         <Texto rotulo="Perícias" valor={dados.pericias} dica="Atletismo 5d20+20, Furtividade 2d20+5" onSalvar={(v) => onAlterarDados({ pericias: v })} />
+        {/* Cada perícia escrita vira um botão de rolar */}
+        {periciasRolaveis.length > 0 && (
+          <div className={styles.chips}>
+            {periciasRolaveis.map((p) => (
+              <button
+                key={p.nome}
+                type="button"
+                onClick={() => rolar(pedidoTeste(p.nome, 'Teste de perícia', p.formula))}
+                title={`Rolar ${p.nome}: ${p.formula}`}
+              >
+                <IconeD20 /> {p.nome}
+              </button>
+            ))}
+          </div>
+        )}
       </Painel>
 
       {/* ---------- Combate ---------- */}
@@ -137,9 +166,9 @@ export default function FichaMonstro({ ficha, onAlterarDados, onAlterarFicha }) 
         </div>
 
         <div className={styles.testes}>
-          <Texto rotulo="Fortitude" valor={dados.fortitude} dica="3d20+10" curto onSalvar={(v) => onAlterarDados({ fortitude: v })} />
-          <Texto rotulo="Reflexos" valor={dados.reflexos} dica="1d20" curto onSalvar={(v) => onAlterarDados({ reflexos: v })} />
-          <Texto rotulo="Vontade" valor={dados.vontade} dica="1d20" curto onSalvar={(v) => onAlterarDados({ vontade: v })} />
+          <Texto rotulo="Fortitude" valor={dados.fortitude} dica="3d20+10" curto rolavel={resistencia} onSalvar={(v) => onAlterarDados({ fortitude: v })} />
+          <Texto rotulo="Reflexos" valor={dados.reflexos} dica="1d20" curto rolavel={resistencia} onSalvar={(v) => onAlterarDados({ reflexos: v })} />
+          <Texto rotulo="Vontade" valor={dados.vontade} dica="1d20" curto rolavel={resistencia} onSalvar={(v) => onAlterarDados({ vontade: v })} />
         </div>
 
         <Texto rotulo="Resistências" valor={dados.resistencias} dica="Balístico, impacto e perfuração 5; Sangue 10" onSalvar={(v) => onAlterarDados({ resistencias: v })} />
@@ -179,18 +208,32 @@ function Bloco({ titulo, children }) {
   );
 }
 
-// Campo de texto que salva ao sair (não grava a cada letra)
-function Texto({ rotulo, valor = '', dica, area = false, curto = false, onSalvar }) {
+// Campo de texto que salva ao sair (não grava a cada letra).
+// Com "rolavel" ({ subtitulo }), ganha um d20 que rola a fórmula escrita no campo.
+function Texto({ rotulo, valor = '', dica, area = false, curto = false, onSalvar, rolavel }) {
+  const { rolar } = useRolagem();
   const salvar = (e) => {
     const novo = e.target.value.trim();
     if (novo !== (valor ?? '')) onSalvar(novo);
   };
-  return (
-    <label className={`${styles.campo} ${curto ? styles.curto : ''}`}>
+  const campo = (
+    <label className={`${styles.campo} ${curto && !rolavel ? styles.curto : ''}`}>
       {rotulo && <span className={styles.rotulo}>{rotulo}</span>}
       {area
         ? <textarea defaultValue={valor} onBlur={salvar} placeholder={dica} rows={3} />
         : <input defaultValue={valor} onBlur={salvar} placeholder={dica} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />}
     </label>
+  );
+  if (!rolavel) return campo;
+  return (
+    <div className={`${styles.comDado} ${curto ? styles.curto : ''}`}>
+      {campo}
+      <BotaoRolar
+        className={styles.dadoDoCampo}
+        pedido={pedidoTeste(rolavel.titulo ?? rotulo, rolavel.subtitulo, valor)}
+        rolar={rolar}
+        rotulo={`Rolar ${rotulo}`}
+      />
+    </div>
   );
 }

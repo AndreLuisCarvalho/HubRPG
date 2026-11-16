@@ -8,6 +8,7 @@ import EmBreve from './secoes/EmBreve/EmBreve';
 import styles from './Campanha.module.scss';
 import DetalheFicha from './secoes/DetalheFicha/DetalheFicha';
 import { FundoOutroLado } from '../../components';
+import RolagemProvider from '../../components/Dados/RolagemProvider';
 import { obterSistema } from '../../sistemas';
 
 // Leitor do livro: só baixa ao abrir a seção
@@ -51,6 +52,8 @@ export default function Campanha() {
       <FundoOutroLado />
         <MenuCampanha campanha={campanha} />
 
+        {/* Mesa de dados: dentro da paleta, para os dados terem as cores do sistema */}
+        <RolagemProvider>
         <main className={styles.conteudo}>
           <Routes>
             <Route index element={<VisaoGeral campanha={campanha} onAtualizar={setCampanha} />} />
@@ -63,6 +66,7 @@ export default function Campanha() {
             <Route path=":secao" element={<EmBreve />} />
           </Routes>
         </main>
+        </RolagemProvider>
       </div>
   );
 }

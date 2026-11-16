@@ -64,6 +64,25 @@
   .barra { font-weight: 400; margin: 0 2px; }
 }
 
+// Número que rola ao clicar: sublinhado pontilhado, acende na cor
+.rolavel {
+  padding: 0;
+  border: 0;
+  border-bottom: 1px dotted color-mix(in srgb, var(--cor) 70%, transparent);
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  cursor: pointer;
+
+  &:hover { color: var(--cor); border-bottom-style: solid; }
+  &:focus-visible { outline: 1px solid var(--cor); outline-offset: 2px; }
+}
+
+.rolavelDano {
+  border-bottom-color: color-mix(in srgb, var(--carimbo, #e76e6e) 70%, transparent);
+  &:hover { color: var(--carimbo, #e76e6e); }
+}
+
 .texto {
   font-size: 0.86rem;
   line-height: 1.5;

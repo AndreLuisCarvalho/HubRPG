@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useRolagem } from '../../../../../components/Dados/rolagem';
 import { ATRIBUTOS, ATRIBUTO_MAX, ATRIBUTO_MIN, NEX } from '../../../modelo';
+import { formulaDoAtributo, pedidoAtributo } from '../../../rolagens';
 import styles from './CirculoAtributos.module.scss';
 
 // Sentido horário a partir do topo, como na ficha oficial
@@ -23,6 +25,7 @@ const VOLTA_NEX = 2 * Math.PI * RAIO_NEX;
 
 export default function CirculoAtributos({ atributos = {}, onAlterar, nex = 5, onAlterarNex }) {
   const [editando, setEditando] = useState(false);
+  const { rolar } = useRolagem();
 
   function alterar(id, delta) {
     const novo = Math.min(Math.max((atributos[id] ?? 0) + delta, ATRIBUTO_MIN), ATRIBUTO_MAX);
@@ -63,13 +66,23 @@ export default function CirculoAtributos({ atributos = {}, onAlterar, nex = 5, o
           const { x, y } = ponto(i);
 
                     return (
-            <div key={id} className={styles.no} style={{ left: `${x}%`, top: `${y}%` }} title={atributo.nome}>
+            <div key={id} className={styles.no} style={{ left: `${x}%`, top: `${y}%` }}>
               {/* Hexágono em SVG: o stroke com stroke-linejoin="round" deixa as quinas suaves */}
               <svg className={styles.hex} viewBox="0 0 100 100" aria-hidden="true">
                 <polygon points="50,6 90,29 90,71 50,94 10,71 10,29" />
               </svg>
               <span className={styles.valor}>{atributos[id] ?? 0}</span>
               <span className={styles.sigla}>{atributo.sigla}</span>
+
+              {!editando && (
+                <button
+                  type="button"
+                  className={styles.rolarAtributo}
+                  onClick={() => rolar(pedidoAtributo(id, atributos[id] ?? 0))}
+                  aria-label={`Rolar ${atributo.nome} (${formulaDoAtributo(atributos[id] ?? 0)})`}
+                  title={`Rolar ${atributo.nome}: ${formulaDoAtributo(atributos[id] ?? 0)}`}
+                />
+              )}
 
               {editando && (
                 <>

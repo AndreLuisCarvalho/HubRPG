@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useRolagem } from '../../../../../components/Dados/rolagem';
 import { ATRIBUTOS, GRAUS, PERICIAS } from '../../../modelo';
+import { pedidoPericia } from '../../../rolagens';
 import {
   bonusPericia, dadosDoAtributo, dadosDoTeste, grauDaPericia, PENALIDADE_SEM_KIT, penalidadeDeCarga, temKit,
 } from '../../../regras';
@@ -26,6 +28,7 @@ const IconeKit = () => (
 
 export default function Pericias({ dados, onAlterarDados, className = '' }) {
   const [soTreinadas, setSoTreinadas] = useState(false);
+  const { rolar } = useRolagem();
   const pericias = dados.pericias ?? {};
 
   const lista = soTreinadas
@@ -73,9 +76,9 @@ export default function Pericias({ dados, onAlterarDados, className = '' }) {
             <li key={p.id} className={`${styles.pericia} ${nivel > 0 ? styles.treinada : ''}`}>
               <button
                 className={styles.rolar}
-                title={`${p.nome}: ${dadosDoTeste(dados, p.id)} (rolagem em breve)`}
+                title={`Rolar ${p.nome}: ${dadosDoTeste(dados, p.id)}`}
                 aria-label={`Rolar ${p.nome}`}
-                disabled
+                onClick={() => rolar(pedidoPericia(dados, p.id))}
               >
                 <IconeD20 />
               </button>
