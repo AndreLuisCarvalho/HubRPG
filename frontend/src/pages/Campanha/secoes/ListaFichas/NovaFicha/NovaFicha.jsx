@@ -62,8 +62,14 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
     setEscolhido(m);
   }
 
+  // Filtro por elemento: só aparecem os elementos que existem no catálogo
+  const [elementoMonstro, setElementoMonstro] = useState('');
+  const elementosDoCatalogo = [...new Map((catalogo ?? []).map((m) => [m.elemento, { id: m.elemento, nome: m.nomeElemento, cor: m.cor }])).values()];
+
   const termo = buscaMonstro.trim().toLocaleLowerCase('pt-BR');
-  const listaMonstros = (catalogo ?? []).filter((m) => !termo || m.nome.toLocaleLowerCase('pt-BR').includes(termo));
+  const listaMonstros = (catalogo ?? []).filter((m) =>
+    (!termo || m.nome.toLocaleLowerCase('pt-BR').includes(termo))
+    && (!elementoMonstro || m.elemento === elementoMonstro));
 
   const semClasse = simples || ehMonstro;
   const completo = nome.trim()
@@ -141,6 +147,22 @@ export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) 
                   placeholder="Buscar monstro…"
                   aria-label="Buscar monstro do livro"
                 />
+                {elementosDoCatalogo.length > 1 && (
+                  <div className={styles.filtroElemento} role="group" aria-label="Filtrar por elemento">
+                    {[{ id: '', nome: 'Todos' }, ...elementosDoCatalogo].map((el) => (
+                      <button
+                        key={el.id || 'todos'}
+                        type="button"
+                        aria-pressed={elementoMonstro === el.id}
+                        style={el.cor ? { '--el': el.cor } : undefined}
+                        // Clicar de novo no mesmo elemento volta para "Todos"
+                        onClick={() => setElementoMonstro(elementoMonstro === el.id ? '' : el.id)}
+                      >
+                        {el.nome}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {!catalogo && <p className={styles.aviso}>Abrindo o livro…</p>}
                 {catalogo && listaMonstros.length === 0 && <p className={styles.aviso}>Nenhum monstro encontrado.</p>}
                 <ul role="listbox" aria-label="Monstros do livro">
