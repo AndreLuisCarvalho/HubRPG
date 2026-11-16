@@ -2,8 +2,7 @@
 
 .visao {
   display: grid;
-  gap: 18px;
-  max-width: 1200px;
+  gap: 18px;   // ocupa toda a largura disponível (antes parava em 1200px e sobrava espaço em telas grandes)
 }
 
 /* ---------- Banner ---------- */
@@ -15,7 +14,7 @@
 // Faixa baixa (3:1 na imagem enviada); sem imagem, a cor da campanha em um fundo liso
 .banner {
   position: relative;
-  height: 190px;
+  height: clamp(190px, 14vw, 280px);   // cresce um pouco em telas largas para não virar uma tira fina
   overflow: hidden;
   border: 1px solid var(--borda);
   border-radius: 4px;
