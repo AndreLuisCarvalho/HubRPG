@@ -1,0 +1,392 @@
+@use '../../../../styles/mixins' as *;
+
+.pagina {
+  display: grid;
+  gap: 12px;
+}
+
+.topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+
+  h1 { @include fonte-titulo; font-size: 1.8rem; }
+}
+
+.acoesTopo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.visao {
+  display: flex;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  overflow: hidden;
+
+  button {
+    padding: 7px 14px;
+    border: 0;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.78rem;
+    cursor: pointer;
+
+    &[aria-checked='true'] {
+      background: color-mix(in srgb, var(--cor) 28%, transparent);
+      color: var(--texto);
+    }
+  }
+}
+
+.novo {
+  padding: 8px 14px;
+  border: 1px solid var(--cor);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--cor) 25%, #121315);
+  color: var(--texto);
+  @include fonte-ficha;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.dica {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--texto-suave);
+}
+
+.vazio {
+  padding: 24px;
+  border: 1px dashed var(--borda);
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+/* ---------- Lista de mapas (abas) ---------- */
+.mapas {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+
+  button {
+    flex: none;
+    padding: 6px 14px;
+    border: 1px solid var(--borda);
+    border-radius: 2px;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.8rem;
+    cursor: pointer;
+
+    &:hover { color: var(--texto); }
+
+    &[aria-current='page'] {
+      border-color: #b8935c;
+      background: rgba(184, 147, 92, 0.18);
+      color: var(--texto);
+    }
+  }
+
+  .mapaOculto { border-style: dashed; opacity: 0.7; }
+}
+
+// Caminho de volta: Cidade › Hospital › Porão
+.caminho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.86rem;
+
+  li + li::before { content: '›'; margin-right: 4px; color: var(--texto-suave); }
+
+  button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #d8b67a;
+    font: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  b { font-weight: 600; }
+}
+
+/* ---------- Cartão do pino (papel, dentro do mapa) ---------- */
+.cartaoPino {
+  display: grid;
+  gap: 8px;
+  padding: 12px 12px 10px;
+  border-radius: 3px;
+  border-top: 4px solid var(--c);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.25), transparent 40%),
+    #eadcb8;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+  color: #23170b;
+
+  header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+
+    small { @include fonte-ficha; font-size: 0.68rem; font-weight: 700; color: color-mix(in srgb, var(--c) 70%, #23170b); }
+    b { display: block; @include fonte-ficha; font-size: 1.1rem; font-weight: 700; line-height: 1.1; }
+  }
+
+  > p {
+    max-height: 160px;
+    overflow-y: auto;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+  }
+
+  footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(35, 23, 11, 0.3);
+
+    button {
+      padding: 0;
+      border: 0;
+      background: none;
+      color: #5a4426;
+      font: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+
+      &:hover { color: #23170b; text-decoration: underline; }
+    }
+  }
+}
+
+// Disco com o ícone do tipo (no cartão e no formulário)
+.selo {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  background: radial-gradient(circle, #efe3c4 0 9px, var(--c) 9.5px);
+  color: #23170b;
+
+  svg { width: 14px; height: 14px; }
+}
+
+.fecharCartao {
+  align-self: start;
+  padding: 2px 4px;
+  border: 0;
+  background: none;
+  color: #5a4426;
+  cursor: pointer;
+}
+
+.linkPino {
+  justify-self: start;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--c) 70%, #23170b);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--c) 18%, transparent);
+  color: #23170b;
+  @include fonte-ficha;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover { background: color-mix(in srgb, var(--c) 30%, transparent); }
+}
+
+.perigoTexto { color: #8f1d24 !important; }
+
+/* ---------- Formulários ---------- */
+.caixa {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  @include celular { max-height: none; overflow: visible; }
+}
+
+.formPino,
+.formMapa {
+  display: grid;
+  gap: 12px;
+}
+
+.tiposPino {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+
+  @include celular { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.78rem;
+    cursor: pointer;
+
+    .selo { width: 26px; height: 26px; background: radial-gradient(circle, #efe3c4 0 8px, var(--c) 8.5px); }
+
+    &[aria-checked='true'] {
+      border-color: var(--c);
+      background: color-mix(in srgb, var(--c) 20%, transparent);
+      color: var(--texto);
+    }
+  }
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  @include celular { grid-template-columns: minmax(0, 1fr); }
+}
+
+.campo {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+
+  > span { @include rotulo-campo; }
+
+  > input,
+  > textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    color-scheme: dark;
+    font: inherit;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    resize: vertical;
+
+    &:focus { outline: none; border-color: var(--cor); }
+  }
+}
+
+.imagemMapa {
+  display: grid;
+  gap: 8px;
+
+  img {
+    width: 100%;
+    max-height: 220px;
+    object-fit: contain;
+    border: 1px solid var(--borda);
+    background: #0c0b0e;
+  }
+}
+
+.papelVazio {
+  display: grid;
+  place-items: center;
+  height: 120px;
+  border-radius: 2px;
+  background: #e3d3ad;
+  box-shadow: inset 0 0 30px rgba(70, 40, 12, 0.55);
+  color: #5a4426;
+  @include fonte-ficha;
+  font-size: 0.86rem;
+}
+
+.botoesImagem {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  label,
+  button {
+    padding: 6px 12px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.76rem;
+    cursor: pointer;
+  }
+}
+
+.marcar {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  cursor: pointer;
+
+  input { margin-top: 2px; accent-color: var(--cor); }
+}
+
+.ajuda {
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--texto-suave);
+}
+
+.botoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+
+  button {
+    padding: 8px 16px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .perigo { margin-right: auto; }
+}
+
+.primario {
+  border: 1px solid var(--cor);
+  background: color-mix(in srgb, var(--cor) 25%, #121315);
+  color: var(--texto);
+
+  &:disabled { opacity: 0.6; cursor: default; }
+}
+
+.secundario {
+  border: 1px solid var(--borda);
+  background: none;
+  color: var(--texto-suave);
+
+  &:hover { color: var(--texto); }
+}
+
+.perigo {
+  border: 1px solid color-mix(in srgb, var(--carimbo, #e76e6e) 50%, transparent);
+  background: none;
+  color: var(--carimbo, #e76e6e);
+}

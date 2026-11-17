@@ -96,7 +96,22 @@ export const api = {
   atualizarArquivo: async (id, arquivo) =>
     lerItem(await requisicao(`/arquivos/${id}`, { method: 'PUT', body: escreverArquivo(arquivo) })),
   excluirArquivo: (id) => requisicao(`/arquivos/${id}`, { method: 'DELETE' }),
+
+  // Mapas: a lista vem sem a imagem; buscarMapa traz tudo. atualizarMapa devolve sem a imagem.
+  listarMapas: async (campanhaId) => (await requisicao(`/campanhas/${campanhaId}/mapas`)).map(lerItem),
+  buscarMapa: async (id) => lerItem(await requisicao(`/mapas/${id}`)),
+  criarMapa: async (campanhaId, mapa) =>
+    lerItem(await requisicao(`/campanhas/${campanhaId}/mapas`, { method: 'POST', body: escreverMapa(mapa) })),
+  atualizarMapa: async (id, mapa) =>
+    lerItem(await requisicao(`/mapas/${id}`, { method: 'PUT', body: escreverMapa(mapa) })),
+  excluirMapa: (id) => requisicao(`/mapas/${id}`, { method: 'DELETE' }),
 };
+
+const escreverMapa = ({ nome, dados, imagem }) => ({
+  nome,
+  ...(dados ? { dados: JSON.stringify(dados) } : {}),
+  ...(imagem !== undefined ? { imagem } : {}),
+});
 
 const escreverArquivo = ({ titulo, dados, conteudo }) => ({
   titulo,

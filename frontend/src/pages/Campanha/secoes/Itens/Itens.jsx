@@ -10,6 +10,7 @@ import { pedidoDano } from '../../../../sistemas/ordemParanormal/rolagens';
 import CartaItem from './CartaItem';
 import DoLivro from './DoLivro';
 import FormItem from './FormItem';
+import { pedidoDeAbrir } from '../../visao';
 import styles from './Itens.module.scss';
 
 const normalizar = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -41,6 +42,10 @@ export default function Itens({ campanha }) {
         setItens(i);
         setSessoes(s);
         setAgentes(f);
+        // ?abrir=7 (vindo de um pino do mapa): abre a carta desse item
+        const pedido = pedidoDeAbrir();
+        const alvo = i.find((x) => x.id === pedido);
+        if (alvo) setJanela({ modo: 'ver', item: alvo });
       })
       .catch((e) => efeito.ativo && setErro(e.message));
     return () => { efeito.ativo = false; };
