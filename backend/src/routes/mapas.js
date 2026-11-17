@@ -2,8 +2,9 @@ import { Router } from 'express';
 import { db } from '../db.js';
 
 /*
- * Mapas da campanha (aba Mapas). "dados" é o JSON leve (pinos, opções); "imagem" é a imagem
- * do mapa em data URL (pesada). A lista não traz a imagem: ela só vem ao abrir o mapa.
+ * Mapas da campanha (aba Mapas). "dados" é o JSON leve (pinos, tokens, rotas, opções); "imagem" é a
+ * imagem do mapa e "nevoa" a máscara da névoa, ambas em data URL. A lista não traz as duas:
+ * elas só vêm ao abrir o mapa.
  */
 const router = Router();
 
@@ -39,11 +40,13 @@ router.get('/mapas/:id', async (req, res) => {
 router.put('/mapas/:id', async (req, res) => {
   const atual = await buscar(req.params.id);
   if (!atual) return res.status(404).json({ erro: 'Mapa não encontrado' });
-  const { nome = atual.nome, dados = atual.dados, imagem = atual.imagem } = req.body ?? {};
+  const {
+    nome = atual.nome, dados = atual.dados, imagem = atual.imagem, nevoa = atual.nevoa,
+  } = req.body ?? {};
 
-  await db.run('UPDATE mapas SET nome = ?, dados = ?, imagem = ? WHERE id = ?', nome, dados, imagem, atual.id);
-  // Devolve sem a imagem (quem mandou já tem; evita trafegar MBs a cada pino)
-  const { imagem: _imagem, ...resto } = await buscar(atual.id);
+  await db.run('UPDATE mapas SET nome = ?, dados = ?, imagem = ?, nevoa = ? WHERE id = ?', nome, dados, imagem, nevoa, atual.id);
+  // Devolve sem imagem e névoa (quem mandou já tem; evita trafegar MBs a cada pino)
+  const { imagem: _imagem, nevoa: _nevoa, ...resto } = await buscar(atual.id);
   res.json(resto);
 });
 

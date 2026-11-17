@@ -219,6 +219,169 @@
   }
 }
 
+/* ---------- Névoa (pergaminho ainda não desenhado) ---------- */
+.nevoa {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+// O mestre enxerga através da névoa
+.nevoaMestre { opacity: 0.5; }
+
+.pincel { cursor: none; &:active { cursor: none; } }
+
+.miraPincel {
+  position: absolute;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.cobrindo { border-style: dashed; border-color: #e3d3ad; }
+
+/* ---------- Rotas tracejadas ---------- */
+.rotas {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.tracado {
+  fill: none;
+  stroke: var(--r, #7a1f1f);
+  stroke-width: 3.5;
+  stroke-dasharray: 11 8;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 1.5px rgba(239, 227, 196, 0.9));
+}
+
+.inicio {
+  fill: #efe3c4;
+  stroke: var(--r, #7a1f1f);
+  stroke-width: 2.5;
+}
+
+.xis {
+  fill: none;
+  stroke: var(--r, #7a1f1f);
+  stroke-width: 4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 1.5px rgba(239, 227, 196, 0.9));
+}
+
+// Faixa invisível mais larga, para conseguir clicar na rota
+.alvoRota {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 18;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.rotaOculta { opacity: 0.45; }
+.rotaAberta .tracado { stroke-width: 5; }
+
+.rascunho {
+  .tracado { stroke: #efe3c4; filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9)); }
+  circle { fill: #efe3c4; stroke: #23170b; stroke-width: 1.5; }
+}
+
+/* ---------- Tokens dos agentes ---------- */
+.token {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 3px solid #efe3c4;
+  border-radius: 50%;
+  background: #3a2d1d;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  color: #efe3c4;
+  @include fonte-ficha;
+  font-size: 1.1rem;
+  font-weight: 700;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  touch-action: none;
+
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    pointer-events: none;
+  }
+
+  .rotulo { top: calc(100% + 3px); }
+
+  &:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+}
+
+.tokenAberto { z-index: 2; border-color: var(--cor); }
+
+// Cartão de token/rota: mais perto do ponto (não há agulha de alfinete)
+.cartaoBaixo { transform: translate(-50%, calc(-100% - 32px)); }
+.cartaoBaixo.embaixo { transform: translate(-50%, 32px); }
+
+/* ---------- Ferramentas do mestre (canto de cima) e bandeja (embaixo) ---------- */
+.ferramentas {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: calc(100% - 230px);
+
+  @include celular { max-width: calc(100% - 28px); top: 56px; }
+}
+
+.rodape {
+  position: absolute;
+  left: 104px;
+  right: 14px;
+  bottom: 14px;
+  z-index: 4;
+  display: flex;
+  justify-content: center;
+
+  @include celular { left: 14px; bottom: 70px; }
+}
+
+.ferramentas,
+.rodape {
+  button {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid rgba(227, 211, 173, 0.35);
+    border-radius: 3px;
+    background: rgba(20, 15, 10, 0.82);
+    color: #efe3c4;
+    @include fonte-ficha;
+    font-size: 0.78rem;
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+
+    &:hover { border-color: rgba(227, 211, 173, 0.8); }
+
+    &[aria-pressed='true'] {
+      border-color: var(--cor);
+      background: color-mix(in srgb, var(--cor) 40%, #140f0a);
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cabeca { transition: none; }
 }

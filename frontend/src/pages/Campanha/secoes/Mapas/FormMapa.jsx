@@ -75,6 +75,10 @@ export default function FormMapa({ inicial, onSalvar, onCancelar, onExcluir }) {
         Efeito de pergaminho (papel envelhecido e bordas queimadas)
       </label>
       <label className={styles.marcar}>
+        <input type="checkbox" checked={Boolean(mapa.dados.usarNevoa)} onChange={(e) => mudar('usarNevoa', e.target.checked)} />
+        Usar névoa (o mapa começa coberto; você revela com o pincel)
+      </label>
+      <label className={styles.marcar}>
         <input type="checkbox" checked={mapa.dados.oculto} onChange={(e) => mudar('oculto', e.target.checked)} />
         Mapa oculto (os jogadores não veem até você mostrar)
       </label>

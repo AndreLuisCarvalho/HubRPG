@@ -107,10 +107,11 @@ export const api = {
   excluirMapa: (id) => requisicao(`/mapas/${id}`, { method: 'DELETE' }),
 };
 
-const escreverMapa = ({ nome, dados, imagem }) => ({
+const escreverMapa = ({ nome, dados, imagem, nevoa }) => ({
   nome,
   ...(dados ? { dados: JSON.stringify(dados) } : {}),
   ...(imagem !== undefined ? { imagem } : {}),
+  ...(nevoa !== undefined ? { nevoa } : {}),
 });
 
 const escreverArquivo = ({ titulo, dados, conteudo }) => ({
