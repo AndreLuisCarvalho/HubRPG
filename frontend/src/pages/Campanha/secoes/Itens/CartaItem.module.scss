@@ -1,0 +1,271 @@
+@use '../../../../styles/mixins' as *;
+
+// A carta é o "container": tudo dentro mede em cqw (largura da carta), então a pequena e a grande
+// ficam iguais, só em escala. (cqw mede o container de fora, por isso o corpo fica num elemento interno.)
+.carta {
+  --e: var(--cor);
+  --papel: #e8e0cb;
+  --tinta: #2a2420;
+  container-type: inline-size;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  transition: transform 0.25s ease;
+}
+
+.corpo {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto;
+  gap: 2.4cqw;
+  aspect-ratio: 63 / 88;
+  padding: 4.5cqw;
+  border: 1px solid #3a3530;
+  border-radius: 4cqw;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.05), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.015) 0 2px, transparent 2px 6px),
+    #16141a;
+  box-shadow:
+    inset 0 0 0 1.6cqw #1d1a20,
+    inset 0 0 0 2cqw color-mix(in srgb, var(--e) 45%, #6b5f4a),   // filete interno na cor do elemento
+    0 10px 24px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  transition: box-shadow 0.25s ease;
+}
+
+button.carta {
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    transform: translateY(-4px) rotate(-0.6deg);
+
+    .corpo {
+      box-shadow:
+        inset 0 0 0 1.6cqw #1d1a20,
+        inset 0 0 0 2cqw color-mix(in srgb, var(--e) 70%, #6b5f4a),
+        0 16px 30px rgba(0, 0, 0, 0.55);
+    }
+  }
+
+  &:focus-visible .corpo { border-color: var(--e); }
+}
+
+/* ---------- Nome + categoria ---------- */
+.faixa {
+  display: flex;
+  align-items: center;
+  gap: 2cqw;
+  padding: 1.6cqw 2.6cqw;
+  border: 1px solid #4a4238;
+  background: linear-gradient(#2a2620, #1c1a17);
+}
+
+.nome {
+  flex: 1;
+  min-width: 0;
+  @include fonte-ficha;
+  font-size: 7cqw;
+  font-weight: 600;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Losango com o número romano (o "nível" da carta)
+.categoria {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 9cqw;
+  height: 9cqw;
+  border: 1px solid color-mix(in srgb, var(--e) 70%, #c9b98f);
+  background: #0f0d10;
+  transform: rotate(45deg);
+  @include fonte-ficha;
+  font-size: 4.2cqw;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--e) 50%, #e9dcb8);
+
+  i { display: block; font-style: normal; transform: rotate(-45deg); }
+}
+
+/* ---------- Foto da evidência ---------- */
+.janela {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 0.82;
+  border: 1px solid #4a4238;
+  background:
+    radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--e) 22%, #24202a), #0d0c0f 75%);
+  overflow: hidden;
+
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: sepia(0.18) contrast(1.05);
+  }
+}
+
+.simbolo {
+  font-size: 28cqw;
+  line-height: 1;
+  color: color-mix(in srgb, var(--e) 55%, #d9cfb4);
+  opacity: 0.55;
+}
+
+// Etiqueta "EVIDÊNCIA Nº 0007" no canto
+.numero {
+  position: absolute;
+  top: 2.4cqw;
+  left: 2.4cqw;
+  padding: 0.6cqw 2cqw;
+  background: var(--papel);
+  color: var(--tinta);
+  @include fonte-ficha;
+  font-size: 3.4cqw;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.carimbo {
+  position: absolute;
+  bottom: 9cqw;
+  padding: 1cqw 3cqw;
+  border: 0.8cqw solid #c4202f;
+  color: #ff4a5a;
+  @include fonte-ficha;
+  font-size: 6cqw;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  transform: rotate(-12deg);
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+
+/* ---------- Linha de tipo ---------- */
+.linhaTipo {
+  display: flex;
+  justify-content: space-between;
+  gap: 2cqw;
+  padding: 0.8cqw 2.4cqw;
+  border-top: 1px solid #4a4238;
+  border-bottom: 1px solid #4a4238;
+  @include fonte-ficha;
+  font-size: 4.6cqw;
+  font-weight: 600;
+  color: #cfc4a6;
+
+  span:first-child { color: color-mix(in srgb, var(--e) 45%, #e9dcb8); }
+}
+
+/* ---------- Ficha de papel com o texto ---------- */
+.papel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6cqw;
+  min-height: 0;
+  padding: 2.4cqw 3cqw;
+  background:
+    repeating-linear-gradient(transparent 0 6.4cqw, rgba(42, 36, 32, 0.12) 6.4cqw calc(6.4cqw + 1px)),
+    var(--papel);
+  background-position: 0 2.4cqw;
+  color: var(--tinta);
+  font-size: 4.8cqw;
+  line-height: 6.4cqw;
+  overflow: hidden;
+
+  i { opacity: 0.55; }
+}
+
+.custo {
+  margin-top: auto;
+  font-size: 3.6cqw;
+  font-weight: 600;
+  color: #8a1622;
+}
+
+/* ---------- Rodapé de combate ---------- */
+.rodape {
+  padding: 0.6cqw 2cqw;
+  @include fonte-ficha;
+  font-size: 4.8cqw;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  em {
+    font-style: normal;
+    color: var(--texto-suave);
+  }
+}
+
+// Clipe de papel com o nome do dono, preso na borda
+.clipe {
+  position: absolute;
+  top: 20cqw;
+  right: -1cqw;
+  padding: 1cqw 3cqw 1cqw 4cqw;
+  background: #d8c48c;
+  color: #2a2420;
+  @include fonte-ficha;
+  font-size: 3.6cqw;
+  font-weight: 700;
+  transform: rotate(4deg);
+  box-shadow: -1px 2px 4px rgba(0, 0, 0, 0.5);
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Paranormal: reflexo holográfico na cor do elemento ---------- */
+.paranormal .corpo {
+  border-color: color-mix(in srgb, var(--e) 50%, #3a3530);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(115deg,
+      transparent 30%,
+      color-mix(in srgb, var(--e) 30%, transparent) 45%,
+      rgba(255, 255, 255, 0.12) 50%,
+      color-mix(in srgb, var(--e) 30%, transparent) 55%,
+      transparent 70%);
+    background-size: 250% 250%;
+    background-position: 100% 0;
+    mix-blend-mode: screen;
+    pointer-events: none;
+    transition: background-position 0.8s ease;
+  }
+
+}
+
+.paranormal:hover .corpo::after,
+.paranormal.grande .corpo::after { background-position: 0 100%; }
+
+.grande { cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+  .carta,
+  .corpo,
+  .corpo::after { transition: none; }
+}

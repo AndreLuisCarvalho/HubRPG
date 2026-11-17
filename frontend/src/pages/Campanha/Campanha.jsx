@@ -15,6 +15,7 @@ import { obterSistema } from '../../sistemas';
 const Livro = lazy(() => import('./secoes/Livro/Livro'));
 const Sessoes = lazy(() => import('./secoes/Sessoes/Sessoes'));
 const Dados = lazy(() => import('./secoes/Dados/Dados'));   // traz o three.js junto (prévia 3D)
+const Itens = lazy(() => import('./secoes/Itens/Itens'));
 
 export default function Campanha() {
   const { id } = useParams();
@@ -65,6 +66,7 @@ export default function Campanha() {
             <Route path="fichas/:fichaId" element={<DetalheFicha campanha={campanha} />} />
             <Route path="livro" element={<Suspense fallback={null}><Livro campanha={campanha} /></Suspense>} />
             <Route path="dados" element={<Suspense fallback={null}><Dados campanha={campanha} /></Suspense>} />
+            <Route path="itens" element={<Suspense fallback={null}><Itens campanha={campanha} /></Suspense>} />
             <Route path=":secao" element={<EmBreve />} />
           </Routes>
         </main>

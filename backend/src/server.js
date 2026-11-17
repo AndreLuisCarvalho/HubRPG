@@ -54,6 +54,14 @@ app.use('/api', criarRotasDeItens({
   ordem: 'criado_em DESC',
 }));
  
+// Itens da campanha: o front manda "dados" já em texto JSON (imagem, dano, dono…)
+app.use('/api', criarRotasDeItens({
+  tabela: 'itens',
+  campos: { nome: '', dados: '{}' },
+  obrigatorio: 'nome',
+  ordem: 'id DESC',
+}));
+
 // Erros inesperados viram uma resposta JSON (em vez de derrubar a função na Vercel)
 app.use((erro, req, res, next) => {
   console.error(erro);

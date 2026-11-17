@@ -23,7 +23,7 @@ const GRUPOS = [
     itens: [
       { caminho: 'mapas', rotulo: 'Mapas', icone: '▦', emBreve: true },
       { caminho: 'arquivos', rotulo: 'Arquivos', icone: '▤', emBreve: true },
-      { caminho: 'itens', rotulo: 'Itens', icone: '⚔', emBreve: true },
+      { caminho: 'itens', rotulo: 'Itens', icone: '⚔' },
       { caminho: 'livro', rotulo: 'Livro do sistema', icone: '❖' },
       { caminho: 'dados', rotulo: 'Dados', icone: '⚄' },
     ],

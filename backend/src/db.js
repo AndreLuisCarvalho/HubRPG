@@ -96,6 +96,15 @@ async function iniciar() {
       criado_em     TEXT DEFAULT CURRENT_TIMESTAMP,
       atualizado_em TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Catálogo de itens da campanha (aba Itens); "dados" é o item inteiro em JSON
+    CREATE TABLE IF NOT EXISTS itens (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      campanha_id INTEGER NOT NULL REFERENCES campanhas(id) ON DELETE CASCADE,
+      nome        TEXT NOT NULL,
+      dados       TEXT NOT NULL DEFAULT '{}',
+      criado_em   TEXT DEFAULT CURRENT_TIMESTAMP
+    );
   `);
  
   await adicionarColuna('campanhas', 'mapa', "TEXT DEFAULT ''");
