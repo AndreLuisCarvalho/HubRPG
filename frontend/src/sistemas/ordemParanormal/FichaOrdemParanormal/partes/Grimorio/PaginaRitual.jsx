@@ -1,10 +1,14 @@
+import BotaoRolar from '../../../../../components/Dados/BotaoRolar';
+import { useRolagem } from '../../../../../components/Dados/rolagem';
 import { CUSTO_POR_CIRCULO, ELEMENTOS } from '../../../modelo';
+import { pedidoDano } from '../../../rolagens';
 import SigiloElemento from '../SigiloElemento/SigiloElemento';
 import { ROMANOS } from './romanos';
 import styles from './PaginaRitual.module.scss';
 
 // Página do grimório com um ritual para ler. Ao abrir, toca o efeito do elemento dele.
 export default function PaginaRitual({ ritual, elemento = ritual.elementos[0], conhece, onAprender, onVoltar }) {
+  const { rolar } = useRolagem();
   const campos = [
     ['Execução', ritual.execucao],
     ['Alcance', ritual.alcance],
@@ -41,7 +45,19 @@ export default function PaginaRitual({ ritual, elemento = ritual.elementos[0], c
         {campos.map(([rotulo, valor]) => (
           <div key={rotulo}>
             <dt>{rotulo}</dt>
-            <dd>{valor}</dd>
+            <dd>
+              {valor}
+              {/* O dano rola daqui mesmo ("dano do elemento" usa o elemento desta página) */}
+              {rotulo === 'Dano' && (
+                <BotaoRolar
+                  className={styles.rolarDano}
+                  tipo="dano"
+                  rolar={rolar}
+                  pedido={pedidoDano({ nome: ritual.nome, dano: ritual.dano }, { subtitulo: 'Dano do ritual', elemento })}
+                  rotulo={`Rolar dano de ${ritual.nome}`}
+                />
+              )}
+            </dd>
           </div>
         ))}
       </dl>

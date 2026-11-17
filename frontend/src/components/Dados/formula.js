@@ -29,6 +29,7 @@ export function escreverFormula({ grupos, bonus, pior }, mult = 1) {
     .map((g, i) => `${g.negativo ? '−' : i ? '+' : ''}${g.qtd * mult}d${g.lados}`)
     .join('');
   if (pior) texto += '↓';
+  if (bonus && !texto) return bonus > 0 ? String(bonus) : `−${-bonus}`;   // só bônus: "10", não "+10"
   if (bonus) texto += bonus > 0 ? `+${bonus}` : `−${-bonus}`;
   return texto || '0';
 }
@@ -63,8 +64,26 @@ function comLancamento(dados) {
   }));
 }
 
+/*
+ * d100: dois d10 jogados juntos. O das dezenas (do kit "d100") mostra 00, 10 … 90;
+ * o das unidades (do kit "d10") mostra 0 … 9. 00 + 0 = 100.
+ * "valor" é o que está escrito na face; "soma" é quanto o dado vale na conta.
+ */
+function rolarD100(extra) {
+  const dezena = sortear(10) - 1;
+  const unidade = sortear(10) - 1;
+  return [
+    { lados: 100, numeracao: 'dezenas', valor: dezena * 10, soma: dezena === 0 && unidade === 0 ? 100 : dezena * 10, ...extra },
+    { lados: 10, numeracao: 'unidades', valor: unidade, soma: unidade, ...extra },
+  ];
+}
+
 const repetir = (qtd, lados, extra = {}) =>
-  Array.from({ length: Math.min(qtd, MAX_DADOS) }, () => ({ lados, valor: sortear(lados), ...extra }));
+  Array.from({ length: Math.min(qtd, MAX_DADOS) })
+    .flatMap(() => (lados === 100 ? rolarD100(extra) : [{ lados, valor: sortear(lados), ...extra }]));
+
+/** Quanto um dado vale na conta (com sinal) */
+export const pontos = (d) => (d.negativo ? -1 : 1) * (d.soma ?? d.valor);
 
 // O grupo de d20 que decide o teste (sem d20 na fórmula, "+5" por exemplo, vale 1d20)
 const grupoPrincipal = (formula) => formula.grupos.find((g) => g.lados === 20 && !g.negativo) ?? { qtd: 1, lados: 20 };
@@ -86,7 +105,7 @@ export function rolarTeste(formula) {
   const extras = formula.grupos
     .filter((g) => g !== principal)
     .flatMap((g) => repetir(g.qtd, g.lados, { negativo: g.negativo, usado: true }));
-  const bonus = formula.bonus + extras.reduce((s, d) => s + (d.negativo ? -d.valor : d.valor), 0);
+  const bonus = formula.bonus + extras.reduce((s, d) => s + pontos(d), 0);
 
   return {
     tipo: 'teste',
@@ -99,15 +118,40 @@ export function rolarTeste(formula) {
   };
 }
 
-/** Dano: soma tudo. No crítico (mult > 1) só os dados se multiplicam. */
-export function rolarDano(formula, mult = 1) {
-  const dados = formula.grupos.flatMap((g) => repetir(g.qtd * mult, g.lados, { negativo: g.negativo, usado: true }));
-  const soma = dados.reduce((s, d) => s + (d.negativo ? -d.valor : d.valor), 0);
+/**
+ * Dano em partes: [{ formula: '10', rotulo: 'corte' }, { formula: '1d4', rotulo: 'Morte', skin: 'morte' }].
+ * Cada parte rola e soma separada (o resultado mostra "10 corte · 3 Morte") e o total junta tudo.
+ * No crítico (mult > 1) só os dados se multiplicam, o bônus fixo não.
+ * Os dados levam "parte" (de qual parte vieram) e "skin" (a skin da parte, se houver).
+ */
+export function rolarDanos(partes, mult = 1) {
+  const resultado = partes.map((parte, i) => {
+    const formula = lerFormula(parte.formula) ?? { grupos: [], bonus: 0, pior: false };
+    const dados = formula.grupos.flatMap((g) => repetir(g.qtd * mult, g.lados, {
+      negativo: g.negativo, usado: true, parte: i, skin: parte.skin,
+    }));
+    const soma = dados.reduce((s, d) => s + pontos(d), 0);
+    return {
+      rotulo: parte.rotulo ?? '',
+      formula: escreverFormula(formula, mult),
+      bonus: formula.bonus,
+      dados,
+      total: Math.max(0, soma + formula.bonus),
+    };
+  });
   return {
     tipo: 'dano',
     mult,
-    bonus: formula.bonus,
-    total: Math.max(0, soma + formula.bonus),
-    dados: comLancamento(dados),
+    partes: resultado.map((p) => ({ rotulo: p.rotulo, formula: p.formula, bonus: p.bonus, total: p.total })),
+    bonus: resultado.reduce((s, p) => s + p.bonus, 0),
+    total: resultado.reduce((s, p) => s + p.total, 0),
+    dados: comLancamento(resultado.flatMap((p) => p.dados)),
   };
 }
+
+/** O que um pedido rola, em texto ("3d20+5" ou "1d8+2 corte + 1d4 Morte") — para dicas de botão */
+export const descreverPedido = (pedido) => pedido.formula
+  ?? (pedido.partes ?? []).map((p) => [p.formula, p.rotulo].filter(Boolean).join(' ')).join(' + ');
+
+/** Atalho: dano de uma fórmula só (já lida) */
+export const rolarDano = (formula, mult = 1) => rolarDanos([{ formula: escreverFormula(formula) }], mult);

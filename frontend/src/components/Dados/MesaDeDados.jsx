@@ -3,7 +3,7 @@ import Dado3D from './Dado3D';
 import Dados3D from './Dados3D';
 import { temWebGL } from './dadoWebGL';
 import { aparencia } from './skins';
-import { escreverFormula, lerFormula, rolarDano, rolarTeste } from './formula';
+import { escreverFormula, lerFormula, rolarDanos, rolarTeste } from './formula';
 import styles from './MesaDeDados.module.scss';
 
 const DURACAO = 1900;   // ms do arremesso de cada dado (os dados em CSS usam $duracao no SCSS)
@@ -26,13 +26,22 @@ function conta(resultado) {
     const dados = resultado.qtd > 1 ? `${resultado.pior ? 'Menor' : 'Maior'} de ${resultado.qtd}d20: ${resultado.natural}` : `d20: ${resultado.natural}`;
     return resultado.bonus ? `${dados} ${comSinal(resultado.bonus)}` : dados;
   }
-  const valores = resultado.dados.map((d) => (d.negativo ? `−${d.valor}` : d.valor));
+  const valores = resultado.dados.map((d) => (d.negativo ? `−${d.valor}` : rotuloDoDado(d)));
   const dados = valores.length > 10 ? `${valores.length} dados: ${resultado.total - resultado.bonus}` : valores.join(' + ');
   return resultado.bonus ? `${dados} ${comSinal(resultado.bonus)}` : dados;
 }
 
+// O que está escrito na face (o d100 mostra 00, 10 … 90)
+const rotuloDoDado = (d) => (d.numeracao === 'dezenas' ? String(d.valor).padStart(2, '0') : d.valor);
+
+// "1d8+2 corte + 1d4 Morte"
+const textoDasPartes = (partes) => partes.map((p) => [p.formula, p.rotulo].filter(Boolean).join(' ')).join(' + ');
+
+// Dano sempre em partes; um pedido antigo com "formula" vira uma parte só
+const partesDoPedido = (pedido) => pedido.partes ?? [{ formula: pedido.formula }];
+
 const rolarPedido = (pedido, formula) =>
-  (pedido.tipo === 'dano' ? rolarDano(formula, pedido.mult ?? 1) : rolarTeste(formula));
+  (pedido.tipo === 'dano' ? rolarDanos(partesDoPedido(pedido), pedido.mult ?? 1) : rolarTeste(formula));
 
 /**
  * A mesa: a tela escurece e os dados entram voando, giram e param no resultado.
@@ -80,7 +89,7 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
     onPedir({
       titulo: pedido.titulo,
       subtitulo: critico ? `Dano crítico ×${m}` : 'Dano',
-      formula: pedido.ataque.dano,
+      partes: pedido.ataque.partes,
       tipo: 'dano',
       mult: m,
       estilo: pedido.estilo,   // o dano sai com o dado da mesma ficha
@@ -88,7 +97,8 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
   }
 
   const tamanho = tamanhoDosDados(resultado.dados.length);
-  const apCss = aparencia(pedido.estilo, pedido.tipo);   // dados em CSS: só a cor base da skin
+  // Dados em CSS: só a cor base (do kit ou da skin)
+  const apCss = (d) => aparencia(pedido.estilo, d.lados, d.skin);
   const variosDados = resultado.dados.length > 1;
   // No teste, o d20 escolhido (maior, ou menor com ↓) é o que se destaca
   const ehEscolhido = (d) => !ehDano && d.usado && d.lados === 20;
@@ -99,7 +109,7 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
       className={`${styles.valor} ${parou ? styles.visivel : ''} ${ehEscolhido(d) ? styles.maior : ''} ${!d.usado ? styles.descartado : ''}`}
       style={{ transitionDelay: parou ? `${i * 40}ms` : '0ms' }}
     >
-      {d.negativo ? `−${d.valor}` : d.valor}
+      {d.negativo ? `−${d.valor}` : rotuloDoDado(d)}
       {d.lados !== 20 && <small>d{d.lados}</small>}
     </span>
   );
@@ -122,7 +132,6 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
             etiqueta={etiqueta}
             onFalha={semWebGL}
             estilo={pedido.estilo}
-            tipo={pedido.tipo}
           />
         </div>
       ) : (
@@ -130,12 +139,12 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
           {resultado.dados.map((d, i) => (
             <div key={`${resultado.rodada}-${i}`} className={styles.vaga}>
               <Dado3D
-                lados={d.lados}
+                lados={d.numeracao ? 10 : d.lados}
+                numeracao={d.numeracao}
                 valor={d.valor}
                 tamanho={tamanho}
-                tipo={ehDano ? 'dano' : 'teste'}
-                cor={apCss.base}
-                corNumero={apCss.numero}
+                cor={apCss(d).base}
+                corNumero={apCss(d).numero}
                 lancamento={d}
                 usado={d.usado}
                 destaque={variosDados && ehEscolhido(d)}
@@ -150,19 +159,32 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
         <header className={styles.cabeca}>
           {pedido.subtitulo && <small>{pedido.subtitulo}</small>}
           <h2>{pedido.titulo}</h2>
-          <code>{escreverFormula(formula, mult)}</code>
+          <code>{ehDano ? textoDasPartes(resultado.partes) : escreverFormula(formula, mult)}</code>
         </header>
 
         <div className={styles.resultado} aria-live="polite">
           <b className={`${styles.total} ${parou ? styles.mostrar : ''}`}>{parou ? resultado.total : '·'}</b>
-          {parou && <p className={styles.conta}>{conta(resultado)}</p>}
+          {/* Dano com várias partes: cada tipo com o seu subtotal, na mesma tela */}
+          {parou && ehDano && resultado.partes.length > 1 ? (
+            <ul className={styles.partes}>
+              {resultado.partes.map((p, i) => (
+                <li key={i}>
+                  <b>{p.total}</b>
+                  <span>{p.rotulo || 'dano'}</span>
+                  <small>{p.formula}</small>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            parou && <p className={styles.conta}>{conta(resultado)}</p>
+          )}
           {parou && critico && (
             <div className={styles.carimbos}>
               <span className={styles.carimbo}>Crítico</span>
             </div>
           )}
           <div className={`${styles.botoes} ${parou ? '' : styles.esperando}`}>
-            {pedido.ataque?.dano && (
+            {pedido.ataque?.partes?.length > 0 && (
               <button type="button" className={styles.primario} onClick={rolarDanoDoAtaque} disabled={!parou}>
                 Rolar dano{critico ? ` ×${pedido.ataque.critico?.mult ?? 2}` : ''}
               </button>

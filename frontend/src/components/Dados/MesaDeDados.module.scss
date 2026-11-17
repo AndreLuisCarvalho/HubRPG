@@ -185,6 +185,31 @@
 
 .conta { font-size: 0.9rem; color: var(--texto-suave, #9a978f); }
 
+// Dano em partes: "10 corte · 3 Morte", cada uma com a fórmula embaixo
+.partes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    justify-items: center;
+    min-width: 76px;
+    padding: 6px 12px;
+    border: 1px solid var(--borda, #33363b);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  b { @include fonte-titulo; font-size: 1.4rem; line-height: 1.1; }
+  span { font-size: 0.82rem; color: var(--texto, #e6e3dc); }
+  small { font-size: 0.72rem; color: var(--texto-suave, #9a978f); }
+}
+
 .carimbos {
   display: flex;
   gap: 10px;

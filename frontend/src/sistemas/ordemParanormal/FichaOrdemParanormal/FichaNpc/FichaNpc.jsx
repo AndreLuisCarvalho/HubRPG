@@ -1,7 +1,9 @@
 import Contador from '../../../../components/Contador/Contador';
 import BotaoRolar from '../../../../components/Dados/BotaoRolar';
 import { useRolagem } from '../../../../components/Dados/rolagem';
+import { danosDe, textoDosDanos } from '../../danos';
 import { pedidoAtaque, pedidoTeste } from '../../rolagens';
+import EditorDano from '../partes/EditorDano/EditorDano';
 import EscolherFoto from '../../../../components/EscolherFoto/EscolherFoto';
 import Seletor from '../../../../components/Seletor/Seletor';
 import { PERICIAS } from '../../modelo';
@@ -140,8 +142,17 @@ export default function FichaNpc({ ficha, onAlterarDados, onAlterarFicha }) {
               <BotaoRolar pedido={pedidoAtaque(a)} rolar={rolar} rotulo={`Atacar com ${a.nome || 'ataque'}`} />
               <input defaultValue={a.nome} onBlur={(e) => mudarAtaque(i, 'nome', e.target.value.trim())} placeholder="Arma" aria-label="Arma" />
               <input defaultValue={a.teste} onBlur={(e) => mudarAtaque(i, 'teste', e.target.value.trim())} placeholder="Teste (+5)" aria-label="Teste de ataque" />
-              <input defaultValue={a.dano} onBlur={(e) => mudarAtaque(i, 'dano', e.target.value.trim())} placeholder="Dano (1d6)" aria-label="Dano" />
               <button type="button" className={styles.remover} onClick={() => removerAtaque(i)} aria-label="Remover ataque">×</button>
+              {/* Dano em partes, uma por linha (o texto "dano" acompanha como resumo) */}
+              <div className={styles.danos}>
+                <EditorDano
+                  danos={danosDe(a)}
+                  onMudar={(danos) => mudarNpc({
+                    ataques: npc.ataques.map((x, j) => (j === i ? { ...x, danos, dano: textoDosDanos(danos) } : x)),
+                  })}
+                  compacto
+                />
+              </div>
             </div>
           ))}
           <button type="button" className={styles.adicionar} onClick={novoAtaque}>+ Ataque</button>

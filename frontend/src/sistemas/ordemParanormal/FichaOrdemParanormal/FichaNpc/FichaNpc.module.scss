@@ -165,8 +165,8 @@
 // Arma · teste · dano · ×
 .ataque {
   display: grid;
-  // d20 (ataque → dano) · arma · teste · dano · ×
-  grid-template-columns: 24px minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) 28px;
+  // d20 (ataque → dano) · arma · teste · × — e as partes do dano embaixo
+  grid-template-columns: 24px minmax(0, 1.6fr) minmax(0, 1fr) 28px;
   align-items: center;
   gap: 6px;
 
@@ -183,6 +183,14 @@
 
     &:focus { outline: none; border-color: var(--cor); }
   }
+
+  // Cada ataque separado do próximo por uma linha fina
+  padding-bottom: 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--borda) 60%, transparent);
+}
+
+.danos {
+  grid-column: 2 / -1;
 }
 
 .pericia {

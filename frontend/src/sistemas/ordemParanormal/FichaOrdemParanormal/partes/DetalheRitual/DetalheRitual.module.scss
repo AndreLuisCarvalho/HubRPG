@@ -42,6 +42,42 @@
   }
 }
  
+// Dano do ritual + botão de rolar
+.dano {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+
+  > span {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+
+  b { font-weight: 600; color: #e0465a; }
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    padding: 5px 11px;
+    border: 1px solid color-mix(in srgb, var(--e, var(--cor)) 70%, transparent);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--e, var(--cor)) 16%, transparent);
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+
+    svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
+    &:hover { background: color-mix(in srgb, var(--e, var(--cor)) 30%, transparent); }
+  }
+}
+
 .efeito {
   font-size: 0.82rem;
   line-height: 1.55;

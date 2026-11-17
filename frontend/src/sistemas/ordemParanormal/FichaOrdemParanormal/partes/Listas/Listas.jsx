@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useRolagem } from '../../../../../components/Dados/rolagem';
+import { descreverPedido } from '../../../../../components/Dados/formula';
+import { danosDe, textoDosDanos } from '../../../danos';
 import { pedidoAtaque, pedidoDano } from '../../../rolagens';
+import EditorDano from '../EditorDano/EditorDano';
 import styles from './Listas.module.scss';
 
 /*
@@ -71,7 +74,7 @@ export function ListaAtaques({ ataques = [], onMudar }) {
             { id: 'nome', rotulo: 'Ataque', dica: 'Ex.: Garras' },
             { id: 'alcance', rotulo: 'Alcance', dica: 'Ex.: Corpo a corpo ×2' },
             { id: 'teste', rotulo: 'Teste', dica: '3d20+10', curto: true },
-            { id: 'dano', rotulo: 'Dano', dica: '2d6+6 impacto', curto: true },
+            { id: 'danos', rotulo: 'Dano', danos: true },
           ]}
           onSalvar={(v) => ed.salvar(a.uid, v)}
           onCancelar={() => ed.cancelar(a.uid)}
@@ -88,7 +91,7 @@ export function ListaAtaques({ ataques = [], onMudar }) {
           <p className={styles.numeros}>
             <span>TESTE</span> <Rolavel pedido={pedidoAtaque(a)} rolar={rolar} texto={a.teste} />
             {' '}<span className={styles.barra}>|</span>{' '}
-            <span>DANO</span> <Rolavel pedido={pedidoDano(a)} rolar={rolar} texto={a.dano} dano />
+            <span>DANO</span> <Rolavel pedido={pedidoDano(a)} rolar={rolar} texto={textoDosDanos(danosDe(a))} dano />
           </p>
         </div>
       )))}
@@ -110,6 +113,7 @@ export function ListaHabilidades({ habilidades = [], onMudar }) {
 
 function ListaDeTextos({ titulo, itens, onMudar, comTipo = false, rotuloNovo }) {
   const ed = useEdicao(itens, onMudar, { ...(comTipo && { tipo: 'Padrão' }), nome: '', texto: '' });
+  const { rolar } = useRolagem();
 
   return (
     <section className={styles.lista}>
@@ -122,7 +126,8 @@ function ListaDeTextos({ titulo, itens, onMudar, comTipo = false, rotuloNovo }) 
           tipos={comTipo ? TIPOS_DE_ACAO : null}
           campos={[
             { id: 'nome', rotulo: 'Nome', dica: comTipo ? 'Ex.: Agarrão' : 'Ex.: Regeneração' },
-            { id: 'texto', rotulo: 'O que faz', dica: 'Gatilho, alcance, teste, dano, DT…', longo: true },
+            { id: 'texto', rotulo: 'O que faz', dica: 'Gatilho, alcance, teste, DT…', longo: true },
+            { id: 'danos', rotulo: 'Dano (se causar)', danos: true },
           ]}
           onSalvar={(v) => ed.salvar(it.uid, v)}
           onCancelar={() => ed.cancelar(it.uid)}
@@ -136,6 +141,11 @@ function ListaDeTextos({ titulo, itens, onMudar, comTipo = false, rotuloNovo }) 
             <Lapis onClick={() => ed.abrir(it.uid)} rotulo={`Editar ${it.nome || titulo}`} />
           </div>
           {it.texto && <p className={styles.texto}>{it.texto}</p>}
+          {danosDe(it).length > 0 && (
+            <p className={styles.numeros}>
+              <span>DANO</span> <Rolavel pedido={pedidoDano(it)} rolar={rolar} texto={textoDosDanos(danosDe(it))} dano />
+            </p>
+          )}
         </div>
       )))}
       <button type="button" className={styles.adicionar} onClick={ed.adicionar}>{rotuloNovo}</button>
@@ -154,7 +164,7 @@ export function Rolavel({ pedido, rolar, texto, dano = false }) {
       type="button"
       className={`${styles.rolavel} ${dano ? styles.rolavelDano : ''}`}
       onClick={() => rolar(pedido)}
-      title={`Rolar ${pedido.subtitulo.toLowerCase()}: ${pedido.formula}`}
+      title={`Rolar ${pedido.subtitulo.toLowerCase()}: ${descreverPedido(pedido)}`}
     >
       {texto}
     </button>
@@ -167,15 +177,22 @@ function Lapis({ onClick, rotulo }) {
   );
 }
 
+const Campo = ({ como: Tag, ...resto }) => <Tag {...resto} />;
+
 // Edição de uma linha: só grava ao clicar em Salvar
 function Formulario({ inicial, campos, tipos, onSalvar, onCancelar, onApagar }) {
-  const [valores, setValores] = useState(() =>
-    Object.fromEntries([...(tipos ? ['tipo'] : []), ...campos.map((c) => c.id)].map((id) => [id, inicial[id] ?? ''])));
+  const [valores, setValores] = useState(() => Object.fromEntries([
+    ...(tipos ? [['tipo', inicial.tipo ?? '']] : []),
+    // Dano em partes: as salvas ou, nas fichas antigas, lidas do texto
+    ...campos.map((c) => [c.id, c.danos ? danosDe(inicial) : inicial[c.id] ?? '']),
+  ]));
   const mudar = (id, v) => setValores((atual) => ({ ...atual, [id]: v }));
 
   function enviar(e) {
     e.preventDefault();
-    onSalvar(Object.fromEntries(Object.entries(valores).map(([id, v]) => [id, typeof v === 'string' ? v.trim() : v])));
+    const limpos = Object.fromEntries(Object.entries(valores).map(([id, v]) => [id, typeof v === 'string' ? v.trim() : v]));
+    // O texto "dano" acompanha as partes (resumo e compatibilidade)
+    onSalvar(limpos.danos ? { ...limpos, danos: limpos.danos.filter((d) => d.formula), dano: textoDosDanos(limpos.danos) } : limpos);
   }
 
   return (
@@ -191,14 +208,17 @@ function Formulario({ inicial, campos, tipos, onSalvar, onCancelar, onApagar }) 
       )}
       <div className={styles.campos}>
         {campos.map((c) => (
-          <label key={c.id} className={`${styles.campo} ${c.curto ? styles.curto : ''}`}>
+          // O editor de dano tem vários controles: fica numa div (um label só aceita um controle)
+          <Campo key={c.id} como={c.danos ? 'div' : 'label'} className={`${styles.campo} ${c.curto ? styles.curto : ''}`}>
             <span>{c.rotulo}</span>
-            {c.longo ? (
+            {c.danos ? (
+              <EditorDano danos={valores[c.id]} onMudar={(v) => mudar(c.id, v)} compacto />
+            ) : c.longo ? (
               <textarea value={valores[c.id]} onChange={(e) => mudar(c.id, e.target.value)} placeholder={c.dica} rows={3} />
             ) : (
               <input value={valores[c.id]} onChange={(e) => mudar(c.id, e.target.value)} placeholder={c.dica} />
             )}
-          </label>
+          </Campo>
         ))}
       </div>
       <div className={styles.botoes}>

@@ -9,7 +9,6 @@
  */
 
 export const COR_PADRAO = '#a3181b';
-export const COR_DANO_PADRAO = '#a3181b';
 
 export const PALETA = [
   '#a3181b', '#d1452e', '#c4974a', '#e0c45c', '#3f7d4a', '#2f6f8f',
@@ -193,15 +192,26 @@ export const SKINS = [
 
 export const skinPorId = (id) => SKINS.find((s) => s.id === id) ?? null;
 
+/** As peças do kit, na ordem da página Dados. O d100 é o d10 das dezenas (joga junto com o d10). */
+export const KIT = [4, 6, 8, 10, 12, 20, 100];
+
+/** O que o kit guarda para um dado: { cor } ou { skin }. Aceita o formato antigo ({ cor, skin } para todos). */
+export function escolhaDoKit(estilo, lados) {
+  if (estilo?.kit) return estilo.kit[`d${lados}`] ?? {};
+  return estilo?.skin ? { skin: estilo.skin } : { cor: estilo?.cor };
+}
+
 /**
  * Aparência final de um dado: { chave, base, aresta, numero, skin, material }.
- * estilo = o que a ficha guardou ({ cor, corDano, skin }); tipo = 'teste' | 'dano'.
+ * estilo = o que a ficha guardou ({ kit: { d20: { cor } | { skin }, … } }); lados = qual peça do kit.
+ * skinDaParte (ex.: 'morte' num dano de Morte) passa por cima do kit.
  */
-export function aparencia(estilo = {}, tipo = 'teste') {
-  const skin = skinPorId(estilo?.skin);
+export function aparencia(estilo, lados = 20, skinDaParte = null) {
+  const escolha = escolhaDoKit(estilo, lados);
+  const skin = skinPorId(skinDaParte) ?? skinPorId(escolha.skin);
   if (skin) {
     return { chave: `skin:${skin.id}`, base: skin.base, aresta: skin.aresta, numero: skin.numero, skin, material: skin.material };
   }
-  const base = (tipo === 'dano' ? estilo?.corDano ?? estilo?.cor : estilo?.cor) ?? COR_PADRAO;
+  const base = escolha.cor ?? COR_PADRAO;
   return { chave: `cor:${base}`, base, aresta: base, numero: corDoNumero(base), skin: null, material: null };
 }
