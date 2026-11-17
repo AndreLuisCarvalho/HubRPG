@@ -115,6 +115,16 @@ async function iniciar() {
       conteudo    TEXT NOT NULL DEFAULT '',
       criado_em   TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Mapas da campanha (aba Mapas): "dados" tem os pinos e opções em JSON, "imagem" a imagem
+    CREATE TABLE IF NOT EXISTS mapas (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      campanha_id INTEGER NOT NULL REFERENCES campanhas(id) ON DELETE CASCADE,
+      nome        TEXT NOT NULL,
+      dados       TEXT NOT NULL DEFAULT '{}',
+      imagem      TEXT NOT NULL DEFAULT '',
+      criado_em   TEXT DEFAULT CURRENT_TIMESTAMP
+    );
   `);
  
   await adicionarColuna('campanhas', 'mapa', "TEXT DEFAULT ''");

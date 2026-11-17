@@ -1,0 +1,224 @@
+@use '../../../../styles/mixins' as *;
+
+// Moldura de tinta em volta do mapa (linha dupla)
+.moldura {
+  --tinta-mapa: #3b2a17;
+  --papel-mapa: #e3d3ad;
+  position: relative;
+  display: grid;
+  height: clamp(420px, calc(100dvh - 230px), 1200px);
+  padding: 6px;
+  border: 1px solid #6b5536;
+  border-radius: 4px;
+  background: #1a1510;
+  box-shadow: inset 0 0 0 3px #1a1510, inset 0 0 0 4px #4d3c26;
+
+  @include celular { height: calc(100dvh - 210px); min-height: 360px; }
+}
+
+// Em tela cheia o mapa ocupa tudo
+.cheia {
+  height: 100dvh;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.area {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+  background:
+    radial-gradient(circle at 50% 50%, #2a2118, #120e0a 80%);
+  cursor: grab;
+  touch-action: none;   // o gesto (arrastar, pinça) é nosso, não da página
+  user-select: none;
+
+  &:active { cursor: grabbing; }
+}
+
+.mira { cursor: crosshair; &:active { cursor: crosshair; } }
+
+/* ---------- O mapa (imagem + papel) ---------- */
+.mundo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+}
+
+// Camada de papel: textura, manchas e bordas queimadas por cima da imagem
+.papel {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pergaminho {
+  img { filter: sepia(0.6) saturate(0.75) contrast(1.06) brightness(0.96); }
+
+  .papel {
+    background:
+      radial-gradient(ellipse at 22% 30%, rgba(120, 80, 30, 0.14), transparent 40%),
+      radial-gradient(ellipse at 78% 70%, rgba(110, 70, 25, 0.16), transparent 45%),
+      radial-gradient(ellipse at 60% 15%, rgba(90, 60, 20, 0.1), transparent 35%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .12 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+    // Bordas queimadas: escurecem para dentro em camadas
+    box-shadow:
+      inset 0 0 6px 2px rgba(40, 20, 5, 0.9),
+      inset 0 0 40px 12px rgba(70, 40, 12, 0.55),
+      inset 0 0 120px 30px rgba(90, 55, 18, 0.35);
+  }
+}
+
+// Sem imagem: pergaminho em branco
+.emBranco {
+  background-color: var(--papel-mapa) !important;
+  mix-blend-mode: normal !important;
+}
+
+.medir {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- Pinos: tachinha colorida com ícone a tinta ---------- */
+.pino {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  transform: translate(-50%, -100%);
+  cursor: pointer;
+  touch-action: none;
+  z-index: 1;
+
+  &:hover .cabeca,
+  &:focus-visible .cabeca { transform: scale(1.12); }
+
+  &:focus-visible { outline: none; }
+  &:focus-visible .cabeca { box-shadow: 0 0 0 3px #fff, 0 3px 6px rgba(0, 0, 0, 0.5); }
+}
+
+.cabeca {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  // Tachinha: cor do tipo com brilho; o miolo é um disco de papel com o ícone a tinta
+  background:
+    radial-gradient(circle at 50% 50%, #efe3c4 0 10px, transparent 10.5px),
+    radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 40%, #fff), var(--c) 55%, color-mix(in srgb, var(--c) 60%, #000));
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.55), inset 0 -2px 3px rgba(0, 0, 0, 0.3);
+  color: #23170b;
+  transition: transform 0.15s ease;
+
+  svg { width: 15px; height: 15px; }
+}
+
+.agulha {
+  width: 2px;
+  height: 10px;
+  background: linear-gradient(#c9c9c9, #6c6c6c);
+  box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.4);
+}
+
+.rotulo {
+  position: absolute;
+  top: calc(100% + 2px);
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: rgba(239, 227, 196, 0.92);
+  color: #23170b;
+  @include fonte-ficha;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.pinoAberto { z-index: 2; .cabeca { transform: scale(1.15); } }
+
+// Oculto (só o mestre vê): apagado e tracejado
+.pinoOculto {
+  opacity: 0.6;
+
+  .cabeca { outline: 2px dashed rgba(255, 255, 255, 0.8); outline-offset: 2px; }
+}
+
+/* ---------- Cartão do pino ---------- */
+.cartao {
+  position: absolute;
+  z-index: 3;
+  width: min(280px, calc(100% - 24px));
+  transform: translate(-50%, calc(-100% - 52px));
+  cursor: auto;
+  user-select: text;
+
+  &.embaixo { transform: translate(-50%, 34px); }
+}
+
+.rosa {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  width: 78px;
+  height: 78px;
+  color: rgba(227, 211, 173, 0.75);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+
+  @include celular { width: 54px; height: 54px; }
+}
+
+/* ---------- Botões no canto ---------- */
+.barra {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: calc(100% - 28px);
+
+  button {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid rgba(227, 211, 173, 0.35);
+    border-radius: 3px;
+    background: rgba(20, 15, 10, 0.82);
+    color: #efe3c4;
+    @include fonte-ficha;
+    font-size: 0.8rem;
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+
+    &:hover { border-color: rgba(227, 211, 173, 0.8); }
+
+    &[aria-pressed='true'] {
+      border-color: var(--cor);
+      background: color-mix(in srgb, var(--cor) 40%, #140f0a);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cabeca { transition: none; }
+}

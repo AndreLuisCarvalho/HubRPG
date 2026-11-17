@@ -5,6 +5,7 @@ import campanhasRouter from './routes/campanhas.js';
 import { criarRotasDeItens } from './routes/itensDaCampanha.js';
 import fichasRouter from './routes/fichas.js';
 import arquivosRouter from './routes/arquivos.js';
+import mapasRouter from './routes/mapas.js';
  
 const app = express();
  
@@ -31,6 +32,7 @@ app.use(async (req, res, next) => {
 app.use('/api/campanhas', campanhasRouter);
 app.use('/api', fichasRouter);
 app.use('/api', arquivosRouter);
+app.use('/api', mapasRouter);
  
 app.use('/api', criarRotasDeItens({
   tabela: 'sessoes',

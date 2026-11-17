@@ -6,16 +6,8 @@ import FormArquivo from './FormArquivo';
 import Pasta from './Pasta';
 import Terminal from './Terminal';
 import VerArquivo from './VerArquivo';
+import { lerVisao, pedidoDeAbrir, useVisao } from '../../visao';
 import styles from './Arquivos.module.scss';
-
-const chaveVisao = (id) => `hubrpg:arquivos:visao:${id}`;
-function lerVisao(id) {
-  try {
-    return localStorage.getItem(chaveVisao(id)) ?? 'mestre';
-  } catch {
-    return 'mestre';
-  }
-}
 
 // A lista guarda só o resumo; o conteúdo (pesado) é buscado ao abrir
 const semConteudo = ({ conteudo: _conteudo, ...resto }) => resto;
@@ -29,7 +21,7 @@ export default function Arquivos({ campanha }) {
   const [arquivos, setArquivos] = useState(null);
   const [sessoes, setSessoes] = useState([]);
   const [erro, setErro] = useState('');
-  const [visao, setVisao] = useState(() => lerVisao(campanha.id));
+  const [visao, trocarVisao] = useVisao(campanha.id);
   // { modo: 'ver' | 'terminal' | 'form', arquivo }
   const [janela, setJanela] = useState(null);
   const mestre = visao === 'mestre';
@@ -41,15 +33,15 @@ export default function Arquivos({ campanha }) {
         if (!efeito.ativo) return;
         setArquivos(a);
         setSessoes(s);
+        // ?abrir=7 (vindo de um pino do mapa): abre esse arquivo (trancado → terminal, para os jogadores)
+        const pedido = pedidoDeAbrir();
+        const ehMestre = lerVisao(campanha.id) === 'mestre';
+        const alvo = a.find((x) => x.id === pedido && (ehMestre || x.dados.liberado));
+        if (alvo) setJanela({ modo: estadoDo(alvo) === 'trancado' && !ehMestre ? 'terminal' : 'ver', arquivo: alvo });
       })
       .catch((e) => efeito.ativo && setErro(e.message));
     return () => { efeito.ativo = false; };
   }, [campanha.id]);
-
-  function trocarVisao(nova) {
-    setVisao(nova);
-    try { localStorage.setItem(chaveVisao(campanha.id), nova); } catch { /* sem armazenamento: só não lembra */ }
-  }
 
   const fechar = () => setJanela(null);
   const trocarNaLista = (salvo) =>
