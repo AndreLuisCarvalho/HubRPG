@@ -132,6 +132,8 @@ async function iniciar() {
   await adicionarColuna('campanhas', 'sistema_id', "TEXT DEFAULT ''");
   // Anotações da sessão que não aparecem na Visão geral (vista pelos jogadores)
   await adicionarColuna('sessoes', 'notas_mestre', "TEXT DEFAULT ''");
+  // Névoa do mapa: máscara em PNG (data URL), separada para os pinos continuarem leves
+  await adicionarColuna('mapas', 'nevoa', "TEXT DEFAULT ''");
  
   // Dados iniciais, só se o banco estiver vazio
   const { total } = await db.get('SELECT COUNT(*) AS total FROM campanhas');

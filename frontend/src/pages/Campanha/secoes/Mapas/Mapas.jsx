@@ -6,28 +6,37 @@ import { useVisao } from '../../visao';
 import CartaoPino from './CartaoPino';
 import FormMapa from './FormMapa';
 import FormPino from './FormPino';
-import { caminhoAte, MAPA_NOVO, novoPino } from './regrasMapa';
+import FormRota from './FormRota';
+import { caminhoAte, MAPA_NOVO, novaRota, novoPino } from './regrasMapa';
 import Visualizador from './Visualizador';
 import styles from './Mapas.module.scss';
 
-const semImagem = ({ imagem: _imagem, ...resto }) => resto;
-const comPadroes = (m) => ({ ...m, dados: { ...MAPA_NOVO.dados, ...m.dados, pinos: m.dados?.pinos ?? [] } });
+const semPesados = ({ imagem: _imagem, nevoa: _nevoa, ...resto }) => resto;
+const comPadroes = (m) => ({ ...m, dados: { ...MAPA_NOVO.dados, ...m.dados } });
+
+// Tamanhos do pincel da névoa (raio na tela, em px)
+const PINCEIS = [{ rotulo: 'P', raio: 28 }, { rotulo: 'M', raio: 60 }, { rotulo: 'G', raio: 120 }];
 
 /**
- * Mapas da campanha: vários mapas ligados por pinos de passagem, com pinos por tipo,
- * descrição e links para as outras abas. Visão do mestre (edita tudo) e dos jogadores (só o revelado).
+ * Mapas da campanha: vários mapas ligados por pinos de passagem, pinos com links para as outras abas,
+ * névoa pintada pelo mestre, tokens dos agentes e rotas tracejadas.
+ * Visão do mestre (edita tudo) e dos jogadores (só o revelado).
  */
 export default function Mapas({ campanha }) {
   const navigate = useNavigate();
   const [busca, setBusca] = useSearchParams();
   const [mapas, setMapas] = useState(null);
-  const [imagens, setImagens] = useState({});   // id → data URL ('' = pergaminho em branco)
+  // Carregados ao abrir cada mapa: id → { imagem, nevoa } ('' = pergaminho em branco / tudo coberto)
+  const [pesados, setPesados] = useState({});
   const [catalogo, setCatalogo] = useState({ sessoes: [], arquivos: [], itens: [], fichas: [] });
   const [erro, setErro] = useState('');
   const [visao, trocarVisao] = useVisao(campanha.id);
   const [ferramenta, setFerramenta] = useState('mover');
-  const [pinoAberto, setPinoAberto] = useState(null);
-  const [janela, setJanela] = useState(null);   // { modo: 'mapa' | 'pino', ... }
+  const [pincel, setPincel] = useState(PINCEIS[1].raio);
+  const [agenteEscolhido, setAgenteEscolhido] = useState(null);   // ficha a pôr no mapa
+  const [rascunho, setRascunho] = useState(null);   // pontos da rota sendo desenhada
+  const [selecionado, setSelecionado] = useState(null);
+  const [janela, setJanela] = useState(null);   // { modo: 'mapa' | 'pino' | 'rota', ... }
   const mestre = visao === 'mestre';
 
   useEffect(() => {
@@ -52,21 +61,29 @@ export default function Mapas({ campanha }) {
   const visiveis = (mapas ?? []).filter((m) => mestre || !m.dados.oculto);
   const pedido = Number(busca.get('mapa'));
   const atual = visiveis.find((m) => m.id === pedido) ?? visiveis[0] ?? null;
-  const imagem = atual ? imagens[atual.id] : undefined;
+  const carregado = atual ? pesados[atual.id] : undefined;
 
-  // A imagem só vem ao abrir o mapa (a lista é leve)
+  // A imagem e a névoa só vêm ao abrir o mapa (a lista é leve)
   useEffect(() => {
-    if (!atual || imagens[atual.id] !== undefined) return undefined;
+    if (!atual || pesados[atual.id] !== undefined) return undefined;
     const efeito = { ativo: true };
     api.buscarMapa(atual.id)
-      .then((m) => efeito.ativo && setImagens((i) => ({ ...i, [m.id]: m.imagem ?? '' })))
+      .then((m) => efeito.ativo && setPesados((p) => ({ ...p, [m.id]: { imagem: m.imagem ?? '', nevoa: m.nevoa ?? '' } })))
       .catch((e) => efeito.ativo && setErro(e.message));
     return () => { efeito.ativo = false; };
-  }, [atual, imagens]);
+  }, [atual, pesados]);
+
+  function trocarFerramenta(nova) {
+    setFerramenta((f) => (f === nova ? 'mover' : nova));
+    setSelecionado(null);
+    if (nova !== 'rota') setRascunho(null);
+    if (nova !== 'token') setAgenteEscolhido(null);
+  }
 
   function irPara(id) {
-    setPinoAberto(null);
+    setSelecionado(null);
     setFerramenta('mover');
+    setRascunho(null);
     setBusca({ mapa: String(id) });
   }
 
@@ -76,36 +93,75 @@ export default function Mapas({ campanha }) {
     api.atualizarMapa(mapa.id, { nome: mapa.nome, dados }).catch((e) => setErro(`Não foi possível salvar: ${e.message}`));
   }
 
-  const mudarPinos = (fn) => salvarDados(atual, { ...atual.dados, pinos: fn(atual.dados.pinos) });
+  const mudar = (campo, fn) => salvarDados(atual, { ...atual.dados, [campo]: fn(atual.dados[campo] ?? []) });
+  const trocarNaLista = (lista, chave, obj) => (lista.some((x) => x[chave] === obj[chave])
+    ? lista.map((x) => (x[chave] === obj[chave] ? obj : x))
+    : [...lista, obj]);
+
+  function salvarNevoa(mascara) {
+    const mapa = atual;
+    setPesados((p) => ({ ...p, [mapa.id]: { ...p[mapa.id], nevoa: mascara } }));
+    api.atualizarMapa(mapa.id, { nome: mapa.nome, nevoa: mascara }).catch((e) => setErro(`Não foi possível salvar a névoa: ${e.message}`));
+  }
 
   function salvarPino(pino) {
-    mudarPinos((pinos) => (pinos.some((p) => p.id === pino.id) ? pinos.map((p) => (p.id === pino.id ? pino : p)) : [...pinos, pino]));
+    mudar('pinos', (ps) => trocarNaLista(ps, 'id', pino));
     setJanela(null);
-    setPinoAberto(pino.id);
+    setSelecionado({ tipo: 'pino', id: pino.id });
   }
 
   function apagarPino(pino) {
     if (!window.confirm(`Apagar o pino “${pino.nome || 'sem nome'}”?`)) return;
-    mudarPinos((pinos) => pinos.filter((p) => p.id !== pino.id));
-    setPinoAberto(null);
+    mudar('pinos', (ps) => ps.filter((p) => p.id !== pino.id));
+    setSelecionado(null);
+  }
+
+  function salvarRota(rota) {
+    mudar('rotas', (rs) => trocarNaLista(rs, 'id', rota));
+    setJanela(null);
+    setRascunho(null);
+    setFerramenta('mover');
+  }
+
+  function apagarRota(rota) {
+    if (!window.confirm(`Apagar a rota “${rota.nome || 'sem nome'}”?`)) return;
+    mudar('rotas', (rs) => rs.filter((r) => r.id !== rota.id));
+    setJanela(null);
+    setSelecionado(null);
+  }
+
+  // Clique no mapa com uma ferramenta de clique
+  function clicarMapa(x, y) {
+    if (ferramenta === 'pino') setJanela({ modo: 'pino', pino: novoPino(x, y) });
+    if (ferramenta === 'rota') setRascunho((r) => [...(r ?? []), { x, y }]);
+    if (ferramenta === 'token' && agenteEscolhido) {
+      mudar('tokens', (ts) => trocarNaLista(ts, 'fichaId', { fichaId: agenteEscolhido, x, y }));
+      setAgenteEscolhido(null);
+      setFerramenta('mover');
+    }
+  }
+
+  function mover(tipo, id, pos) {
+    if (tipo === 'pino') mudar('pinos', (ps) => ps.map((p) => (p.id === id ? { ...p, ...pos } : p)));
+    if (tipo === 'token') mudar('tokens', (ts) => ts.map((t) => (t.fichaId === id ? { ...t, ...pos } : t)));
   }
 
   async function salvarMapa(mapa) {
     if (mapa.id) {
       const salvo = await api.atualizarMapa(mapa.id, mapa);
       setMapas((lista) => lista.map((m) => (m.id === salvo.id ? comPadroes(salvo) : m)));
-      if (mapa.imagem !== undefined) setImagens((i) => ({ ...i, [salvo.id]: mapa.imagem }));
+      if (mapa.imagem !== undefined) setPesados((p) => ({ ...p, [salvo.id]: { ...p[salvo.id], imagem: mapa.imagem } }));
     } else {
       const salvo = await api.criarMapa(campanha.id, { ...mapa, imagem: mapa.imagem ?? '' });
-      setMapas((lista) => [...lista, comPadroes(semImagem(salvo))]);
-      setImagens((i) => ({ ...i, [salvo.id]: salvo.imagem ?? '' }));
+      setMapas((lista) => [...lista, comPadroes(semPesados(salvo))]);
+      setPesados((p) => ({ ...p, [salvo.id]: { imagem: salvo.imagem ?? '', nevoa: '' } }));
       irPara(salvo.id);
     }
     setJanela(null);
   }
 
   async function excluirMapa(mapa) {
-    if (!window.confirm(`Apagar o mapa “${mapa.nome}” e os pinos dele? Isso não pode ser desfeito.`)) return;
+    if (!window.confirm(`Apagar o mapa “${mapa.nome}” e tudo o que há nele? Isso não pode ser desfeito.`)) return;
     try {
       await api.excluirMapa(mapa.id);
       setMapas((lista) => lista.filter((m) => m.id !== mapa.id));
@@ -153,8 +209,132 @@ export default function Mapas({ campanha }) {
     sessao: catalogo.sessoes.map((s) => ({ valor: String(s.id), rotulo: `Sessão ${s.numero}`, detalhe: s.titulo })),
   };
 
+  /* ---------- O que vai para a tela ---------- */
+  const agentes = catalogo.fichas.filter((f) => f.tipo === 'jogador');
   const pinos = atual ? atual.dados.pinos.filter((p) => mestre || !p.oculto) : [];
+  const rotas = atual ? atual.dados.rotas.filter((r) => mestre || !r.oculta) : [];
+  const tokens = atual
+    ? atual.dados.tokens.flatMap((t) => {
+      const ficha = agentes.find((a) => a.id === t.fichaId);
+      return ficha ? [{ id: t.fichaId, x: t.x, y: t.y, nome: ficha.nome, foto: ficha.imagem }] : [];
+    })
+    : [];
   const caminho = atual ? caminhoAte(atual.id, visiveis) : [];
+  const usaNevoa = Boolean(atual?.dados.usarNevoa);
+
+  function cartao(sel) {
+    if (sel.tipo === 'pino') {
+      const pino = atual.dados.pinos.find((p) => p.id === sel.id);
+      return pino && (
+        <CartaoPino
+          pino={pino}
+          link={linkDe(pino)}
+          mestre={mestre}
+          onFechar={() => setSelecionado(null)}
+          onEditar={() => setJanela({ modo: 'pino', pino })}
+          onAlternarOculto={() => mudar('pinos', (ps) => ps.map((p) => (p.id === pino.id ? { ...p, oculto: !p.oculto } : p)))}
+          onApagar={() => apagarPino(pino)}
+        />
+      );
+    }
+    if (sel.tipo === 'token') {
+      const ficha = agentes.find((a) => a.id === sel.id);
+      return ficha && (
+        <article className={styles.cartaoPino} style={{ '--c': 'var(--cor)' }}>
+          <header>
+            <span />
+            <div><small>Agente</small><b>{ficha.nome}</b></div>
+            <button type="button" className={styles.fecharCartao} onClick={() => setSelecionado(null)} aria-label="Fechar">✕</button>
+          </header>
+          <button type="button" className={styles.linkPino} onClick={() => navigate(`${base}/fichas/${ficha.id}`)}>Abrir ficha →</button>
+          <footer>
+            <button type="button" onClick={() => { mudar('tokens', (ts) => ts.filter((t) => t.fichaId !== ficha.id)); setSelecionado(null); }}>
+              Tirar do mapa
+            </button>
+          </footer>
+        </article>
+      );
+    }
+    const rota = atual.dados.rotas.find((r) => r.id === sel.id);
+    return rota && (
+      <article className={styles.cartaoPino} style={{ '--c': rota.cor }}>
+        <header>
+          <span />
+          <div><small>Rota{rota.oculta ? ' · oculta' : ''}</small><b>{rota.nome || 'Sem nome'}</b></div>
+          <button type="button" className={styles.fecharCartao} onClick={() => setSelecionado(null)} aria-label="Fechar">✕</button>
+        </header>
+        {mestre && (
+          <footer>
+            <button type="button" onClick={() => setJanela({ modo: 'rota', rota })}>Editar</button>
+            <button type="button" onClick={() => mudar('rotas', (rs) => rs.map((r) => (r.id === rota.id ? { ...r, oculta: !r.oculta } : r)))}>
+              {rota.oculta ? 'Mostrar aos jogadores' : 'Ocultar'}
+            </button>
+            <button type="button" className={styles.perigoTexto} onClick={() => apagarRota(rota)}>Apagar</button>
+          </footer>
+        )}
+      </article>
+    );
+  }
+
+  // Ferramentas do mestre (dentro do mapa: funcionam também em tela cheia)
+  const ferramentas = mestre && (
+    rascunho !== null ? (
+      <>
+        <span className={styles.aviso}>Clique no mapa para marcar os pontos da rota ({rascunho.length})</span>
+        <button type="button" onClick={() => setRascunho((r) => r.slice(0, -1))} disabled={!rascunho.length}>Desfazer ponto</button>
+        <button type="button" aria-pressed="true" disabled={rascunho.length < 2} onClick={() => setJanela({ modo: 'rota', rota: novaRota(rascunho) })}>
+          Concluir rota
+        </button>
+        <button type="button" onClick={() => { setRascunho(null); setFerramenta('mover'); }}>Cancelar</button>
+      </>
+    ) : (
+      <>
+        <button type="button" aria-pressed={ferramenta === 'pino'} onClick={() => trocarFerramenta('pino')} title="Clique no mapa para pôr um pino">+ Pino</button>
+        <button type="button" aria-pressed={ferramenta === 'rota'} onClick={() => { trocarFerramenta('rota'); setRascunho([]); }} title="Clique nos pontos do caminho">Rota</button>
+        {usaNevoa && (
+          <>
+            <button type="button" aria-pressed={ferramenta === 'revelar'} onClick={() => trocarFerramenta('revelar')} title="Pincel que apaga a névoa">Revelar</button>
+            <button type="button" aria-pressed={ferramenta === 'cobrir'} onClick={() => trocarFerramenta('cobrir')} title="Pincel que pinta a névoa de volta">Cobrir</button>
+            {(ferramenta === 'revelar' || ferramenta === 'cobrir') && PINCEIS.map((p) => (
+              <button key={p.rotulo} type="button" aria-pressed={pincel === p.raio} onClick={() => setPincel(p.raio)} title={`Pincel ${p.rotulo}`}>
+                {p.rotulo}
+              </button>
+            ))}
+            <button type="button" onClick={() => salvarNevoa('limpa')}>Revelar tudo</button>
+            <button type="button" onClick={() => window.confirm('Cobrir o mapa inteiro de névoa?') && salvarNevoa('')}>Cobrir tudo</button>
+          </>
+        )}
+        <button type="button" onClick={() => setJanela({ modo: 'mapa', mapa: { ...atual, imagem: carregado?.imagem } })}>Editar mapa</button>
+      </>
+    )
+  );
+
+  // Bandeja de agentes: escolher um e clicar no mapa
+  const bandeja = mestre && agentes.length > 0 && (
+    <div className={styles.bandeja} role="group" aria-label="Agentes">
+      {agentes.map((a) => {
+        const noMapa = atual?.dados.tokens.some((t) => t.fichaId === a.id);
+        return (
+          <button
+            key={a.id}
+            type="button"
+            className={styles.agente}
+            aria-pressed={agenteEscolhido === a.id}
+            onClick={() => {
+              const escolher = agenteEscolhido !== a.id;
+              setAgenteEscolhido(escolher ? a.id : null);
+              setFerramenta(escolher ? 'token' : 'mover');
+              setRascunho(null);
+            }}
+            title={noMapa ? `${a.nome} (no mapa: clique e depois no mapa para mudar de lugar)` : `${a.nome}: clique e depois no mapa`}
+          >
+            {a.imagem ? <img src={a.imagem} alt="" /> : <span>{a.nome.slice(0, 1)}</span>}
+            {noMapa && <i aria-hidden="true">✓</i>}
+          </button>
+        );
+      })}
+    </div>
+  );
 
   return (
     <section className={styles.pagina}>
@@ -163,7 +343,14 @@ export default function Mapas({ campanha }) {
         <div className={styles.acoesTopo}>
           <div className={styles.visao} role="radiogroup" aria-label="Visão">
             <button type="button" role="radio" aria-checked={mestre} onClick={() => trocarVisao('mestre')}>Mestre</button>
-            <button type="button" role="radio" aria-checked={!mestre} onClick={() => { trocarVisao('jogadores'); setFerramenta('mover'); }}>Jogadores</button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={!mestre}
+              onClick={() => { trocarVisao('jogadores'); setFerramenta('mover'); setRascunho(null); setAgenteEscolhido(null); setSelecionado(null); }}
+            >
+              Jogadores
+            </button>
           </div>
           {mestre && (
             <button type="button" className={styles.novo} onClick={() => setJanela({ modo: 'mapa', mapa: MAPA_NOVO })}>+ Novo mapa</button>
@@ -209,46 +396,28 @@ export default function Mapas({ campanha }) {
             </ol>
           )}
 
-          {mestre && ferramenta === 'pino' && <p className={styles.dica}>Clique no mapa onde o pino deve ficar.</p>}
-
-          {imagem === undefined ? (
+          {carregado === undefined ? (
             <p className={styles.dica}>Abrindo o mapa…</p>
           ) : (
             <Visualizador
               key={atual.id}
-              imagem={imagem}
+              imagem={carregado.imagem}
               pergaminho={atual.dados.pergaminho}
-              pinos={pinos}
               mestre={mestre}
               ferramenta={ferramenta}
-              pinoAberto={pinoAberto}
-              onAbrirPino={setPinoAberto}
-              onAdicionarPino={(x, y) => setJanela({ modo: 'pino', pino: novoPino(x, y) })}
-              onMoverPino={(id, pos) => mudarPinos((ps) => ps.map((p) => (p.id === id ? { ...p, ...pos } : p)))}
-              cartao={(pino) => (
-                <CartaoPino
-                  pino={pino}
-                  link={linkDe(pino)}
-                  mestre={mestre}
-                  onFechar={() => setPinoAberto(null)}
-                  onEditar={() => setJanela({ modo: 'pino', pino })}
-                  onAlternarOculto={() => mudarPinos((ps) => ps.map((p) => (p.id === pino.id ? { ...p, oculto: !p.oculto } : p)))}
-                  onApagar={() => apagarPino(pino)}
-                />
-              )}
-              barra={mestre && (
-                <>
-                  <button
-                    type="button"
-                    aria-pressed={ferramenta === 'pino'}
-                    onClick={() => setFerramenta((f) => (f === 'pino' ? 'mover' : 'pino'))}
-                    title="Clique no mapa para pôr um pino"
-                  >
-                    + Pino
-                  </button>
-                  <button type="button" onClick={() => setJanela({ modo: 'mapa', mapa: { ...atual, imagem } })}>Editar mapa</button>
-                </>
-              )}
+              pinos={pinos}
+              tokens={tokens}
+              rotas={rotas}
+              rascunhoRota={rascunho}
+              nevoa={usaNevoa ? { ativa: true, mascara: carregado.nevoa, onMudar: salvarNevoa } : null}
+              pincel={pincel}
+              selecionado={selecionado}
+              onSelecionar={setSelecionado}
+              onClicarMapa={clicarMapa}
+              onMover={mover}
+              cartao={cartao}
+              ferramentas={ferramentas}
+              rodape={bandeja}
             />
           )}
         </>
@@ -257,14 +426,25 @@ export default function Mapas({ campanha }) {
       <Modal
         aberto={Boolean(janela)}
         onFechar={() => setJanela(null)}
-        largura={janela?.modo === 'pino' ? '560px' : '600px'}
+        largura={janela?.modo === 'mapa' ? '600px' : '560px'}
         classeCaixa={styles.caixa}
-        titulo={janela?.modo === 'pino'
-          ? (atual?.dados.pinos.some((p) => p.id === janela.pino.id) ? 'Editar pino' : 'Novo pino')
-          : (janela?.mapa?.id ? 'Editar mapa' : 'Novo mapa')}
+        titulo={{
+          pino: atual?.dados.pinos.some((p) => p.id === janela?.pino?.id) ? 'Editar pino' : 'Novo pino',
+          rota: atual?.dados.rotas.some((r) => r.id === janela?.rota?.id) ? 'Editar rota' : 'Nova rota',
+          mapa: janela?.mapa?.id ? 'Editar mapa' : 'Novo mapa',
+        }[janela?.modo]}
       >
         {janela?.modo === 'pino' && (
           <FormPino key={janela.pino.id} inicial={janela.pino} destinos={destinos} onSalvar={salvarPino} onCancelar={() => setJanela(null)} />
+        )}
+        {janela?.modo === 'rota' && (
+          <FormRota
+            key={janela.rota.id}
+            inicial={janela.rota}
+            onSalvar={salvarRota}
+            onCancelar={() => setJanela(null)}
+            onExcluir={atual?.dados.rotas.some((r) => r.id === janela.rota.id) ? () => apagarRota(janela.rota) : undefined}
+          />
         )}
         {janela?.modo === 'mapa' && (
           <FormMapa
