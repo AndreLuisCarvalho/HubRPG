@@ -272,6 +272,55 @@
   &[aria-pressed='true'] { border-color: var(--cor); box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor) 60%, transparent); }
 }
 
+// Post-it: prévia ao lado do texto
+.formPostit {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+
+  @include celular { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+}
+
+.campos {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.previaPostit {
+  display: grid;
+  justify-items: center;
+  width: 150px;
+  padding-top: 4px;
+  transform: rotate(-2deg);
+
+  p {
+    width: 100%;
+    min-height: 110px;
+    margin-top: -8px;
+    padding: 14px 10px 10px;
+    background: linear-gradient(var(--papel), color-mix(in srgb, var(--papel) 88%, #000));
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.45);
+    color: #2a2116;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}
+
+.alfinetePrevia {
+  position: relative;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff8a8a, #c4202f 60%, #6d0f17);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+}
+
 .cores {
   display: flex;
   gap: 8px;

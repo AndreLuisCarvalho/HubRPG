@@ -5,6 +5,7 @@ import { api } from '../../../../services/api';
 import { reduzirBanner } from '../../../../services/imagem';
 import { formatarData, organizarSessoes, quantoFalta } from '../Sessoes/agenda';
 import ResumoSessao from '../Sessoes/ResumoSessao';
+import MapaAtual from './MapaAtual';
 import styles from './VisaoGeral.module.scss';
 
 const STATUS = [
@@ -43,7 +44,11 @@ export default function VisaoGeral({ campanha, onAtualizar }) {
 
       <div className={styles.blocos}>
         <Sessoes campanha={campanha} sessoes={sessoes} />
-        <Grupo agentes={agentes} />
+        {/* Coluna da direita: o mapa onde o grupo está (se houver) e o grupo */}
+        <div className={styles.coluna}>
+          <MapaAtual campanha={campanha} agentes={agentes} />
+          <Grupo agentes={agentes} />
+        </div>
       </div>
     </section>
   );

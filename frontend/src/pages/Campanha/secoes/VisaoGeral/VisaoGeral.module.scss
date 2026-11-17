@@ -225,6 +225,40 @@
   @include celular { grid-template-columns: 1fr; }
 }
 
+.coluna {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-width: 0;
+}
+
+// Miniatura do mapa atual: o cartão inteiro abre o mapa
+.miniMapa {
+  position: relative;
+  display: block;
+  border-radius: 4px;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover .nomeMapa,
+  &:focus-visible .nomeMapa { background: color-mix(in srgb, var(--cor) 45%, #140f0a); }
+  &:focus-visible { outline: 2px solid var(--cor); outline-offset: 2px; }
+}
+
+.nomeMapa {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  background: rgba(20, 15, 10, 0.85);
+  color: #efe3c4;
+  @include fonte-ficha;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: background 0.2s ease;
+}
+
 .bloco {
   display: grid;
   gap: 12px;

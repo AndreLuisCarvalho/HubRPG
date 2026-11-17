@@ -5,9 +5,11 @@ import { api } from '../../../../services/api';
 import { useVisao } from '../../visao';
 import CartaoPino from './CartaoPino';
 import FormMapa from './FormMapa';
+import FormEscala from './FormEscala';
+import FormNota from './FormNota';
 import FormPino from './FormPino';
 import FormRota from './FormRota';
-import { caminhoAte, MAPA_NOVO, novaRota, novoPino } from './regrasMapa';
+import { caminhoAte, MAPA_NOVO, novaNota, novaRota, novoPino } from './regrasMapa';
 import Visualizador from './Visualizador';
 import styles from './Mapas.module.scss';
 
@@ -123,6 +125,33 @@ export default function Mapas({ campanha }) {
     setFerramenta('mover');
   }
 
+  function salvarNota(nota) {
+    mudar('notas', (ns) => trocarNaLista(ns, 'id', nota));
+    setJanela(null);
+  }
+
+  function apagarNota(nota) {
+    if (!window.confirm('Apagar este post-it?')) return;
+    mudar('notas', (ns) => ns.filter((n) => n.id !== nota.id));
+    setJanela(null);
+    setSelecionado(null);
+  }
+
+  function salvarEscala(escala) {
+    salvarDados(atual, { ...atual.dados, escala });
+    setJanela(null);
+    setFerramenta('regua');   // já dá para medir
+  }
+
+  // Só um mapa é o "atual" (onde o grupo está): aparece na Visão geral
+  function marcarAtual() {
+    const ligar = !atual.dados.atual;
+    for (const m of mapas) {
+      if (m.id === atual.id) salvarDados(m, { ...m.dados, atual: ligar });
+      else if (ligar && m.dados.atual) salvarDados(m, { ...m.dados, atual: false });
+    }
+  }
+
   function apagarRota(rota) {
     if (!window.confirm(`Apagar a rota “${rota.nome || 'sem nome'}”?`)) return;
     mudar('rotas', (rs) => rs.filter((r) => r.id !== rota.id));
@@ -134,6 +163,7 @@ export default function Mapas({ campanha }) {
   function clicarMapa(x, y) {
     if (ferramenta === 'pino') setJanela({ modo: 'pino', pino: novoPino(x, y) });
     if (ferramenta === 'rota') setRascunho((r) => [...(r ?? []), { x, y }]);
+    if (ferramenta === 'texto') setJanela({ modo: 'nota', nota: novaNota(x, y) });
     if (ferramenta === 'token' && agenteEscolhido) {
       mudar('tokens', (ts) => trocarNaLista(ts, 'fichaId', { fichaId: agenteEscolhido, x, y }));
       setAgenteEscolhido(null);
@@ -144,6 +174,7 @@ export default function Mapas({ campanha }) {
   function mover(tipo, id, pos) {
     if (tipo === 'pino') mudar('pinos', (ps) => ps.map((p) => (p.id === id ? { ...p, ...pos } : p)));
     if (tipo === 'token') mudar('tokens', (ts) => ts.map((t) => (t.fichaId === id ? { ...t, ...pos } : t)));
+    if (tipo === 'nota') mudar('notas', (ns) => ns.map((n) => (n.id === id ? { ...n, ...pos } : n)));
   }
 
   async function salvarMapa(mapa) {
@@ -213,6 +244,7 @@ export default function Mapas({ campanha }) {
   const agentes = catalogo.fichas.filter((f) => f.tipo === 'jogador');
   const pinos = atual ? atual.dados.pinos.filter((p) => mestre || !p.oculto) : [];
   const rotas = atual ? atual.dados.rotas.filter((r) => mestre || !r.oculta) : [];
+  const notas = atual ? atual.dados.notas.filter((n) => mestre || !n.oculta) : [];
   const tokens = atual
     ? atual.dados.tokens.flatMap((t) => {
       const ficha = agentes.find((a) => a.id === t.fichaId);
@@ -255,6 +287,25 @@ export default function Mapas({ campanha }) {
         </article>
       );
     }
+    if (sel.tipo === 'nota') {
+      const nota = atual.dados.notas.find((n) => n.id === sel.id);
+      return nota && (
+        <article className={styles.cartaoPino} style={{ '--c': nota.cor }}>
+          <header>
+            <span />
+            <div><small>Post-it{nota.oculta ? ' · oculto' : ''}</small><b>{nota.texto.split('\n')[0]}</b></div>
+            <button type="button" className={styles.fecharCartao} onClick={() => setSelecionado(null)} aria-label="Fechar">✕</button>
+          </header>
+          <footer>
+            <button type="button" onClick={() => setJanela({ modo: 'nota', nota })}>Editar</button>
+            <button type="button" onClick={() => mudar('notas', (ns) => ns.map((n) => (n.id === nota.id ? { ...n, oculta: !n.oculta } : n)))}>
+              {nota.oculta ? 'Mostrar aos jogadores' : 'Ocultar'}
+            </button>
+            <button type="button" className={styles.perigoTexto} onClick={() => apagarNota(nota)}>Apagar</button>
+          </footer>
+        </article>
+      );
+    }
     const rota = atual.dados.rotas.find((r) => r.id === sel.id);
     return rota && (
       <article className={styles.cartaoPino} style={{ '--c': rota.cor }}>
@@ -291,6 +342,8 @@ export default function Mapas({ campanha }) {
       <>
         <button type="button" aria-pressed={ferramenta === 'pino'} onClick={() => trocarFerramenta('pino')} title="Clique no mapa para pôr um pino">+ Pino</button>
         <button type="button" aria-pressed={ferramenta === 'rota'} onClick={() => { trocarFerramenta('rota'); setRascunho([]); }} title="Clique nos pontos do caminho">Rota</button>
+        <button type="button" aria-pressed={ferramenta === 'texto'} onClick={() => trocarFerramenta('texto')} title="Clique no mapa para colar um post-it">Post-it</button>
+        <button type="button" aria-pressed={ferramenta === 'escala'} onClick={() => trocarFerramenta('escala')} title="Marque dois pontos de distância conhecida">Escala</button>
         {usaNevoa && (
           <>
             <button type="button" aria-pressed={ferramenta === 'revelar'} onClick={() => trocarFerramenta('revelar')} title="Pincel que apaga a névoa">Revelar</button>
@@ -304,9 +357,20 @@ export default function Mapas({ campanha }) {
             <button type="button" onClick={() => window.confirm('Cobrir o mapa inteiro de névoa?') && salvarNevoa('')}>Cobrir tudo</button>
           </>
         )}
+        <button type="button" aria-pressed={Boolean(atual?.dados.atual)} onClick={marcarAtual} title="O mapa onde o grupo está aparece na Visão geral">
+          {atual?.dados.atual ? '★ Mapa atual' : '☆ Mapa atual'}
+        </button>
         <button type="button" onClick={() => setJanela({ modo: 'mapa', mapa: { ...atual, imagem: carregado?.imagem } })}>Editar mapa</button>
       </>
     )
+  );
+
+  // Régua: todos usam (só mostra, não salva); sem escala, só o mestre vê o botão (para lembrar de definir)
+  const temEscala = Boolean(atual?.dados.escala);
+  const botaoRegua = (temEscala || mestre) && (
+    <button type="button" aria-pressed={ferramenta === 'regua'} onClick={() => trocarFerramenta('regua')} title="Clique ponto a ponto; duplo clique recomeça">
+      Régua
+    </button>
   );
 
   // Bandeja de agentes: escolher um e clicar no mapa
@@ -396,6 +460,13 @@ export default function Mapas({ campanha }) {
             </ol>
           )}
 
+          {ferramenta === 'regua' && (
+            <p className={styles.dica}>
+              {temEscala ? 'Clique ponto a ponto para medir; duplo clique recomeça.' : 'Este mapa ainda não tem escala: use “Escala” e marque dois pontos de distância conhecida.'}
+            </p>
+          )}
+          {ferramenta === 'escala' && <p className={styles.dica}>Clique em dois pontos cuja distância você sabe (ex.: o começo e o fim de uma rua).</p>}
+
           {carregado === undefined ? (
             <p className={styles.dica}>Abrindo o mapa…</p>
           ) : (
@@ -408,6 +479,10 @@ export default function Mapas({ campanha }) {
               pinos={pinos}
               tokens={tokens}
               rotas={rotas}
+              notas={notas}
+              escala={atual.dados.escala}
+              onMedirEscala={(px) => setJanela({ modo: 'escala', px })}
+              barra={botaoRegua}
               rascunhoRota={rascunho}
               nevoa={usaNevoa ? { ativa: true, mascara: carregado.nevoa, onMudar: salvarNevoa } : null}
               pincel={pincel}
@@ -431,6 +506,8 @@ export default function Mapas({ campanha }) {
         titulo={{
           pino: atual?.dados.pinos.some((p) => p.id === janela?.pino?.id) ? 'Editar pino' : 'Novo pino',
           rota: atual?.dados.rotas.some((r) => r.id === janela?.rota?.id) ? 'Editar rota' : 'Nova rota',
+          nota: atual?.dados.notas.some((n) => n.id === janela?.nota?.id) ? 'Editar post-it' : 'Novo post-it',
+          escala: 'Escala do mapa',
           mapa: janela?.mapa?.id ? 'Editar mapa' : 'Novo mapa',
         }[janela?.modo]}
       >
@@ -445,6 +522,18 @@ export default function Mapas({ campanha }) {
             onCancelar={() => setJanela(null)}
             onExcluir={atual?.dados.rotas.some((r) => r.id === janela.rota.id) ? () => apagarRota(janela.rota) : undefined}
           />
+        )}
+        {janela?.modo === 'nota' && (
+          <FormNota
+            key={janela.nota.id}
+            inicial={janela.nota}
+            onSalvar={salvarNota}
+            onCancelar={() => setJanela(null)}
+            onExcluir={atual?.dados.notas.some((n) => n.id === janela.nota.id) ? () => apagarNota(janela.nota) : undefined}
+          />
+        )}
+        {janela?.modo === 'escala' && (
+          <FormEscala px={janela.px} atual={atual?.dados.escala} onSalvar={salvarEscala} onCancelar={() => setJanela(null)} />
         )}
         {janela?.modo === 'mapa' && (
           <FormMapa

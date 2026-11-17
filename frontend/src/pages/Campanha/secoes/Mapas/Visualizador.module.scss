@@ -382,6 +382,118 @@
   }
 }
 
+/* ---------- Post-its (bilhete preso por alfinete) ---------- */
+// O ponto do mapa é o alfinete; o bilhete pende dele, um pouco torto
+.postit {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  width: 150px;
+  padding: 0;
+  border: 0;
+  background: none;
+  transform: translate(-50%, -9px) rotate(var(--giro, 0deg));
+  transform-origin: 50% 9px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+
+  &:focus-visible { outline: none; .bilhete { outline: 2px solid #fff; outline-offset: 2px; } }
+}
+
+.alfinete {
+  position: relative;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff8a8a, #c4202f 60%, #6d0f17);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+}
+
+.bilhete {
+  width: 100%;
+  min-height: 70px;
+  margin-top: -8px;
+  padding: 14px 10px 10px;
+  // Papel do post-it: cor escolhida, com a parte de baixo um pouco mais escura
+  background: linear-gradient(var(--papel, #f4e06d), color-mix(in srgb, var(--papel, #f4e06d) 88%, #000));
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.3);
+  color: #2a2116;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.notaOculta { opacity: 0.55; .bilhete { outline: 2px dashed rgba(255, 255, 255, 0.8); outline-offset: -5px; } }
+.notaAberta { z-index: 2; .bilhete { box-shadow: 0 0 0 2px var(--cor), 0 8px 16px rgba(0, 0, 0, 0.5); } }
+
+/* ---------- Régua ---------- */
+.regua {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+
+  polyline {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2.5;
+    stroke-dasharray: 2 6;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
+  }
+
+  circle { fill: #fff; stroke: #23170b; stroke-width: 1.5; }
+
+  text {
+    fill: #fff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-anchor: middle;
+    paint-order: stroke;
+    stroke: rgba(0, 0, 0, 0.85);
+    stroke-width: 3px;
+  }
+}
+
+.totalRegua {
+  position: absolute;
+  z-index: 3;
+  padding: 3px 9px;
+  border-radius: 3px;
+  background: rgba(20, 15, 10, 0.88);
+  color: #fff;
+  @include fonte-ficha;
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transform: translate(12px, -130%);
+  pointer-events: none;
+}
+
+/* ---------- Miniatura (Visão geral) ---------- */
+.mini {
+  height: 240px;
+  padding: 4px;
+
+  .area { cursor: pointer; pointer-events: none; }
+  .rotulo { display: none; }
+  .cabeca { width: 22px; height: 22px; svg { width: 10px; height: 10px; } }
+  .agulha { height: 6px; }
+  .token { width: 26px; height: 26px; border-width: 2px; font-size: 0.7rem; }
+  .postit { width: 74px; }
+  .alfinete { width: 9px; height: 9px; }
+  .bilhete { min-height: 0; margin-top: -4px; padding: 6px 5px 5px; font-size: 0.5rem; max-height: 46px; overflow: hidden; }
+
+  @include celular { height: 200px; min-height: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cabeca { transition: none; }
 }
