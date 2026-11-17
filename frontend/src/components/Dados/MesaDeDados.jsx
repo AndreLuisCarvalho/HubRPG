@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Dado3D from './Dado3D';
 import Dados3D from './Dados3D';
 import { temWebGL } from './dadoWebGL';
+import { aparencia } from './skins';
 import { escreverFormula, lerFormula, rolarDano, rolarTeste } from './formula';
 import styles from './MesaDeDados.module.scss';
 
@@ -82,10 +83,12 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
       formula: pedido.ataque.dano,
       tipo: 'dano',
       mult: m,
+      estilo: pedido.estilo,   // o dano sai com o dado da mesma ficha
     });
   }
 
   const tamanho = tamanhoDosDados(resultado.dados.length);
+  const apCss = aparencia(pedido.estilo, pedido.tipo);   // dados em CSS: só a cor base da skin
   const variosDados = resultado.dados.length > 1;
   // No teste, o d20 escolhido (maior, ou menor com ↓) é o que se destaca
   const ehEscolhido = (d) => !ehDano && d.usado && d.lados === 20;
@@ -118,6 +121,8 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
             duracao={DURACAO}
             etiqueta={etiqueta}
             onFalha={semWebGL}
+            estilo={pedido.estilo}
+            tipo={pedido.tipo}
           />
         </div>
       ) : (
@@ -129,6 +134,8 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
                 valor={d.valor}
                 tamanho={tamanho}
                 tipo={ehDano ? 'dano' : 'teste'}
+                cor={apCss.base}
+                corNumero={apCss.numero}
                 lancamento={d}
                 usado={d.usado}
                 destaque={variosDados && ehEscolhido(d)}

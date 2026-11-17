@@ -27,6 +27,7 @@ const contorno = (pontos, k = 1) =>
  */
 export default function Dado3D({
   lados = 20, valor, tamanho = 96, tipo = 'teste', estado = 'rolando', lancamento = {}, usado = true, destaque = false,
+  cor, corNumero,
 }) {
   const { forma, faces } = poliedro(lados);
   const raio = tamanho / 2;
@@ -57,6 +58,8 @@ export default function Dado3D({
         '--rz': `${rz}deg`,
         '--dx': `${dx}px`,
         '--atraso': `${atraso}ms`,
+        ...(cor && { '--dado': cor }),
+        ...(corNumero && { '--tinta': corNumero }),
       }}
       aria-hidden="true"
     >

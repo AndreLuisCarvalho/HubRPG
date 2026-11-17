@@ -14,6 +14,7 @@ import { obterSistema } from '../../sistemas';
 // Leitor do livro: só baixa ao abrir a seção
 const Livro = lazy(() => import('./secoes/Livro/Livro'));
 const Sessoes = lazy(() => import('./secoes/Sessoes/Sessoes'));
+const Dados = lazy(() => import('./secoes/Dados/Dados'));   // traz o three.js junto (prévia 3D)
 
 export default function Campanha() {
   const { id } = useParams();
@@ -63,6 +64,7 @@ export default function Campanha() {
             <Route path="monstros" element={<ListaFichas key="monstro" campanha={campanha} tipo="monstro" titulo="Monstros" />} />
             <Route path="fichas/:fichaId" element={<DetalheFicha campanha={campanha} />} />
             <Route path="livro" element={<Suspense fallback={null}><Livro campanha={campanha} /></Suspense>} />
+            <Route path="dados" element={<Suspense fallback={null}><Dados campanha={campanha} /></Suspense>} />
             <Route path=":secao" element={<EmBreve />} />
           </Routes>
         </main>

@@ -1,6 +1,6 @@
 /*
- * Dado em WebGL (three.js), no visual de um d20 de resina: vermelho, arestas arredondadas,
- * números brancos levemente gravados.
+ * Dado em WebGL (three.js), no visual de um d20 de resina: arestas arredondadas e números
+ * levemente gravados. Cor e desenho das faces vêm da aparência (skins.js).
  *
  * A forma vem de poliedros.js (as mesmas faces e números do dado em CSS). Para arredondar:
  *  - cada face encolhe um pouco em direção ao próprio centro;
@@ -12,9 +12,10 @@
  * poliedros.js usa o eixo y do CSS (para baixo); aqui tudo é espelhado em y (three: para cima).
  */
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { LETRA, poliedro } from './poliedros';
+import { corDoNumero } from './skins';
 
-export const COR_DADO = '#a3181b';
 const CHANFRO = 0.88;   // quanto sobra de cada face; o resto vira aresta arredondada
 const CASA = 256;       // px de cada número no atlas
 
@@ -31,20 +32,31 @@ function rotular(lados, forma, faces, valor) {
   });
 }
 
-function desenharAtlas(rotulos, forma, lados) {
-  const colunas = Math.ceil(Math.sqrt(rotulos.length));
-  const linhas = Math.ceil(rotulos.length / colunas);
+// Sorteio com semente: o desenho de cada face é sempre o mesmo para a mesma skin
+function sorteador(semente) {
+  let s = semente >>> 0;
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const hash = (texto) => [...texto].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), 2166136261);
+
+const novaTela = (colunas, linhas) => {
   const tela = document.createElement('canvas');
   tela.width = colunas * CASA;
   tela.height = linhas * CASA;
-  const ctx = tela.getContext('2d');
-  ctx.fillStyle = COR_DADO;
-  ctx.fillRect(0, 0, tela.width, tela.height);
+  return tela;
+};
 
+function escreverNumeros(ctx, rotulos, colunas, forma, lados, cor, gravado) {
   const px = Math.round(LETRA[forma] * (CASA / 2));
   ctx.font = `700 ${px}px "Barlow Condensed", sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
+  const escuro = cor === corDoNumero('#ffffff');   // número escuro em dado claro
 
   rotulos.forEach((rotulo, i) => {
     const cx = (i % colunas) * CASA + CASA / 2;
@@ -53,10 +65,12 @@ function desenharAtlas(rotulos, forma, lados) {
     const medida = ctx.measureText(texto);
     const base = cy + (medida.actualBoundingBoxAscent - medida.actualBoundingBoxDescent) / 2;
 
-    // Gravado: uma sombra escura em cima e o número claro
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-    ctx.fillText(texto, cx, base - 3);
-    ctx.fillStyle = '#f6f1ea';
+    // Gravado: sombra escura em cima (número claro) ou luz embaixo (número escuro)
+    if (gravado) {
+      ctx.fillStyle = escuro ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.45)';
+      ctx.fillText(texto, cx, base + (escuro ? 2 : -3));
+    }
+    ctx.fillStyle = cor;
     ctx.fillText(texto, cx, base);
 
     // 6 e 9 sublinhados
@@ -64,11 +78,62 @@ function desenharAtlas(rotulos, forma, lados) {
       ctx.fillRect(cx - medida.width / 2, base + px * 0.1, medida.width, Math.max(3, px * 0.07));
     }
   });
+}
 
+function comoTextura(tela) {
   const textura = new THREE.CanvasTexture(tela);
   textura.colorSpace = THREE.SRGBColorSpace;
   textura.anisotropy = 8;
-  return { textura, colunas, linhas };
+  return textura;
+}
+
+function desenharAtlas(rotulos, forma, lados, ap) {
+  const colunas = Math.ceil(Math.sqrt(rotulos.length));
+  const linhas = Math.ceil(rotulos.length / colunas);
+  const tela = novaTela(colunas, linhas);
+  const ctx = tela.getContext('2d');
+  ctx.fillStyle = ap.base;
+  ctx.fillRect(0, 0, tela.width, tela.height);
+
+  // Desenho da skin, casa por casa (recortado para não vazar na vizinha)
+  if (ap.skin) {
+    rotulos.forEach((_, i) => {
+      const x = (i % colunas) * CASA;
+      const y = Math.floor(i / colunas) * CASA;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, CASA, CASA);
+      ctx.clip();
+      ap.skin.pintar(ctx, x, y, CASA, sorteador(hash(ap.skin.id) + i * 7919));
+      ctx.restore();
+    });
+  }
+  escreverNumeros(ctx, rotulos, colunas, forma, lados, ap.numero, true);
+
+  // Brilho (mapa de emissão: preto não acende). "tudo" acende o desenho e os números; "numeros" só os números.
+  let brilho = null;
+  if (ap.skin?.brilho) {
+    const telaBrilho = novaTela(colunas, linhas);
+    const c2 = telaBrilho.getContext('2d');
+    c2.fillStyle = '#000';
+    c2.fillRect(0, 0, telaBrilho.width, telaBrilho.height);
+    if (ap.skin.brilho === 'tudo') {
+      rotulos.forEach((_, i) => {
+        const x = (i % colunas) * CASA;
+        const y = Math.floor(i / colunas) * CASA;
+        c2.save();
+        c2.beginPath();
+        c2.rect(x, y, CASA, CASA);
+        c2.clip();
+        ap.skin.pintar(c2, x, y, CASA, sorteador(hash(ap.skin.id) + i * 7919));   // mesmo desenho da face
+        c2.restore();
+      });
+    }
+    escreverNumeros(c2, rotulos, colunas, forma, lados, ap.numero, false);
+    brilho = comoTextura(telaBrilho);
+  }
+
+  return { textura: comoTextura(tela), brilho, colunas, linhas };
 }
 
 function montarGeometria(faces, colunas, linhas) {
@@ -165,25 +230,99 @@ function rotacaoDaFace(f) {
 }
 
 const cache = new Map();
+const LIMITE_CACHE = 24;
 
-/** Geometria, textura e a rotação de cada face de um dado de "lados" lados */
-export function pecasDoDado(lados, valor) {
+/**
+ * Geometria, texturas e a rotação de cada face de um dado de "lados" lados com a aparência "ap"
+ * (de skins.js). A geometria é uma só por forma; as texturas, uma por forma + aparência.
+ */
+export function pecasDoDado(lados, valor, ap) {
   const { forma, faces } = poliedro(lados);
   const unico = lados > 20;
-  const chave = unico ? null : lados;
-  if (chave && cache.has(chave)) return cache.get(chave);
+  const chave = unico ? null : `${lados}|${ap.chave}`;
+  if (chave && cache.has(chave)) {
+    // Mais recente vai para o fim (o primeiro é o primeiro a sair)
+    const pecas = cache.get(chave);
+    cache.delete(chave);
+    cache.set(chave, pecas);
+    return pecas;
+  }
 
   const rotulos = rotular(lados, forma, faces, valor);
-  const { textura, colunas, linhas } = desenharAtlas(rotulos, forma, lados);
+  const { textura, brilho, colunas, linhas } = desenharAtlas(rotulos, forma, lados, ap);
   const pecas = {
-    geometria: montarGeometria(faces, colunas, linhas),
+    geometria: geometriaDa(forma, faces, colunas, linhas, unico),
     textura,
+    brilho,
     rotulos,
     frentes: faces.map(rotacaoDaFace),
     descartar: unico,   // só os dados fora do cache são apagados ao sair
   };
-  if (chave) cache.set(chave, pecas);
+  if (chave) {
+    cache.set(chave, pecas);
+    // Arrastar o seletor de cor cria uma textura por cor: guarda só as mais recentes
+    while (cache.size > LIMITE_CACHE) {
+      const [antiga, velhas] = cache.entries().next().value;
+      cache.delete(antiga);
+      velhas.textura.dispose();
+      velhas.brilho?.dispose();
+    }
+  }
   return pecas;
+}
+
+// O atlas tem sempre a mesma grade para a mesma forma, então a geometria pode ser compartilhada
+const geometrias = new Map();
+function geometriaDa(forma, faces, colunas, linhas, unico) {
+  if (unico) return montarGeometria(faces, colunas, linhas);
+  if (!geometrias.has(forma)) geometrias.set(forma, montarGeometria(faces, colunas, linhas));
+  return geometrias.get(forma);
+}
+
+/** Os dois materiais do dado: faces (com os números) e arestas arredondadas */
+export function materiaisDo(pecas, ap) {
+  const acabamento = { roughness: 0.38, clearcoat: 0.6, clearcoatRoughness: 0.25, ...ap.material };
+  const brilho = pecas.brilho
+    ? { emissive: 0xffffff, emissiveMap: pecas.brilho, emissiveIntensity: ap.skin?.intensidade ?? 1 }
+    : {};
+  return [
+    new THREE.MeshPhysicalMaterial({ map: pecas.textura, ...acabamento, ...brilho }),
+    new THREE.MeshPhysicalMaterial({ color: ap.aresta, ...acabamento }),
+  ];
+}
+
+/** Renderizador, cena, luzes e reflexos do ambiente, prontos numa <canvas> */
+export function criarPalco(canvas, { fov = 26, distancia = 30 } = {}) {
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+
+  const cena = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const ambiente = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  cena.environment = ambiente;
+  cena.environmentIntensity = 0.55;
+
+  const sol = new THREE.DirectionalLight(0xffffff, 2.2);
+  sol.position.set(-4, 7, 10);
+  const contraluz = new THREE.DirectionalLight(0xffe2c4, 0.6);
+  contraluz.position.set(6, -3, 4);
+  cena.add(sol, contraluz);
+
+  const camera = new THREE.PerspectiveCamera(fov, 1, 0.1, 200);
+  camera.position.set(0, 0, distancia);
+
+  return {
+    renderer,
+    cena,
+    camera,
+    descartar() {
+      ambiente.dispose();
+      pmrem.dispose();
+      renderer.dispose();
+    },
+  };
 }
 
 export function temWebGL() {
