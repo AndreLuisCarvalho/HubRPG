@@ -78,5 +78,23 @@ export const api = {
     requisicao(`/campanhas/${campanhaId}/sessoes`, { method: 'POST', body: sessao }),
   atualizarSessao: (id, alteracoes) => requisicao(`/sessoes/${id}`, { method: 'PUT', body: alteracoes }),
   excluirSessao: (id) => requisicao(`/sessoes/${id}`, { method: 'DELETE' }),
+
+  // Itens da campanha: o banco guarda "dados" em texto; aqui entra e sai como objeto
+  listarItens: async (campanhaId) => (await requisicao(`/campanhas/${campanhaId}/itens`)).map(lerItem),
+  criarItem: async (campanhaId, item) =>
+    lerItem(await requisicao(`/campanhas/${campanhaId}/itens`, { method: 'POST', body: escreverItem(item) })),
+  atualizarItem: async (id, item) =>
+    lerItem(await requisicao(`/itens/${id}`, { method: 'PUT', body: escreverItem(item) })),
+  excluirItem: (id) => requisicao(`/itens/${id}`, { method: 'DELETE' }),
 };
+
+function lerItem(linha) {
+  try {
+    return { ...linha, dados: JSON.parse(linha.dados || '{}') };
+  } catch {
+    return { ...linha, dados: {} };
+  }
+}
+
+const escreverItem = ({ nome, dados }) => ({ nome, dados: JSON.stringify(dados ?? {}) });
  

@@ -1,0 +1,403 @@
+@use '../../../../styles/mixins' as *;
+
+.pagina {
+  display: grid;
+  gap: 14px;
+}
+
+.topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+
+  h1 { @include fonte-titulo; font-size: 1.8rem; }
+}
+
+.contagem {
+  padding: 0 8px;
+  border: 1px solid var(--borda);
+  border-radius: 2px;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.acoesTopo {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+
+  button {
+    padding: 8px 14px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+}
+
+.novo {
+  border: 1px solid var(--cor);
+  background: color-mix(in srgb, var(--cor) 25%, #121315);
+  color: var(--texto);
+}
+
+.dica {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--texto-suave);
+
+  b { color: var(--texto); font-weight: 600; }
+}
+
+.vazio {
+  padding: 24px;
+  border: 1px dashed var(--borda);
+  text-align: center;
+  color: var(--texto-suave);
+  list-style: none;
+}
+
+/* ---------- Filtros + busca ---------- */
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  button {
+    padding: 5px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 2px;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.74rem;
+    cursor: pointer;
+
+    &:hover { color: var(--texto); }
+
+    &[aria-selected='true'] {
+      border-color: var(--cor);
+      background: color-mix(in srgb, var(--cor) 20%, transparent);
+      color: var(--texto);
+    }
+  }
+}
+
+.busca {
+  flex: 1 1 200px;
+  max-width: 320px;
+  padding: 7px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--texto);
+  color-scheme: dark;
+  font: inherit;
+  font-size: 0.88rem;
+
+  &:focus { outline: none; border-color: var(--cor); }
+}
+
+/* ---------- Mesa de cartas ---------- */
+.cartas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr));
+  gap: 22px 18px;
+  margin: 0;
+  padding: 4px 0 12px;
+  list-style: none;
+
+  @include celular { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+}
+
+// O formulário é mais alto que a tela: a caixa do modal rola por dentro
+.caixa {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  @include celular { max-height: none; overflow: visible; }   // no celular quem rola é a janela
+}
+
+/* ---------- Detalhe (carta grande + painel) ---------- */
+.detalhe {
+  display: grid;
+  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+  align-items: start;
+  gap: 22px;
+
+  @include celular { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+}
+
+.painel {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+}
+
+.nomeDetalhe { @include fonte-titulo; font-size: 1.6rem; line-height: 1.1; }
+
+.fatos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+
+  div {
+    display: grid;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.28);
+  }
+
+  dt { @include rotulo-campo; font-size: 0.6rem; }
+  dd { margin: 0; font-size: 0.88rem; font-weight: 600; }
+}
+
+.nota {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+
+  button {
+    padding: 6px 12px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.74rem;
+    cursor: pointer;
+  }
+
+  p {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px dashed color-mix(in srgb, var(--carimbo, #b3362c) 60%, transparent);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.2);
+    font-size: 0.86rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+}
+
+.ajuda {
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--texto-suave);
+}
+
+/* ---------- Formulário: prévia da carta + campos ---------- */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 250px) minmax(0, 1fr);
+  align-items: start;
+  gap: 22px;
+
+  @include celular { grid-template-columns: minmax(0, 1fr); }
+}
+
+.previa {
+  position: sticky;
+  top: 0;
+  display: grid;
+  gap: 10px;
+
+  @include celular { position: static; width: min(100%, 240px); justify-self: center; }
+}
+
+.botoesImagem {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+
+  label,
+  button {
+    padding: 6px 12px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.74rem;
+    cursor: pointer;
+  }
+}
+
+.campos {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 10px;
+}
+
+.campo {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+
+  > span { @include rotulo-campo; }
+
+  > input,
+  > textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    color-scheme: dark;
+    font: inherit;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    resize: vertical;
+
+    &:focus { outline: none; border-color: var(--cor); }
+  }
+}
+
+.grupo {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+
+  legend {
+    padding: 0 6px;
+    @include rotulo-campo;
+  }
+}
+
+.categorias {
+  display: flex;
+  gap: 6px;
+
+  button {
+    flex: 1;
+    padding: 6px 0;
+    border: 1px solid var(--borda);
+    border-radius: 2px;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    &[aria-checked='true'] {
+      border-color: var(--cor);
+      background: color-mix(in srgb, var(--cor) 22%, transparent);
+      color: var(--texto);
+    }
+  }
+}
+
+.marcar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  font-size: 0.86rem;
+  cursor: pointer;
+
+  input { accent-color: #c4202f; }
+}
+
+.botoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+
+  button {
+    padding: 8px 16px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .painel & { justify-content: flex-start; }
+}
+
+.primario {
+  border: 1px solid var(--cor);
+  background: color-mix(in srgb, var(--cor) 25%, #121315);
+  color: var(--texto);
+
+  &:disabled { opacity: 0.6; cursor: default; }
+}
+
+.secundario {
+  border: 1px solid var(--borda);
+  background: none;
+  color: var(--texto-suave);
+
+  &:hover { color: var(--texto); }
+}
+
+.perigo {
+  border: 1px solid color-mix(in srgb, var(--carimbo, #e76e6e) 50%, transparent);
+  background: none;
+  color: var(--carimbo, #e76e6e);
+}
+
+/* ---------- Trazer do livro ---------- */
+.doLivro {
+  display: grid;
+  gap: 12px;
+
+  .busca { max-width: none; }
+}
+
+.listaLivro {
+  display: grid;
+  gap: 4px;
+  max-height: min(55vh, 460px);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+
+  button {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.22);
+    color: var(--texto);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover { border-color: var(--cor); }
+  }
+
+  b { font-weight: 600; font-size: 0.9rem; }
+  small { grid-column: 1; font-size: 0.76rem; color: var(--texto-suave); }
+
+  span {
+    grid-row: 1 / 3;
+    grid-column: 2;
+    align-self: center;
+    @include fonte-ficha;
+    font-size: 0.74rem;
+    color: var(--texto-suave);
+  }
+}
