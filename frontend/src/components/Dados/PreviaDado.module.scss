@@ -1,0 +1,18 @@
+.previa {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--borda, #33363b);
+  border-radius: 4px;
+  // Feltro escuro de mesa de jogo, com uma luz no meio
+  background:
+    radial-gradient(ellipse at 45% 40%, rgba(255, 255, 255, 0.06), transparent 65%),
+    #121316;
+  overflow: hidden;
+}
+
+.tela {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

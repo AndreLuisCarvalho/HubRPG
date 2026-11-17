@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ComEstiloDeDado from '../../../components/Dados/ComEstiloDeDado';
 import Agente from './partes/Agente/Agente';
 import Vitais from './partes/Vitais/Vitais';
 import Pericias from './partes/Pericias/Pericias';
@@ -16,7 +17,16 @@ const VISTAS = [
   { id: 'combate', rotulo: 'Combate', icone: '⚔' },
 ];
 
-export default function FichaOrdemParanormal({ ficha, onAlterarDados, onAlterarFicha }) {
+// Cada ficha rola com o próprio dado (cor ou skin escolhida na página Dados)
+export default function FichaOrdemParanormal(props) {
+  return (
+    <ComEstiloDeDado estilo={props.ficha.dados?.dado}>
+      <Ficha {...props} />
+    </ComEstiloDeDado>
+  );
+}
+
+function Ficha({ ficha, onAlterarDados, onAlterarFicha }) {
   const [vista, setVista] = useState('agente');
   const { dados } = ficha;
   const visivel = (id) => (vista === id ? styles.visivel : '');

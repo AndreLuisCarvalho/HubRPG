@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { COR_DADO, pecasDoDado, sombraRedonda } from './dadoWebGL';
+import { criarPalco, materiaisDo, pecasDoDado, sombraRedonda } from './dadoWebGL';
+import { aparencia } from './skins';
 import styles from './Dados3D.module.scss';
 
 const FOV = 26;
@@ -52,7 +52,9 @@ function montarVagas(qtd, tamanho) {
  * voando de baixo (passando por cima do painel) e param nas vagas, acima do painel.
  * "etiqueta(d, i)" desenha o que vai embaixo de cada dado (o valor).
  */
-export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onFalha }) {
+export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onFalha, estilo, tipo = 'teste' }) {
+  // Cor ou skin da ficha que rolou (skins.js)
+  const ap = useMemo(() => aparencia(estilo, tipo), [estilo, tipo]);
   const area = useRef(null);
   const tela = useRef(null);
   const mundo = useRef(null);
@@ -60,33 +62,15 @@ export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onF
 
   /* ---------- Palco: renderizador, câmera e luz (uma vez) ---------- */
   useEffect(() => {
-    let renderer;
+    let palco;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas: tela.current, alpha: true, antialias: true });
+      palco = criarPalco(tela.current, { fov: FOV, distancia: DISTANCIA });
     } catch {
       onFalha?.();
       return undefined;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
-
-    const cena = new THREE.Scene();
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    const ambiente = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    cena.environment = ambiente;
-    cena.environmentIntensity = 0.55;
-
-    const sol = new THREE.DirectionalLight(0xffffff, 2.2);
-    sol.position.set(-4, 7, 10);
-    cena.add(sol);
-    const contraluz = new THREE.DirectionalLight(0xffe2c4, 0.6);
-    contraluz.position.set(6, -3, 4);
-    cena.add(contraluz);
-
-    const camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 200);
-    camera.position.set(0, 0, DISTANCIA);
-    mundo.current = { renderer, cena, camera, ajustar: [], desenhar: null };
+    const { renderer, camera } = palco;
+    mundo.current = { ...palco, ajustar: [], desenhar: null };
 
     // Tamanho da tela = janela; px → mundo no plano z = 0
     function medir() {
@@ -112,9 +96,7 @@ export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onF
       observador.disconnect();
       window.removeEventListener('resize', medir);
       dialogo?.removeEventListener('scroll', medir);
-      ambiente.dispose();
-      pmrem.dispose();
-      renderer.dispose();   // a tela some junto com a mesa; o navegador libera o contexto
+      palco.descartar();   // a tela some junto com a mesa; o navegador libera o contexto
       mundo.current = null;
     };
   }, [onFalha]);
@@ -151,12 +133,9 @@ export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onF
       const foraDaTela = Math.hypot(window.innerWidth, window.innerHeight) / 2 * m.pxMundo;
 
       dados.forEach((d, i) => {
-        const pecas = pecasDoDado(d.lados, d.valor);
+        const pecas = pecasDoDado(d.lados, d.valor, ap);
         const indice = Math.max(0, pecas.rotulos.indexOf(d.valor));
-        const materiais = [
-          new THREE.MeshPhysicalMaterial({ map: pecas.textura, roughness: 0.38, clearcoat: 0.6, clearcoatRoughness: 0.25 }),
-          new THREE.MeshPhysicalMaterial({ color: COR_DADO, roughness: 0.38, clearcoat: 0.6, clearcoatRoughness: 0.25 }),
-        ];
+        const materiais = materiaisDo(pecas, ap);
         const malha = new THREE.Mesh(pecas.geometria, materiais);
         const sombra = new THREE.Mesh(
           new THREE.PlaneGeometry(1, 1),
@@ -227,7 +206,8 @@ export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onF
           if (!o.d.usado) {
             const luz = 1 - 0.55 * depois;
             o.materiais[0].color.setScalar(luz);
-            o.materiais[1].color.set(COR_DADO).multiplyScalar(luz);
+            o.materiais[1].color.set(ap.aresta).multiplyScalar(luz);
+            if (o.materiais[0].emissiveMap) o.materiais[0].emissiveIntensity = (ap.skin?.intensidade ?? 1) * luz;
           }
         }
         m.renderer.render(m.cena, m.camera);
@@ -255,13 +235,14 @@ export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onF
         if (o.pecas.descartar) {
           o.pecas.geometria.dispose();
           o.pecas.textura.dispose();
+          o.pecas.brilho?.dispose();
         }
       }
       m.ajustar = [];
       m.desenhar = null;
       if (mundo.current) m.renderer.render(m.cena, m.camera);
     };
-  }, [dados, rodada, tamanho, duracao, vagas]);
+  }, [dados, rodada, tamanho, duracao, vagas, ap]);
 
   return (
     <div ref={area} className={styles.area} style={{ width: largura, height: altura }}>
