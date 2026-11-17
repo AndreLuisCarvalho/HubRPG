@@ -9,7 +9,7 @@
 .ataque {
   display: grid;
   // d20 do ataque · nome · dano · d20 do dano · ×
-  grid-template-columns: 24px minmax(0, 1fr) 70px 24px 24px;
+  grid-template-columns: 24px minmax(0, 1fr) auto 24px 24px;
   align-items: center;
   gap: 4px 8px;
   padding: 8px 10px;
@@ -41,11 +41,21 @@
   letter-spacing: 0.06em;
 }
 
+// Resumo do dano (as partes são editadas embaixo)
 .dano {
+  max-width: 46vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   @include fonte-ficha;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   text-align: right;
-  color: #e0465a !important;
+  color: #e0465a;
+}
+
+.danos {
+  grid-column: 1 / -1;
+  padding-top: 2px;
 }
 
 .remover {

@@ -1,3 +1,4 @@
+import { descreverPedido } from './formula';
 import styles from './BotaoRolar.module.scss';
 
 export function IconeD20() {
@@ -16,7 +17,7 @@ export default function BotaoRolar({ pedido, rolar, rotulo, className = '', tipo
       className={`${styles.rolar} ${tipo === 'dano' ? styles.dano : ''} ${className}`}
       onClick={() => pedido && rolar(pedido)}
       disabled={!pedido}
-      title={pedido ? `${rotulo ?? pedido.titulo}: ${pedido.formula}` : 'Escreva a fórmula para rolar (ex.: 2d20+5)'}
+      title={pedido ? `${rotulo ?? pedido.titulo}: ${descreverPedido(pedido)}` : 'Escreva a fórmula para rolar (ex.: 2d20+5)'}
       aria-label={rotulo ?? (pedido ? `Rolar ${pedido.titulo}` : 'Rolar')}
     >
       <IconeD20 />

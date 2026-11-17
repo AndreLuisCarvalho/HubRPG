@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PreviaDado from '../../../../components/Dados/PreviaDado';
 import { useRolagem } from '../../../../components/Dados/rolagem';
-import { COR_PADRAO, corDoNumero, PALETA, SKINS } from '../../../../components/Dados/skins';
+import { aparencia, COR_PADRAO, corDoNumero, escolhaDoKit, KIT, PALETA, SKINS } from '../../../../components/Dados/skins';
 import Seletor from '../../../../components/Seletor/Seletor';
 import { api } from '../../../../services/api';
 import styles from './Dados.module.scss';
@@ -14,8 +14,8 @@ const GRUPOS = [
 ];
 
 /**
- * Personalização dos dados: cada ficha escolhe a cor (teste e dano) ou uma skin.
- * A escolha fica em ficha.dados.dado = { cor, corDano, skin } e vale em todas as rolagens dela.
+ * Kit de dados de cada ficha: d4, d6, d8, d10, d12, d20 e d100, cada peça com a sua cor ou skin.
+ * Fica em ficha.dados.dado = { kit: { d4: { cor } | { skin }, … } } e vale em todas as rolagens dela.
  */
 export default function Dados({ campanha }) {
   const [fichas, setFichas] = useState(null);
@@ -37,10 +37,17 @@ export default function Dados({ campanha }) {
 
   const ficha = fichas.find((f) => f.id === Number(busca.get('ficha'))) ?? fichas[0];
   const estilo = ficha?.dados?.dado ?? {};
-  const skin = SKINS.find((s) => s.id === estilo.skin);
+  const peca = KIT.includes(Number(busca.get('peca'))) ? Number(busca.get('peca')) : 20;
+  const escolha = escolhaDoKit(estilo, peca);
+  const skin = SKINS.find((s) => s.id === escolha.skin);
 
-  function mudar(parcial) {
-    const novo = Object.fromEntries(Object.entries({ ...estilo, ...parcial }).filter(([, v]) => v !== undefined));
+  const irPara = (mudancas) => {
+    const proxima = new URLSearchParams(busca);
+    Object.entries(mudancas).forEach(([k, v]) => proxima.set(k, String(v)));
+    setBusca(proxima, { replace: true });
+  };
+
+  function salvar(novo) {
     const id = ficha.id;
     setFichas((lista) => lista.map((f) => (f.id === id ? { ...f, dados: { ...f.dados, dado: novo } } : f)));
     clearTimeout(salvando.current[id]);
@@ -49,11 +56,20 @@ export default function Dados({ campanha }) {
     }, 350);
   }
 
-  const testar = (tipo) => rolar({
+  // O kit atual completo (o formato antigo, uma cor para tudo, vira um kit com todas as peças iguais)
+  const kitAtual = () => Object.fromEntries(KIT.map((l) => [`d${l}`, escolhaDoKit(estilo, l)]));
+  const mudarPeca = (nova) => salvar({ kit: { ...kitAtual(), [`d${peca}`]: nova } });
+  const aplicarATodos = () => salvar({ kit: Object.fromEntries(KIT.map((l) => [`d${l}`, escolha])) });
+
+  // Testes: a peça escolhida (o d20 num teste, as outras num dano) e o kit inteiro de uma vez
+  const testarPeca = () => rolar(peca === 20
+    ? { titulo: ficha.nome, subtitulo: 'Teste do d20', formula: '3d20', tipo: 'teste', estilo }
+    : { titulo: ficha.nome, subtitulo: `Teste do d${peca}`, partes: [{ formula: `2d${peca}` }], tipo: 'dano', estilo });
+  const testarKit = () => rolar({
     titulo: ficha.nome,
-    subtitulo: tipo === 'dano' ? 'Teste do dado de dano' : 'Teste do dado',
-    formula: tipo === 'dano' ? '2d8+2' : '3d20',
-    tipo,
+    subtitulo: 'O kit inteiro',
+    partes: [{ formula: KIT.map((l) => `1d${l}`).join('+') }],
+    tipo: 'dano',
     estilo,
   });
 
@@ -61,27 +77,26 @@ export default function Dados({ campanha }) {
     <section className={styles.pagina}>
       <header className={styles.topo}>
         <h1>Dados</h1>
-        <p>Cada ficha rola com o próprio dado. Escolha uma cor para os testes e outra para o dano, ou uma skin.</p>
+        <p>Cada ficha tem o seu kit: d4, d6, d8, d10, d12, d20 e d100, cada peça com a sua cor ou skin.</p>
       </header>
 
       {erro && <p className="erro">{erro}</p>}
 
       {fichas.length === 0 ? (
-        <p className={styles.vazio}>Crie uma ficha (jogador, NPC ou monstro) para personalizar o dado dela.</p>
+        <p className={styles.vazio}>Crie uma ficha (jogador, NPC ou monstro) para montar o kit dela.</p>
       ) : (
         <div className={styles.grade}>
           {/* ---------- Vitrine ---------- */}
           <div className={styles.vitrine}>
-            <PreviaDado estilo={estilo} />
-            <div className={styles.legenda}>
-              <span>d20 · teste</span>
-              <b>{skin ? `Skin ${skin.nome}` : 'Cores'}</b>
-              <span>d8 · dano</span>
-            </div>
+            <PreviaDado estilo={estilo} selecionado={peca} />
             <div className={styles.testar}>
-              <button type="button" className={styles.primario} onClick={() => testar('teste')}>Testar teste</button>
-              <button type="button" onClick={() => testar('dano')}>Testar dano</button>
+              <button type="button" className={styles.primario} onClick={testarPeca}>Rolar o d{peca}</button>
+              <button type="button" onClick={testarKit}>Rolar o kit inteiro</button>
             </div>
+            <p className={styles.dica}>
+              Dano de elemento (Sangue, Morte, Conhecimento, Energia, Medo) cai com a skin do elemento,
+              qualquer que seja o kit. O d100 é o d10 das dezenas: ele rola junto com o d10.
+            </p>
           </div>
 
           {/* ---------- Escolhas ---------- */}
@@ -92,48 +107,50 @@ export default function Dados({ campanha }) {
                 rotulo="Ficha"
                 valor={ficha.id}
                 opcoes={fichas.map((f) => ({ valor: f.id, rotulo: f.nome, detalhe: TIPOS[f.tipo] }))}
-                onMudar={(id) => setBusca({ ficha: String(id) }, { replace: true })}
+                onMudar={(id) => irPara({ ficha: id })}
               />
             </div>
 
             <div className={styles.bloco}>
-              <h2>Cor do dado</h2>
-              <Cores
-                valor={skin ? null : estilo.cor ?? COR_PADRAO}
-                onMudar={(cor) => mudar({ cor, skin: undefined })}
-              />
-              {skin && <p className={styles.dica}>Escolher uma cor tira a skin.</p>}
+              <h2>Peça do kit</h2>
+              <div className={styles.pecas} role="tablist" aria-label="Peça do kit">
+                {KIT.map((l) => {
+                  const ap = aparencia(estilo, l);
+                  return (
+                    <button
+                      key={l}
+                      type="button"
+                      role="tab"
+                      aria-selected={l === peca}
+                      onClick={() => irPara({ peca: l })}
+                      style={{ '--base': ap.base, '--aresta': ap.aresta, '--numero': ap.numero }}
+                    >
+                      <span className={styles.amostraPeca} aria-hidden="true" />
+                      d{l}
+                    </button>
+                  );
+                })}
+              </div>
+              <button type="button" className={styles.todos} onClick={aplicarATodos}>
+                Usar o visual do d{peca} no kit inteiro
+              </button>
             </div>
 
             <div className={styles.bloco}>
-              <h2>Cor do dano</h2>
-              <Cores
-                valor={skin || !estilo.corDano ? null : estilo.corDano}
-                onMudar={(corDano) => mudar({ corDano, skin: undefined })}
-                antes={(
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={!skin && !estilo.corDano}
-                    className={styles.igual}
-                    onClick={() => mudar({ corDano: undefined, skin: undefined })}
-                  >
-                    Igual ao teste
-                  </button>
-                )}
-              />
+              <h2>Cor do d{peca}</h2>
+              <Cores valor={skin ? null : escolha.cor ?? COR_PADRAO} onMudar={(cor) => mudarPeca({ cor })} />
+              {skin && <p className={styles.dica}>Escolher uma cor tira a skin desta peça.</p>}
             </div>
 
             <div className={styles.bloco}>
-              <h2>Skins</h2>
-              <p className={styles.dica}>A skin vale para todos os dados da ficha, de teste e de dano.</p>
+              <h2>Skin do d{peca}</h2>
               <button
                 type="button"
                 className={styles.semSkin}
                 aria-pressed={!skin}
-                onClick={() => mudar({ skin: undefined })}
+                onClick={() => mudarPeca({ cor: escolha.cor ?? COR_PADRAO })}
               >
-                Sem skin (usar as cores)
+                Sem skin (usar a cor)
               </button>
               {GRUPOS.map((grupo) => (
                 <div key={grupo.id} className={styles.grupo}>
@@ -143,8 +160,8 @@ export default function Dados({ campanha }) {
                       <button
                         key={s.id}
                         type="button"
-                        aria-pressed={estilo.skin === s.id}
-                        onClick={() => mudar({ skin: s.id })}
+                        aria-pressed={escolha.skin === s.id}
+                        onClick={() => mudarPeca({ skin: s.id })}
                         style={{ '--base': s.base, '--aresta': s.aresta, '--numero': s.numero }}
                       >
                         <span className={styles.amostra} aria-hidden="true">20</span>
@@ -163,11 +180,10 @@ export default function Dados({ campanha }) {
 }
 
 // Paleta pronta + cor livre
-function Cores({ valor, onMudar, antes }) {
+function Cores({ valor, onMudar }) {
   const livre = valor && !PALETA.includes(valor);
   return (
     <div className={styles.cores} role="radiogroup">
-      {antes}
       {PALETA.map((cor) => (
         <button
           key={cor}

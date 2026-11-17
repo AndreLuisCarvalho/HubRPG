@@ -22,14 +22,23 @@ const CASA = 256;       // px de cada número no atlas
 const espelhar = ([x, y, z]) => new THREE.Vector3(x, -y, z);
 const chaveDe = (v) => v.map((x) => x.toFixed(4)).join(',');
 
-// Rótulos das faces. Dado sem forma própria (d3, d100…) usa o d20; acima de 20 lados o valor sorteado
-// vai escrito na primeira face (por isso esse dado não entra no cache).
-function rotular(lados, forma, faces, valor) {
+// Rótulos das faces. O d100 é um d10 com dezenas (00–90) e o d10 que joga com ele vai de 0 a 9.
+// Dado sem forma própria (d3…) usa o d20; acima de 20 lados o valor sorteado vai escrito na primeira face
+// (por isso esse dado não entra no cache).
+function rotular(lados, forma, faces, valor, numeracao) {
   return faces.map((f, i) => {
+    if (numeracao === 'dezenas') return String((f.valor % 10) * 10).padStart(2, '0');
+    if (numeracao === 'unidades') return f.valor % 10;
     if (forma === lados) return f.valor;
     if (lados > 20 && i === 0) return valor;
     return ((f.valor - 1) % lados) + 1;
   });
+}
+
+/** Em que face está o valor sorteado */
+export function faceDoValor(pecas, d) {
+  const procurado = d.numeracao === 'dezenas' ? String(d.valor).padStart(2, '0') : String(d.valor);
+  return Math.max(0, pecas.rotulos.findIndex((r) => String(r) === procurado));
 }
 
 // Sorteio com semente: o desenho de cada face é sempre o mesmo para a mesma skin
@@ -236,10 +245,10 @@ const LIMITE_CACHE = 24;
  * Geometria, texturas e a rotação de cada face de um dado de "lados" lados com a aparência "ap"
  * (de skins.js). A geometria é uma só por forma; as texturas, uma por forma + aparência.
  */
-export function pecasDoDado(lados, valor, ap) {
-  const { forma, faces } = poliedro(lados);
-  const unico = lados > 20;
-  const chave = unico ? null : `${lados}|${ap.chave}`;
+export function pecasDoDado(lados, valor, ap, numeracao = null) {
+  const { forma, faces } = poliedro(numeracao ? 10 : lados);   // os dois dados do d100 são d10
+  const unico = !numeracao && lados > 20;
+  const chave = unico ? null : `${lados}|${numeracao ?? ''}|${ap.chave}`;
   if (chave && cache.has(chave)) {
     // Mais recente vai para o fim (o primeiro é o primeiro a sair)
     const pecas = cache.get(chave);
@@ -248,7 +257,7 @@ export function pecasDoDado(lados, valor, ap) {
     return pecas;
   }
 
-  const rotulos = rotular(lados, forma, faces, valor);
+  const rotulos = rotular(lados, forma, faces, valor, numeracao);
   const { textura, brilho, colunas, linhas } = desenharAtlas(rotulos, forma, lados, ap);
   const pecas = {
     geometria: geometriaDa(forma, faces, colunas, linhas, unico),

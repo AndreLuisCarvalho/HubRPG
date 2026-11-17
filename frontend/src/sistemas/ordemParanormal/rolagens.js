@@ -1,5 +1,6 @@
 // Monta os pedidos da mesa de dados (useRolagem) a partir do que está escrito na ficha
 import { lerCritico, lerFormula } from '../../components/Dados/formula';
+import { danosDe, partesParaRolar } from './danos';
 import { ATRIBUTOS, PERICIAS } from './modelo';
 import { dadosDoTeste } from './regras';
 
@@ -41,21 +42,23 @@ export function formulaDoTeste(teste, dados) {
   return `${base}${extra > 0 ? '+' : ''}${extra}`;
 }
 
-/** Ataque: rola o teste e oferece o dano (multiplicado no crítico) */
-export function pedidoAtaque({ nome, teste, dano, especial, critico }, dados) {
-  const formula = formulaDoTeste(teste, dados);
+/** Ataque: rola o teste e oferece o dano em partes (multiplicado no crítico) */
+export function pedidoAtaque(ataque, dados) {
+  const formula = formulaDoTeste(ataque.teste, dados);
   if (!formula) return null;
   return {
-    titulo: nome || 'Ataque',
+    titulo: ataque.nome || 'Ataque',
     subtitulo: 'Teste de ataque',
     formula,
     tipo: 'teste',
-    ataque: { dano: lerFormula(dano) ? dano : null, critico: lerCritico(critico ?? especial) },
+    ataque: { partes: partesParaRolar(danosDe(ataque)), critico: lerCritico(ataque.critico ?? ataque.especial) },
   };
 }
 
-export function pedidoDano({ nome, dano }) {
-  return lerFormula(dano) ? { titulo: nome || 'Ataque', subtitulo: 'Dano', formula: dano, tipo: 'dano' } : null;
+/** Dano de um ataque, ação ou habilidade (as partes ou o texto antigo). "elemento" resolve "dano do elemento". */
+export function pedidoDano(item, { subtitulo = 'Dano', elemento } = {}) {
+  const partes = partesParaRolar(danosDe(item, elemento));
+  return partes.length ? { titulo: item.nome || 'Ataque', subtitulo, partes, tipo: 'dano' } : null;
 }
 
 /** "Atletismo 5d20+20, Furtividade 2d20+5" → [{ nome: 'Atletismo', formula: '5d20+20' }, …] */

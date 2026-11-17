@@ -42,16 +42,6 @@
   @include celular { position: static; }
 }
 
-.legenda {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-  padding: 0 4px;
-
-  span { @include rotulo-campo; }
-  b { @include fonte-titulo; font-size: 1rem; color: var(--cor); }
-}
 
 .testar {
   display: flex;
@@ -108,7 +98,7 @@
   align-items: center;
   gap: 8px;
 
-  > button[role='radio']:not(.igual),
+  > button[role='radio'],
   .livre {
     position: relative;
     width: 30px;
@@ -123,7 +113,7 @@
     &:hover { transform: scale(1.1); }
   }
 
-  > button[aria-checked='true']:not(.igual) {
+  > button[aria-checked='true'] {
     border-color: var(--texto);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 50%, transparent);
 
@@ -166,7 +156,58 @@
   &[aria-checked='true'] { border-color: var(--texto); }
 }
 
-.igual,
+// Abas das peças: d4 … d100, cada uma com uma amostra da cor/skin dela
+.pecas {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+
+  @include celular { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+  button {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    padding: 8px 2px 6px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--texto-suave);
+    @include fonte-titulo;
+    font-size: 0.9rem;
+    cursor: pointer;
+
+    &:hover { color: var(--texto); }
+
+    &[aria-selected='true'] {
+      border-color: var(--cor);
+      color: var(--texto);
+      background: color-mix(in srgb, var(--cor) 16%, transparent);
+    }
+  }
+}
+
+.amostraPeca {
+  width: 22px;
+  aspect-ratio: 1;
+  clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  background: linear-gradient(150deg, var(--aresta), var(--base) 60%);
+}
+
+.todos {
+  justify-self: start;
+  padding: 6px 12px;
+  border: 1px dashed var(--borda);
+  border-radius: 3px;
+  background: none;
+  color: var(--texto-suave);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &:hover { color: var(--texto); border-color: var(--cor); }
+}
+
 .semSkin {
   padding: 6px 12px;
   border: 1px solid var(--borda);
@@ -177,7 +218,6 @@
   font-size: 0.82rem;
   cursor: pointer;
 
-  &[aria-checked='true'],
   &[aria-pressed='true'] {
     border-color: var(--cor);
     color: var(--texto);

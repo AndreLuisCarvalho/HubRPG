@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { IconeD20 } from '../../../../../components/Dados/BotaoRolar';
+import { useRolagem } from '../../../../../components/Dados/rolagem';
 import { ELEMENTOS } from '../../../modelo';
+import { pedidoDano } from '../../../rolagens';
 import {
   alterarRitual, conjurarRitual, custoDoRitual, custoParanormal, esquecerRitual, formaPermitida, podeConjurar,
 } from '../../../regras';
@@ -16,7 +19,9 @@ export default function DetalheRitual({ dados, conhecido, onAlterarDados, onEsqu
   const { id, elemento, deClasse, ritual } = conhecido;
   const [forma, setForma] = useState('basico');
   const [esquecendo, setEsquecendo] = useState(false);
- 
+  const { rolar } = useRolagem();
+  const danoRolavel = ritual.dano ? pedidoDano({ nome: ritual.nome, dano: ritual.dano }, { subtitulo: 'Dano do ritual', elemento }) : null;
+
   const custo = custoDoRitual(ritual, forma);
   const pode = podeConjurar(dados, ritual, forma);
   const formaAtual = forma === 'basico' ? null : ritual[forma];
@@ -51,8 +56,19 @@ export default function DetalheRitual({ dados, conhecido, onAlterarDados, onEsqu
         ))}
       </dl>
  
+      {/* Dano do ritual: "dano do elemento" usa o elemento em que ele foi aprendido */}
+      {danoRolavel && (
+        <div className={styles.dano}>
+          <span>Dano</span>
+          <b>{ritual.dano}</b>
+          <button type="button" onClick={() => rolar(danoRolavel)}>
+            <IconeD20 /> Rolar dano
+          </button>
+        </div>
+      )}
+
       <p className={styles.efeito}>{ritual.efeito}</p>
- 
+
       {/* Formas avançadas: a que passa do limite de PE por turno fica bloqueada */}
       {formasDoRitual.length > 1 && (
         <div className={styles.formas} role="radiogroup" aria-label="Forma do ritual">

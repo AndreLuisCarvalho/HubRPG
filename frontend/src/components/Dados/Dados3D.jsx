@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { criarPalco, materiaisDo, pecasDoDado, sombraRedonda } from './dadoWebGL';
+import { criarPalco, faceDoValor, materiaisDo, pecasDoDado, sombraRedonda } from './dadoWebGL';
 import { aparencia } from './skins';
 import styles from './Dados3D.module.scss';
 
@@ -52,9 +52,8 @@ function montarVagas(qtd, tamanho) {
  * voando de baixo (passando por cima do painel) e param nas vagas, acima do painel.
  * "etiqueta(d, i)" desenha o que vai embaixo de cada dado (o valor).
  */
-export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onFalha, estilo, tipo = 'teste' }) {
-  // Cor ou skin da ficha que rolou (skins.js)
-  const ap = useMemo(() => aparencia(estilo, tipo), [estilo, tipo]);
+// estilo = o kit de dados da ficha que rolou (skins.js)
+export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onFalha, estilo }) {
   const area = useRef(null);
   const tela = useRef(null);
   const mundo = useRef(null);
@@ -133,8 +132,10 @@ export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onF
       const foraDaTela = Math.hypot(window.innerWidth, window.innerHeight) / 2 * m.pxMundo;
 
       dados.forEach((d, i) => {
-        const pecas = pecasDoDado(d.lados, d.valor, ap);
-        const indice = Math.max(0, pecas.rotulos.indexOf(d.valor));
+        // Cada peça com a sua aparência: a do kit (d4, d6 … d100) ou a skin da parte do dano (ex.: Morte)
+        const ap = aparencia(estilo, d.lados, d.skin);
+        const pecas = pecasDoDado(d.lados, d.valor, ap, d.numeracao);
+        const indice = faceDoValor(pecas, d);
         const materiais = materiaisDo(pecas, ap);
         const malha = new THREE.Mesh(pecas.geometria, materiais);
         const sombra = new THREE.Mesh(
@@ -148,7 +149,7 @@ export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onF
           .multiplyScalar(foraDaTela + raio * 2)
           .addScaledVector(lateral, d.dx * m.pxMundo * 0.4);
         objetos.push({
-          d, i, malha, sombra, materiais, pecas, raio, inicio,
+          d, i, malha, sombra, materiais, pecas, raio, inicio, ap,
           destino: destinos[i],
           frente: pecas.frentes[indice],
           // Ao parar, um giro qualquer em volta do próprio eixo de visão (a face continua de frente)
@@ -206,8 +207,8 @@ export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onF
           if (!o.d.usado) {
             const luz = 1 - 0.55 * depois;
             o.materiais[0].color.setScalar(luz);
-            o.materiais[1].color.set(ap.aresta).multiplyScalar(luz);
-            if (o.materiais[0].emissiveMap) o.materiais[0].emissiveIntensity = (ap.skin?.intensidade ?? 1) * luz;
+            o.materiais[1].color.set(o.ap.aresta).multiplyScalar(luz);
+            if (o.materiais[0].emissiveMap) o.materiais[0].emissiveIntensity = (o.ap.skin?.intensidade ?? 1) * luz;
           }
         }
         m.renderer.render(m.cena, m.camera);
@@ -242,7 +243,7 @@ export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onF
       m.desenhar = null;
       if (mundo.current) m.renderer.render(m.cena, m.camera);
     };
-  }, [dados, rodada, tamanho, duracao, vagas, ap]);
+  }, [dados, rodada, tamanho, duracao, vagas, estilo]);
 
   return (
     <div ref={area} className={styles.area} style={{ width: largura, height: altura }}>

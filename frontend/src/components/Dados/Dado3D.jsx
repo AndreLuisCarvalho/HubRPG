@@ -27,13 +27,16 @@ const contorno = (pontos, k = 1) =>
  */
 export default function Dado3D({
   lados = 20, valor, tamanho = 96, tipo = 'teste', estado = 'rolando', lancamento = {}, usado = true, destaque = false,
-  cor, corNumero,
+  cor, corNumero, numeracao,
 }) {
   const { forma, faces } = poliedro(lados);
   const raio = tamanho / 2;
 
   // Dado sem forma própria (d3, d100…): usa o d20 e escreve o valor numa das faces
   const rotulos = faces.map((f, i) => {
+    // Par do d100: dezenas (00–90) e unidades (0–9)
+    if (numeracao === 'dezenas') return (f.valor % 10) * 10;
+    if (numeracao === 'unidades') return f.valor % 10;
     if (forma === lados) return f.valor;
     return i === 0 ? valor ?? lados : ((f.valor - 1) % lados) + 1;
   });
@@ -92,7 +95,7 @@ export default function Dado3D({
                     className={lados > 8 && (numero === 6 || numero === 9) ? styles.sublinhado : ''}
                     style={{ fontSize: raio * LETRA[forma] }}
                   >
-                    {numero}
+                    {numeracao === 'dezenas' ? String(numero).padStart(2, '0') : numero}
                   </b>
                 </div>
               );

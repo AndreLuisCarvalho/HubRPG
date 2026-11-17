@@ -1,17 +1,23 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { criarPalco, materiaisDo, pecasDoDado } from './dadoWebGL';
-import { aparencia } from './skins';
+import { aparencia, KIT } from './skins';
 import styles from './PreviaDado.module.scss';
 
 const FOV = 26;
 const DISTANCIA = 30;
 
+// Onde cada peça do kit fica na vitrine (unidades do mundo): d4 a d10 em cima, d12, d20 e d100 embaixo
+const POSICOES = {
+  4: [-6.6, 2.7], 6: [-2.2, 2.7], 8: [2.2, 2.7], 10: [6.6, 2.7],
+  12: [-4.4, -2.9], 20: [0, -2.9], 100: [4.4, -2.9],
+};
+
 /**
- * Vitrine do dado: um d20 grande (teste) e um d8 (dano) girando devagar com a cor/skin escolhida.
- * Sem WebGL, mostra só a mensagem.
+ * Vitrine do kit: as 7 peças girando devagar, cada uma com a sua cor/skin.
+ * "selecionado" (lados) aparece maior e mais à frente.
  */
-export default function PreviaDado({ estilo, className = '' }) {
+export default function PreviaDado({ estilo, selecionado = 20, className = '' }) {
   const tela = useRef(null);
   const mundo = useRef(null);
 
@@ -67,14 +73,14 @@ export default function PreviaDado({ estilo, className = '' }) {
     (async () => {
       await document.fonts?.load('700 64px "Barlow Condensed"').catch(() => {});
       if (vivo.cancelado) return;
-      // [lados, tipo, raio, x, y]
-      const pecasDaVitrine = [[20, 'teste', 4.3, -2.6, 0.7], [8, 'dano', 2.3, 5.4, -3.1]];
-      pecasDaVitrine.forEach(([lados, tipo, raio, x, y]) => {
-        const ap = aparencia(estilo, tipo);
-        const pecas = pecasDoDado(lados, lados, ap);
+      KIT.forEach((lados) => {
+        const [x, y] = POSICOES[lados];
+        const ap = aparencia(estilo, lados);
+        const pecas = pecasDoDado(lados, lados, ap, lados === 100 ? 'dezenas' : null);
         const malha = new THREE.Mesh(pecas.geometria, materiaisDo(pecas, ap));
-        malha.scale.setScalar(raio);
-        malha.position.set(x, y, 0);
+        const escolhido = lados === selecionado;
+        malha.scale.setScalar(escolhido ? 2.35 : 1.6);
+        malha.position.set(x, y, escolhido ? 1.5 : 0);
         m.cena.add(malha);
         criados.push(malha);
       });
@@ -89,7 +95,7 @@ export default function PreviaDado({ estilo, className = '' }) {
       });
       m.dados = [];
     };
-  }, [estilo]);
+  }, [estilo, selecionado]);
 
   return (
     <div className={`${styles.previa} ${className}`}>
