@@ -7,6 +7,8 @@
  * nota:  { id, x, y, texto, cor, oculta } — post-it preso por alfinete (cor = cor do papel)
  * escala: { px, valor, unidade } — "px pixels do mapa valem valor unidade" (ex.: 300 px = 100 m)
  * atual: true no mapa onde o grupo está (aparece na Visão geral)
+ * regiao: { id, nome, pontos: [{ x, y }] (polígono), mapaId (planta do cômodo) | null, oculta }
+ * paiId / regiaoId: num mapa de cômodo, de qual mapa e região ele é (não ganha aba própria)
  * A névoa (máscara) fica fora de "dados", na coluna própria do mapa.
  */
 
@@ -35,7 +37,8 @@ export const MAPA_NOVO = {
   nome: '', imagem: '',
   dados: {
     pergaminho: true, oculto: false, usarNevoa: false, atual: false, escala: null,
-    pinos: [], tokens: [], rotas: [], notas: [],
+    pinos: [], tokens: [], rotas: [], notas: [], regioes: [],
+    paiId: null, regiaoId: null,
   },
 };
 
@@ -51,15 +54,20 @@ export const novoPino = (x, y) => ({
   id: novoId(), x, y, tipo: 'lugar', nome: '', descricao: '', oculto: false, link: null,
 });
 
-/** Mapa "pai": o primeiro que tem uma passagem para este (para o caminho de volta) */
+/** Mapa "pai": o de que este é cômodo ou, senão, o primeiro com uma passagem para este */
+export function paiDe(mapa, mapas) {
+  if (mapa.dados.paiId) return mapas.find((m) => m.id === mapa.dados.paiId) ?? null;
+  return mapas.find((m) => m !== mapa && (m.dados.pinos ?? [])
+    .some((p) => p.link?.tipo === 'mapa' && p.link.id === mapa.id)) ?? null;
+}
+
+/** Caminho de volta até o mapa: [Cidade, Casa, Quarto] */
 export function caminhoAte(mapaId, mapas) {
   const caminho = [];
   let atual = mapas.find((m) => m.id === mapaId);
-  while (atual && caminho.length < 6 && !caminho.includes(atual)) {
+  while (atual && caminho.length < 8 && !caminho.includes(atual)) {
     caminho.unshift(atual);
-    const filho = atual;
-    atual = mapas.find((m) => m !== filho && (m.dados.pinos ?? [])
-      .some((p) => p.link?.tipo === 'mapa' && p.link.id === filho.id));
+    atual = paiDe(atual, mapas);
   }
   return caminho;
 }
@@ -103,5 +111,28 @@ export function formatarDistancia(px, escala) {
   const casas = valor < 10 ? 1 : 0;
   return `${valor.toLocaleString('pt-BR', { maximumFractionDigits: casas })} ${unidade}`;
 }
+
+export const novaRegiao = (pontos) => ({ id: novoId(), nome: '', pontos, mapaId: null, oculta: false });
+
+/** Retângulo arrastado (dois cantos) → os 4 pontos do polígono */
+export const retangulo = (a, b) => [
+  { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y) },
+  { x: Math.max(a.x, b.x), y: Math.min(a.y, b.y) },
+  { x: Math.max(a.x, b.x), y: Math.max(a.y, b.y) },
+  { x: Math.min(a.x, b.x), y: Math.max(a.y, b.y) },
+];
+
+/** Caixa que envolve os pontos (frações do mapa) */
+export function caixaDe(pontos) {
+  const xs = pontos.map((p) => p.x);
+  const ys = pontos.map((p) => p.y);
+  return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
+}
+
+/** Centro "visual" do polígono (média dos pontos), para o nome do cômodo */
+export const centroDe = (pontos) => ({
+  x: pontos.reduce((s, p) => s + p.x, 0) / pontos.length,
+  y: pontos.reduce((s, p) => s + p.y, 0) / pontos.length,
+});
 
 export const limitar = (v, min, max) => Math.min(max, Math.max(min, v));
