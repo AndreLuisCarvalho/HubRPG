@@ -2,12 +2,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import CamadaNevoa from './CamadaNevoa';
 import IconePino from './IconePino';
 import RosaDosVentos from './RosaDosVentos';
-import { caminhoDaRota, limitar, PAPEL_EM_BRANCO, TIPOS_PINO } from './regrasMapa';
+import {
+  caminhoDaRota, distanciaPx, formatarDistancia, limitar, PAPEL_EM_BRANCO, TIPOS_PINO,
+} from './regrasMapa';
 import styles from './Visualizador.module.scss';
 
 const ARRASTO_MINIMO = 4;   // px: menos que isso é clique, não arrasto
 const ZOOM_MAXIMO = 5;
-const FERRAMENTAS_DE_CLIQUE = ['pino', 'rota', 'token'];
+const FERRAMENTAS_DE_CLIQUE = ['pino', 'rota', 'token', 'texto'];
+const MEDIDAS = ['regua', 'escala'];   // cliques que medem (não salvam nada)
+
+// Cada post-it fica um pouco torto, sempre do mesmo jeito (sai do id)
+const inclinacaoDo = (id) => ([...String(id)].reduce((s, c) => s + c.charCodeAt(0), 0) % 9) - 4;
 const PINCEIS = ['revelar', 'cobrir'];
 
 /**
@@ -15,16 +21,18 @@ const PINCEIS = ['revelar', 'cobrir'];
  * A imagem, o papel e a névoa ficam num "mundo" com transform; pinos, tokens e rotas ficam por cima,
  * em coordenadas de tela, para manterem o mesmo tamanho em qualquer zoom.
  *
- * ferramenta: 'mover' | 'pino' | 'rota' | 'token' (clicar no mapa → onClicarMapa) | 'revelar' | 'cobrir' (pincel da névoa)
- * selecionado: { tipo: 'pino' | 'token' | 'rota', id } — o que tem o cartão aberto
+ * ferramenta: 'mover' | 'pino' | 'rota' | 'token' | 'texto' (clicar no mapa → onClicarMapa)
+ *   | 'revelar' | 'cobrir' (pincel da névoa) | 'regua' (medir, todos) | 'escala' (mestre: 2 cliques → onMedirEscala)
+ * selecionado: { tipo: 'pino' | 'token' | 'rota' | 'nota', id } — o que tem o cartão aberto
  * cartao(selecionado): conteúdo do cartão · ferramentas / rodape: barras do mestre dentro da moldura
+ * barra: botões extras no canto (régua) · miniatura: só para ver (Visão geral), sem controles
  */
 export default function Visualizador({
   imagem, pergaminho = true, mestre, ferramenta = 'mover',
-  pinos = [], tokens = [], rotas = [], rascunhoRota = null,
-  nevoa = null, pincel = 60,
+  pinos = [], tokens = [], rotas = [], notas = [], rascunhoRota = null,
+  nevoa = null, pincel = 60, escala = null, onMedirEscala,
   selecionado, onSelecionar, onClicarMapa, onMover, cartao,
-  ferramentas, rodape,
+  ferramentas, rodape, barra, miniatura = false,
 }) {
   const moldura = useRef(null);
   const area = useRef(null);
@@ -39,7 +47,11 @@ export default function Visualizador({
   const engolirClique = useRef(false);
   const [telaCheia, setTelaCheia] = useState(false);
   const [caixa, setCaixa] = useState({ w: 0, h: 0 });   // tamanho da área na tela
-  const [mira, setMira] = useState(null);   // círculo do pincel seguindo o mouse
+  const [mira, setMira] = useState(null);   // posição do mouse (círculo do pincel, trecho da régua)
+  // Pontos da régua/escala; valem só para a ferramenta em que foram marcados
+  const [medida, setMedida] = useState({ ferramenta: null, pontos: [] });
+  const pontosMedida = medida.ferramenta === ferramenta ? medida.pontos : [];
+  const medindo = MEDIDAS.includes(ferramenta) && (ferramenta === 'regua' || mestre);
   // Cópias em ref para o enquadrar (chamado de dentro do ResizeObserver e do onLoad)
   const tamanhoRef = useRef(tamanho);
   const caixaRef = useRef(caixa);
@@ -149,7 +161,7 @@ export default function Visualizador({
   }
 
   function aoMover(e) {
-    if (pintando && e.pointerType === 'mouse') setMira(relativo(e));
+    if ((pintando || medindo) && e.pointerType === 'mouse') setMira(relativo(e));
     if (!ponteiros.current.has(e.pointerId)) return;
     ponteiros.current.set(e.pointerId, relativo(e));
     const g = gesto.current;
@@ -194,6 +206,16 @@ export default function Visualizador({
   function clicouNoMapa(p) {
     const { x, y } = noMapa(p);
     const dentro = x >= 0 && x <= 1 && y >= 0 && y <= 1;
+    if (medindo && dentro) {
+      const pontos = [...pontosMedida, { x, y }];
+      if (ferramenta === 'escala' && pontos.length === 2) {
+        setMedida({ ferramenta, pontos: [] });
+        onMedirEscala?.(distanciaPx(pontos[0], pontos[1], tamanho));
+      } else {
+        setMedida({ ferramenta, pontos });
+      }
+      return;
+    }
     if (mestre && FERRAMENTAS_DE_CLIQUE.includes(ferramenta) && dentro) onClicarMapa?.(x, y);
     else onSelecionar?.(null);
   }
@@ -255,6 +277,7 @@ export default function Visualizador({
   if (tamanho && selecionado) {
     if (selecionado.tipo === 'pino') ancora = pinos.find((p) => p.id === selecionado.id);
     if (selecionado.tipo === 'token') ancora = tokens.find((t) => t.id === selecionado.id);
+    if (selecionado.tipo === 'nota') ancora = notas.find((n) => n.id === selecionado.id);
     if (selecionado.tipo === 'rota') {
       const r = rotas.find((x) => x.id === selecionado.id);
       ancora = r?.pontos[Math.floor((r.pontos.length - 1) / 2)];
@@ -265,18 +288,28 @@ export default function Visualizador({
     styles.area,
     mestre && FERRAMENTAS_DE_CLIQUE.includes(ferramenta) && styles.mira,
     pintando && styles.pincel,
+    medindo && styles.mira,
   ].filter(Boolean).join(' ');
 
+  // Régua: trechos marcados + o trecho até o mouse
+  const sobOMouse = mira && tamanho && { x: (mira.x - vista.x) / (vista.s * tamanho.w), y: (mira.y - vista.y) / (vista.s * tamanho.h) };
+  const trechos = medindo && tamanho ? [...pontosMedida, ...(sobOMouse && pontosMedida.length ? [sobOMouse] : [])] : [];
+  const totalPx = trechos.slice(1).reduce((soma, p, i) => soma + distanciaPx(trechos[i], p, tamanho), 0);
+  const rotuloDistancia = (px) => formatarDistancia(px, escala) ?? (ferramenta === 'escala' ? '' : 'sem escala');
+
   return (
-    <div ref={moldura} className={`${styles.moldura} ${telaCheia ? styles.cheia : ''}`}>
+    <div ref={moldura} className={`${styles.moldura} ${telaCheia ? styles.cheia : ''} ${miniatura ? styles.mini : ''}`}>
       <div
         ref={area}
         className={classesArea}
-        onPointerDown={aoApertar}
-        onPointerMove={aoMover}
-        onPointerUp={aoSoltar}
-        onPointerCancel={aoSoltar}
-        onPointerLeave={() => setMira(null)}
+        {...(miniatura ? {} : {
+          onPointerDown: aoApertar,
+          onPointerMove: aoMover,
+          onPointerUp: aoSoltar,
+          onPointerCancel: aoSoltar,
+          onPointerLeave: () => setMira(null),
+          onDoubleClick: () => medindo && setMedida({ ferramenta, pontos: [] }),
+        })}
       >
         {tamanho && (
           <div
@@ -285,6 +318,7 @@ export default function Visualizador({
           >
             {imagem && <img src={imagem} alt="" draggable={false} />}
             <div className={`${styles.papel} ${imagem ? '' : styles.emBranco}`} aria-hidden="true" />
+
             {nevoa?.ativa && (
               <CamadaNevoa
                 ref={nevoaRef}
@@ -339,6 +373,28 @@ export default function Visualizador({
           </svg>
         )}
 
+        {/* Régua: linha com trechos; cada trecho e o total na escala do mapa */}
+        {trechos.length > 0 && (
+          <svg className={styles.regua} width={caixa.w} height={caixa.h} aria-hidden="true">
+            <polyline points={trechos.map((p) => { const t = telaXY(p); return `${t.x},${t.y}`; }).join(' ')} />
+            {trechos.map((p, i) => {
+              const t = telaXY(p);
+              return <circle key={i} cx={t.x} cy={t.y} r="4" />;
+            })}
+            {trechos.length > 2 && trechos.slice(1).map((p, i) => {
+              const a = telaXY(trechos[i]);
+              const b = telaXY(p);
+              const texto = rotuloDistancia(distanciaPx(trechos[i], p, tamanho));
+              return texto && <text key={i} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2 - 8}>{texto}</text>;
+            })}
+          </svg>
+        )}
+        {trechos.length > 1 && rotuloDistancia(totalPx) && (
+          <span className={styles.totalRegua} style={{ left: telaXY(trechos.at(-1)).x, top: telaXY(trechos.at(-1)).y }}>
+            {trechos.length > 2 ? `Total: ${rotuloDistancia(totalPx)}` : rotuloDistancia(totalPx)}
+          </span>
+        )}
+
         {tamanho && pinos.map((p) => {
           const tipo = TIPOS_PINO[p.tipo] ?? TIPOS_PINO.lugar;
           const aberto = selecionado?.tipo === 'pino' && selecionado.id === p.id;
@@ -358,6 +414,29 @@ export default function Visualizador({
               <span className={styles.cabeca}><IconePino tipo={p.tipo} /></span>
               <span className={styles.agulha} />
               {p.nome && <span className={styles.rotulo}>{p.nome}</span>}
+            </button>
+          );
+        })}
+
+        {/* Post-its: bilhete preso por alfinete, tamanho fixo na tela, por cima da névoa */}
+        {tamanho && notas.map((n) => {
+          const aberta = selecionado?.tipo === 'nota' && selecionado.id === n.id;
+          return (
+            <button
+              key={n.id}
+              type="button"
+              className={`${styles.postit} ${n.oculta ? styles.notaOculta : ''} ${aberta ? styles.notaAberta : ''}`}
+              style={{ ...naTela(posicao('nota', n)), '--papel': n.cor, '--giro': `${inclinacaoDo(n.id)}deg` }}
+              onPointerDown={(e) => apertarObjeto(e, 'nota', n)}
+              onPointerMove={moverObjeto}
+              onPointerUp={soltarObjeto}
+              onPointerCancel={soltarObjeto}
+              onClick={() => mestre && clicarObjeto('nota', n.id)}
+              tabIndex={miniatura ? -1 : 0}
+              aria-label={`Post-it: ${n.texto}${n.oculta ? ' (oculto)' : ''}`}
+            >
+              <span className={styles.alfinete} aria-hidden="true" />
+              <span className={styles.bilhete}>{n.texto}</span>
             </button>
           );
         })}
@@ -402,14 +481,16 @@ export default function Visualizador({
           <span className={`${styles.miraPincel} ${ferramenta === 'cobrir' ? styles.cobrindo : ''}`} style={{ left: mira.x, top: mira.y, width: pincel * 2, height: pincel * 2 }} />
         )}
 
-        <RosaDosVentos className={styles.rosa} />
+        {!miniatura && <RosaDosVentos className={styles.rosa} />}
       </div>
 
-      {ferramentas && (
+      {!miniatura && ferramentas && (
         <div className={styles.ferramentas} onPointerDown={(e) => e.stopPropagation()}>{ferramentas}</div>
       )}
 
+      {!miniatura && (
       <div className={styles.barra} onPointerDown={(e) => e.stopPropagation()}>
+        {barra}
         <button type="button" onClick={() => zoomEm(caixa.w / 2, caixa.h / 2, 1.3)} aria-label="Aproximar" title="Aproximar">+</button>
         <button type="button" onClick={() => zoomEm(caixa.w / 2, caixa.h / 2, 1 / 1.3)} aria-label="Afastar" title="Afastar">−</button>
         <button type="button" onClick={enquadrar} aria-label="Mostrar o mapa inteiro" title="Mostrar o mapa inteiro">⤢</button>
@@ -417,8 +498,9 @@ export default function Visualizador({
           {telaCheia ? 'Sair' : 'Tela cheia'}
         </button>
       </div>
+      )}
 
-      {rodape && <div className={styles.rodape} onPointerDown={(e) => e.stopPropagation()}>{rodape}</div>}
+      {!miniatura && rodape && <div className={styles.rodape} onPointerDown={(e) => e.stopPropagation()}>{rodape}</div>}
     </div>
   );
 }

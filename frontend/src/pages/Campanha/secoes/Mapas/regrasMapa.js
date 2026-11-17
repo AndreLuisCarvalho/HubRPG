@@ -4,6 +4,9 @@
  * pino:  { id, x, y (0–1, fração da imagem), tipo, nome, descricao, oculto, link: { tipo, id } | null }
  * token: { fichaId, x, y } — um agente no mapa (foto e nome vêm da ficha)
  * rota:  { id, nome, cor, oculta, pontos: [{ x, y }] }
+ * nota:  { id, x, y, texto, cor, oculta } — post-it preso por alfinete (cor = cor do papel)
+ * escala: { px, valor, unidade } — "px pixels do mapa valem valor unidade" (ex.: 300 px = 100 m)
+ * atual: true no mapa onde o grupo está (aparece na Visão geral)
  * A névoa (máscara) fica fora de "dados", na coluna própria do mapa.
  */
 
@@ -30,7 +33,10 @@ export const TIPOS_LINK = {
 
 export const MAPA_NOVO = {
   nome: '', imagem: '',
-  dados: { pergaminho: true, oculto: false, usarNevoa: false, pinos: [], tokens: [], rotas: [] },
+  dados: {
+    pergaminho: true, oculto: false, usarNevoa: false, atual: false, escala: null,
+    pinos: [], tokens: [], rotas: [], notas: [],
+  },
 };
 
 // Cores das rotas (tinta): a do grupo, a do culto…
@@ -75,6 +81,27 @@ export function caminhoDaRota(pts) {
     d += ` C${c1.x} ${c1.y} ${c2.x} ${c2.y} ${p2.x} ${p2.y}`;
   }
   return d;
+}
+
+// Cores do papel dos post-its
+export const CORES_NOTA = ['#f4e06d', '#f3a6b8', '#9fd0ee', '#b5e3a1', '#f6b871', '#efe9dc'];
+
+export const novaNota = (x, y) => ({ id: novoId(), x, y, texto: '', cor: CORES_NOTA[0], oculta: false });
+
+/** Distância em pixels do mapa entre dois pontos (frações) */
+export const distanciaPx = (a, b, tamanho) => Math.hypot((b.x - a.x) * tamanho.w, (b.y - a.y) * tamanho.h);
+
+/** "350 m", "1,2 km" — pela escala do mapa */
+export function formatarDistancia(px, escala) {
+  if (!escala?.px || !escala.valor) return null;
+  let valor = (px * escala.valor) / escala.px;
+  let unidade = escala.unidade;
+  if (unidade === 'm' && valor >= 1000) {
+    valor /= 1000;
+    unidade = 'km';
+  }
+  const casas = valor < 10 ? 1 : 0;
+  return `${valor.toLocaleString('pt-BR', { maximumFractionDigits: casas })} ${unidade}`;
 }
 
 export const limitar = (v, min, max) => Math.min(max, Math.max(min, v));
