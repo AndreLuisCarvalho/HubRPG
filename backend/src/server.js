@@ -4,13 +4,15 @@ import { bancoPronto, db } from './db.js';
 import campanhasRouter from './routes/campanhas.js';
 import { criarRotasDeItens } from './routes/itensDaCampanha.js';
 import fichasRouter from './routes/fichas.js';
+import arquivosRouter from './routes/arquivos.js';
  
 const app = express();
  
 // Na Vercel, ORIGEM_SITE é o endereço do site (ex.: https://hubrpg.vercel.app). No PC, libera tudo.
 app.use(cors({ origin: process.env.ORIGEM_SITE ?? true }));
-// 1 MB: a ficha pode levar a foto do personagem (já reduzida no navegador, ~30 KB)
-app.use(express.json({ limit: '1mb' }));
+// 4 MB: a ficha leva a foto (~30 KB) e um arquivo pode levar um PDF pequeno (até 2 MB, ~2,7 MB em texto).
+// A Vercel aceita até 4,5 MB por requisição.
+app.use(express.json({ limit: '4mb' }));
  
 // Chave de acesso: enquanto não há login, só quem tem a chave mexe nos dados.
 // Se CHAVE_ACESSO não estiver definida (no seu PC), a API fica aberta.
@@ -28,6 +30,7 @@ app.use(async (req, res, next) => {
  
 app.use('/api/campanhas', campanhasRouter);
 app.use('/api', fichasRouter);
+app.use('/api', arquivosRouter);
  
 app.use('/api', criarRotasDeItens({
   tabela: 'sessoes',
