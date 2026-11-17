@@ -1,0 +1,402 @@
+@use '../../../../styles/mixins' as *;
+
+.pagina {
+  display: grid;
+  gap: 14px;
+}
+
+.topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+
+  h1 { @include fonte-titulo; font-size: 1.8rem; }
+}
+
+.contagem {
+  padding: 0 8px;
+  border: 1px solid var(--borda);
+  border-radius: 2px;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.acoesTopo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+// Chave Mestre | Jogadores
+.visao {
+  display: flex;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  overflow: hidden;
+
+  button {
+    padding: 7px 14px;
+    border: 0;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.78rem;
+    cursor: pointer;
+
+    &[aria-checked='true'] {
+      background: color-mix(in srgb, var(--cor) 28%, transparent);
+      color: var(--texto);
+    }
+  }
+}
+
+.novo {
+  padding: 8px 14px;
+  border: 1px solid var(--cor);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--cor) 25%, #121315);
+  color: var(--texto);
+  @include fonte-ficha;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.dica {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--texto-suave);
+
+  b { color: var(--texto); font-weight: 600; }
+}
+
+.vazio {
+  padding: 24px;
+  border: 1px dashed var(--borda);
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+/* ---------- Gaveta de cada caso ---------- */
+.caso {
+  display: grid;
+  gap: 12px;
+  padding-top: 6px;
+
+  h2 {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--borda);
+    @include fonte-titulo;
+    font-size: 1.25rem;
+
+    small {
+      @include rotulo-campo;
+      font-size: 0.62rem;
+    }
+  }
+}
+
+.pastas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  gap: 18px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ---------- Janela ---------- */
+.caixa {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  @include celular { max-height: none; overflow: visible; }
+}
+
+// Arquivo recém-destrancado: a pasta "abre" (desdobra de cima)
+.revelado {
+  animation: abrir 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-origin: top center;
+}
+
+@keyframes abrir {
+  from { opacity: 0; transform: perspective(900px) rotateX(-70deg); }
+}
+
+/* ---------- Arquivo aberto ---------- */
+.ver {
+  display: grid;
+  gap: 16px;
+}
+
+.cabecalhoVer {
+  display: grid;
+  gap: 4px;
+  padding-right: 28px;   // espaço do ✕
+
+  h2 { @include fonte-titulo; font-size: 1.7rem; line-height: 1.1; }
+  p { font-size: 0.88rem; color: var(--texto-suave); }
+}
+
+.sobre { @include sobretitulo; }
+
+// Folha do documento: papel claro, letra sem serifa
+.documento {
+  padding: 26px 28px;
+  border-radius: 2px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.35), transparent 30%),
+    #ece5d4;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  color: #231d16;
+  font-size: 0.96rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  @include celular { padding: 18px 16px; }
+}
+
+.tarja {
+  background: #111;
+  color: #111;
+  letter-spacing: -0.12em;
+  user-select: none;
+}
+
+.foto {
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  background: #0c0b0e;
+  border: 1px solid var(--borda);
+
+  img {
+    max-width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+  }
+}
+
+.pdf {
+  display: grid;
+  gap: 8px;
+
+  iframe {
+    width: 100%;
+    height: min(72vh, 820px);
+    border: 1px solid var(--borda);
+    background: #fff;
+  }
+
+  a { justify-self: end; font-size: 0.82rem; color: var(--texto-suave); }
+}
+
+.link {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.25);
+
+  audio { width: 100%; }
+
+  a {
+    padding: 10px 16px;
+    border: 1px solid var(--cor);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--cor) 22%, transparent);
+    color: var(--texto);
+    @include fonte-ficha;
+    font-size: 0.86rem;
+    text-decoration: none;
+  }
+}
+
+// Bastidores (só o mestre): caixa tracejada
+.bastidores {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px dashed color-mix(in srgb, var(--carimbo, #b3362c) 60%, transparent);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.2);
+
+  .sobre { color: var(--carimbo, #e76e6e); }
+
+  dl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 0;
+
+    div { display: grid; gap: 2px; }
+    dt { @include rotulo-campo; font-size: 0.6rem; }
+    dd { margin: 0; font-size: 0.88rem; font-weight: 600; }
+  }
+
+  > p { font-size: 0.86rem; line-height: 1.5; white-space: pre-wrap; }
+}
+
+/* ---------- Formulário ---------- */
+.formArquivo {
+  display: grid;
+  gap: 12px;
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  @include celular { grid-template-columns: minmax(0, 1fr); }
+}
+
+.campo {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+
+  > span { @include rotulo-campo; }
+
+  > input,
+  > textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    color-scheme: dark;
+    font: inherit;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    resize: vertical;
+
+    &:focus { outline: none; border-color: var(--cor); }
+    &:disabled { opacity: 0.45; }
+  }
+}
+
+.segmentos {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+
+  button {
+    padding: 8px 0;
+    border: 1px solid var(--borda);
+    border-radius: 2px;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.8rem;
+    cursor: pointer;
+
+    &[aria-checked='true'] {
+      border-color: var(--cor);
+      background: color-mix(in srgb, var(--cor) 22%, transparent);
+      color: var(--texto);
+    }
+  }
+}
+
+.arquivoEscolhido {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 1px dashed var(--borda);
+  border-radius: 3px;
+
+  img { width: 64px; height: 64px; object-fit: cover; border-radius: 2px; }
+  small { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--texto-suave); }
+
+  label {
+    padding: 6px 12px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.76rem;
+    cursor: pointer;
+  }
+}
+
+.grupo {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+
+  legend { padding: 0 6px; @include rotulo-campo; }
+}
+
+.marcar {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  cursor: pointer;
+
+  input { margin-top: 2px; accent-color: var(--cor); }
+}
+
+.ajuda {
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--texto-suave);
+}
+
+.botoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+
+  button {
+    padding: 8px 16px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .bastidores & { justify-content: flex-start; }
+}
+
+.primario {
+  border: 1px solid var(--cor);
+  background: color-mix(in srgb, var(--cor) 25%, #121315);
+  color: var(--texto);
+
+  &:disabled { opacity: 0.6; cursor: default; }
+}
+
+.secundario {
+  border: 1px solid var(--borda);
+  background: none;
+  color: var(--texto-suave);
+
+  &:hover { color: var(--texto); }
+}
+
+.perigo {
+  border: 1px solid color-mix(in srgb, var(--carimbo, #e76e6e) 50%, transparent);
+  background: none;
+  color: var(--carimbo, #e76e6e);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .revelado { animation: none; }
+}

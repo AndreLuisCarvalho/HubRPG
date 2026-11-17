@@ -86,7 +86,23 @@ export const api = {
   atualizarItem: async (id, item) =>
     lerItem(await requisicao(`/itens/${id}`, { method: 'PUT', body: escreverItem(item) })),
   excluirItem: (id) => requisicao(`/itens/${id}`, { method: 'DELETE' }),
+
+  // Arquivos: a lista vem sem o conteúdo (pesado); buscarArquivo traz tudo
+  listarArquivos: async (campanhaId) => (await requisicao(`/campanhas/${campanhaId}/arquivos`)).map(lerItem),
+  buscarArquivo: async (id) => lerItem(await requisicao(`/arquivos/${id}`)),
+  criarArquivo: async (campanhaId, arquivo) =>
+    lerItem(await requisicao(`/campanhas/${campanhaId}/arquivos`, { method: 'POST', body: escreverArquivo(arquivo) })),
+  // Manda só o que veio: { dados } para liberar/destrancar; com "conteudo" quando o arquivo mudou
+  atualizarArquivo: async (id, arquivo) =>
+    lerItem(await requisicao(`/arquivos/${id}`, { method: 'PUT', body: escreverArquivo(arquivo) })),
+  excluirArquivo: (id) => requisicao(`/arquivos/${id}`, { method: 'DELETE' }),
 };
+
+const escreverArquivo = ({ titulo, dados, conteudo }) => ({
+  titulo,
+  ...(dados ? { dados: JSON.stringify(dados) } : {}),
+  ...(conteudo !== undefined ? { conteudo } : {}),
+});
 
 function lerItem(linha) {
   try {

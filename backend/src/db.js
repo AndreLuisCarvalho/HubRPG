@@ -105,6 +105,16 @@ async function iniciar() {
       dados       TEXT NOT NULL DEFAULT '{}',
       criado_em   TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Arquivos da campanha (aba Arquivos): "dados" é o resumo em JSON, "conteudo" o texto/imagem/PDF
+    CREATE TABLE IF NOT EXISTS arquivos (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      campanha_id INTEGER NOT NULL REFERENCES campanhas(id) ON DELETE CASCADE,
+      titulo      TEXT NOT NULL,
+      dados       TEXT NOT NULL DEFAULT '{}',
+      conteudo    TEXT NOT NULL DEFAULT '',
+      criado_em   TEXT DEFAULT CURRENT_TIMESTAMP
+    );
   `);
  
   await adicionarColuna('campanhas', 'mapa', "TEXT DEFAULT ''");
