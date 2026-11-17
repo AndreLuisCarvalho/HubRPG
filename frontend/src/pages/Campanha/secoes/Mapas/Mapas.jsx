@@ -8,8 +8,9 @@ import FormMapa from './FormMapa';
 import FormEscala from './FormEscala';
 import FormNota from './FormNota';
 import FormPino from './FormPino';
+import FormRegiao from './FormRegiao';
 import FormRota from './FormRota';
-import { caminhoAte, MAPA_NOVO, novaNota, novaRota, novoPino } from './regrasMapa';
+import { caminhoAte, MAPA_NOVO, novaNota, novaRegiao, novaRota, novoPino } from './regrasMapa';
 import Visualizador from './Visualizador';
 import styles from './Mapas.module.scss';
 
@@ -37,6 +38,9 @@ export default function Mapas({ campanha }) {
   const [pincel, setPincel] = useState(PINCEIS[1].raio);
   const [agenteEscolhido, setAgenteEscolhido] = useState(null);   // ficha a pôr no mapa
   const [rascunho, setRascunho] = useState(null);   // pontos da rota sendo desenhada
+  const [rascunhoRegiao, setRascunhoRegiao] = useState([]);   // pontos do cômodo (polígono) sendo desenhado
+  // Como o mapa entrou: { tipo: 'entrar' } (de um cômodo) ou { tipo: 'sair', foco: pontos do cômodo }
+  const [transicao, setTransicao] = useState(null);
   const [selecionado, setSelecionado] = useState(null);
   const [janela, setJanela] = useState(null);   // { modo: 'mapa' | 'pino' | 'rota', ... }
   const mestre = visao === 'mestre';
@@ -78,15 +82,24 @@ export default function Mapas({ campanha }) {
   function trocarFerramenta(nova) {
     setFerramenta((f) => (f === nova ? 'mover' : nova));
     setSelecionado(null);
+    setRascunhoRegiao([]);
     if (nova !== 'rota') setRascunho(null);
     if (nova !== 'token') setAgenteEscolhido(null);
   }
 
-  function irPara(id) {
+  function irPara(id, comoEntra = null) {
     setSelecionado(null);
     setFerramenta('mover');
     setRascunho(null);
+    setRascunhoRegiao([]);
+    setTransicao(comoEntra);
     setBusca({ mapa: String(id) });
+  }
+
+  // Voltar ao mapa "pai" de um cômodo: começa enquadrado no cômodo e afasta
+  function voltarPara(destino) {
+    const regiao = atual?.dados.paiId === destino.id && destino.dados.regioes.find((r) => r.id === atual.dados.regiaoId);
+    irPara(destino.id, regiao ? { tipo: 'sair', foco: regiao.pontos } : null);
   }
 
   /* ---------- Salvar ---------- */
@@ -164,6 +177,7 @@ export default function Mapas({ campanha }) {
     if (ferramenta === 'pino') setJanela({ modo: 'pino', pino: novoPino(x, y) });
     if (ferramenta === 'rota') setRascunho((r) => [...(r ?? []), { x, y }]);
     if (ferramenta === 'texto') setJanela({ modo: 'nota', nota: novaNota(x, y) });
+    if (ferramenta === 'comodo') setRascunhoRegiao((r) => [...r, { x, y }]);
     if (ferramenta === 'token' && agenteEscolhido) {
       mudar('tokens', (ts) => trocarNaLista(ts, 'fichaId', { fichaId: agenteEscolhido, x, y }));
       setAgenteEscolhido(null);
@@ -175,6 +189,12 @@ export default function Mapas({ campanha }) {
     if (tipo === 'pino') mudar('pinos', (ps) => ps.map((p) => (p.id === id ? { ...p, ...pos } : p)));
     if (tipo === 'token') mudar('tokens', (ts) => ts.map((t) => (t.fichaId === id ? { ...t, ...pos } : t)));
     if (tipo === 'nota') mudar('notas', (ns) => ns.map((n) => (n.id === id ? { ...n, ...pos } : n)));
+    if (tipo === 'vertice') {
+      const [regiaoId, indice] = id.split(':');
+      mudar('regioes', (rs) => rs.map((r) => (r.id === regiaoId
+        ? { ...r, pontos: r.pontos.map((pt, i) => (i === Number(indice) ? { x: pos.x, y: pos.y } : pt)) }
+        : r)));
+    }
   }
 
   async function salvarMapa(mapa) {
@@ -191,11 +211,78 @@ export default function Mapas({ campanha }) {
     setJanela(null);
   }
 
-  async function excluirMapa(mapa) {
-    if (!window.confirm(`Apagar o mapa “${mapa.nome}” e tudo o que há nele? Isso não pode ser desfeito.`)) return;
+  /* ---------- Cômodos ---------- */
+  // A imagem da planta de um cômodo (para o formulário): busca se ainda não veio
+  function carregarPlanta(mapaId) {
+    if (!mapaId || pesados[mapaId] !== undefined) return;
+    api.buscarMapa(mapaId)
+      .then((m) => setPesados((p) => ({ ...p, [m.id]: { imagem: m.imagem ?? '', nevoa: m.nevoa ?? '' } })))
+      .catch((e) => setErro(e.message));
+  }
+
+  function editarRegiao(regiao) {
+    carregarPlanta(regiao.mapaId);
+    setJanela({ modo: 'regiao', regiao });
+  }
+
+  // Salva o cômodo; com imagem, cria (ou atualiza) a planta dele, um mapa "dentro" deste
+  async function salvarRegiao(regiao, imagem) {
+    const pai = atual;
+    let mapaId = regiao.mapaId;
+    if (imagem && !mapaId) {
+      const novo = await api.criarMapa(campanha.id, {
+        nome: regiao.nome,
+        imagem,
+        dados: { ...MAPA_NOVO.dados, pergaminho: pai.dados.pergaminho, oculto: regiao.oculta, paiId: pai.id, regiaoId: regiao.id },
+      });
+      setMapas((lista) => [...lista, comPadroes(semPesados(novo))]);
+      setPesados((ps) => ({ ...ps, [novo.id]: { imagem, nevoa: '' } }));
+      mapaId = novo.id;
+    } else if (mapaId && imagem === '') {
+      await api.excluirMapa(mapaId);
+      setMapas((lista) => lista.filter((m) => m.id !== mapaId));
+      mapaId = null;
+    } else if (mapaId) {
+      const planta = mapas.find((m) => m.id === mapaId);
+      const dados = { ...planta.dados, oculto: regiao.oculta };
+      const salvo = await api.atualizarMapa(mapaId, { nome: regiao.nome, dados, ...(imagem ? { imagem } : {}) });
+      setMapas((lista) => lista.map((m) => (m.id === mapaId ? comPadroes(salvo) : m)));
+      if (imagem) setPesados((ps) => ({ ...ps, [mapaId]: { ...ps[mapaId], imagem } }));
+    }
+    salvarDados(pai, { ...pai.dados, regioes: trocarNaLista(pai.dados.regioes, 'id', { ...regiao, mapaId }) });
+    setJanela(null);
+    setRascunhoRegiao([]);
+  }
+
+  async function apagarRegiao(regiao) {
+    const aviso = regiao.mapaId ? ' A planta dele (com pinos, tokens e post-its) também será apagada.' : '';
+    if (!window.confirm(`Apagar o cômodo “${regiao.nome || 'sem nome'}”?${aviso}`)) return;
     try {
+      if (regiao.mapaId) {
+        await api.excluirMapa(regiao.mapaId);
+        setMapas((lista) => lista.filter((m) => m.id !== regiao.mapaId));
+      }
+      mudar('regioes', (rs) => rs.filter((r) => r.id !== regiao.id));
+      setJanela(null);
+      setSelecionado(null);
+    } catch (e) {
+      setErro(e.message);
+    }
+  }
+
+  // Depois do voo da câmera: com planta, entra nela
+  function entrarRegiao(regiao) {
+    if (regiao.mapaId && mapas.some((m) => m.id === regiao.mapaId)) irPara(regiao.mapaId, { tipo: 'entrar' });
+  }
+
+  async function excluirMapa(mapa) {
+    const plantas = mapas.filter((m) => m.dados.paiId === mapa.id);
+    const aviso = plantas.length ? ` As plantas dos ${plantas.length} cômodos dele também serão apagadas.` : '';
+    if (!window.confirm(`Apagar o mapa “${mapa.nome}” e tudo o que há nele?${aviso} Isso não pode ser desfeito.`)) return;
+    try {
+      await Promise.all(plantas.map((m) => api.excluirMapa(m.id)));
       await api.excluirMapa(mapa.id);
-      setMapas((lista) => lista.filter((m) => m.id !== mapa.id));
+      setMapas((lista) => lista.filter((m) => m.id !== mapa.id && m.dados.paiId !== mapa.id));
       setJanela(null);
       setBusca({});
     } catch (e) {
@@ -287,6 +374,26 @@ export default function Mapas({ campanha }) {
         </article>
       );
     }
+    if (sel.tipo === 'regiao') {
+      const regiao = atual.dados.regioes.find((r) => r.id === sel.id);
+      return regiao && (
+        <article className={styles.cartaoPino} style={{ '--c': '#efe3c4' }}>
+          <header>
+            <span />
+            <div><small>Cômodo{regiao.oculta ? ' · oculto' : ''}{regiao.mapaId ? ' · com planta' : ''}</small><b>{regiao.nome || 'Sem nome'}</b></div>
+            <button type="button" className={styles.fecharCartao} onClick={() => setSelecionado(null)} aria-label="Fechar">✕</button>
+          </header>
+          <p>Arraste os pontos brancos para ajustar o contorno.</p>
+          {regiao.mapaId && (
+            <button type="button" className={styles.linkPino} onClick={() => irPara(regiao.mapaId, { tipo: 'entrar' })}>Entrar no cômodo →</button>
+          )}
+          <footer>
+            <button type="button" onClick={() => editarRegiao(regiao)}>Editar</button>
+            <button type="button" className={styles.perigoTexto} onClick={() => apagarRegiao(regiao)}>Apagar</button>
+          </footer>
+        </article>
+      );
+    }
     if (sel.tipo === 'nota') {
       const nota = atual.dados.notas.find((n) => n.id === sel.id);
       return nota && (
@@ -329,7 +436,24 @@ export default function Mapas({ campanha }) {
 
   // Ferramentas do mestre (dentro do mapa: funcionam também em tela cheia)
   const ferramentas = mestre && (
-    rascunho !== null ? (
+    ferramenta === 'comodo' ? (
+      <>
+        <span className={styles.aviso}>
+          {rascunhoRegiao.length
+            ? `Clique nos cantos do cômodo; clique no 1º ponto para fechar (${rascunhoRegiao.length})`
+            : 'Arraste um retângulo ou clique ponto a ponto. Clique num cômodo para editar.'}
+        </span>
+        {rascunhoRegiao.length > 0 && (
+          <>
+            <button type="button" onClick={() => setRascunhoRegiao((r) => r.slice(0, -1))}>Desfazer ponto</button>
+            <button type="button" aria-pressed="true" disabled={rascunhoRegiao.length < 3} onClick={() => setJanela({ modo: 'regiao', regiao: novaRegiao(rascunhoRegiao) })}>
+              Fechar cômodo
+            </button>
+          </>
+        )}
+        <button type="button" onClick={() => trocarFerramenta('comodo')}>Concluir</button>
+      </>
+    ) : rascunho !== null ? (
       <>
         <span className={styles.aviso}>Clique no mapa para marcar os pontos da rota ({rascunho.length})</span>
         <button type="button" onClick={() => setRascunho((r) => r.slice(0, -1))} disabled={!rascunho.length}>Desfazer ponto</button>
@@ -344,6 +468,7 @@ export default function Mapas({ campanha }) {
         <button type="button" aria-pressed={ferramenta === 'rota'} onClick={() => { trocarFerramenta('rota'); setRascunho([]); }} title="Clique nos pontos do caminho">Rota</button>
         <button type="button" aria-pressed={ferramenta === 'texto'} onClick={() => trocarFerramenta('texto')} title="Clique no mapa para colar um post-it">Post-it</button>
         <button type="button" aria-pressed={ferramenta === 'escala'} onClick={() => trocarFerramenta('escala')} title="Marque dois pontos de distância conhecida">Escala</button>
+        <button type="button" onClick={() => trocarFerramenta('comodo')} title="Marcar cômodos: clicar num cômodo aproxima (ou abre a planta dele)">Cômodos</button>
         {usaNevoa && (
           <>
             <button type="button" aria-pressed={ferramenta === 'revelar'} onClick={() => trocarFerramenta('revelar')} title="Pincel que apaga a névoa">Revelar</button>
@@ -433,11 +558,11 @@ export default function Mapas({ campanha }) {
 
       {visiveis.length > 0 && (
         <nav className={styles.mapas} aria-label="Mapas da campanha">
-          {visiveis.map((m) => (
+          {visiveis.filter((m) => !m.dados.paiId).map((m) => (
             <button
               key={m.id}
               type="button"
-              aria-current={m.id === atual?.id ? 'page' : undefined}
+              aria-current={m.id === caminho[0]?.id ? 'page' : undefined}
               className={m.dados.oculto ? styles.mapaOculto : ''}
               onClick={() => irPara(m.id)}
             >
@@ -454,7 +579,7 @@ export default function Mapas({ campanha }) {
             <ol className={styles.caminho} aria-label="Caminho">
               {caminho.map((m) => (
                 <li key={m.id}>
-                  {m.id === atual.id ? <b>{m.nome}</b> : <button type="button" onClick={() => irPara(m.id)}>{m.nome}</button>}
+                  {m.id === atual.id ? <b>{m.nome}</b> : <button type="button" onClick={() => voltarPara(m)}>{m.nome}</button>}
                 </li>
               ))}
             </ol>
@@ -484,6 +609,13 @@ export default function Mapas({ campanha }) {
               onMedirEscala={(px) => setJanela({ modo: 'escala', px })}
               barra={botaoRegua}
               rascunhoRota={rascunho}
+              regioes={atual.dados.regioes}
+              rascunhoRegiao={ferramenta === 'comodo' ? rascunhoRegiao : null}
+              onDesenharRegiao={(pontos) => setJanela({ modo: 'regiao', regiao: novaRegiao(pontos) })}
+              onFecharRegiao={() => setJanela({ modo: 'regiao', regiao: novaRegiao(rascunhoRegiao) })}
+              onEntrarRegiao={entrarRegiao}
+              entrada={transicao?.tipo === 'entrar'}
+              focoInicial={transicao?.tipo === 'sair' ? transicao.foco : null}
               nevoa={usaNevoa ? { ativa: true, mascara: carregado.nevoa, onMudar: salvarNevoa } : null}
               pincel={pincel}
               selecionado={selecionado}
@@ -508,6 +640,7 @@ export default function Mapas({ campanha }) {
           rota: atual?.dados.rotas.some((r) => r.id === janela?.rota?.id) ? 'Editar rota' : 'Nova rota',
           nota: atual?.dados.notas.some((n) => n.id === janela?.nota?.id) ? 'Editar post-it' : 'Novo post-it',
           escala: 'Escala do mapa',
+          regiao: atual?.dados.regioes.some((r) => r.id === janela?.regiao?.id) ? 'Editar cômodo' : 'Novo cômodo',
           mapa: janela?.mapa?.id ? 'Editar mapa' : 'Novo mapa',
         }[janela?.modo]}
       >
@@ -530,6 +663,16 @@ export default function Mapas({ campanha }) {
             onSalvar={salvarNota}
             onCancelar={() => setJanela(null)}
             onExcluir={atual?.dados.notas.some((n) => n.id === janela.nota.id) ? () => apagarNota(janela.nota) : undefined}
+          />
+        )}
+        {janela?.modo === 'regiao' && (
+          <FormRegiao
+            key={janela.regiao.id}
+            inicial={janela.regiao}
+            imagemAtual={janela.regiao.mapaId ? pesados[janela.regiao.mapaId]?.imagem : ''}
+            onSalvar={salvarRegiao}
+            onCancelar={() => setJanela(null)}
+            onExcluir={atual?.dados.regioes.some((r) => r.id === janela.regiao.id) ? () => apagarRegiao(janela.regiao) : undefined}
           />
         )}
         {janela?.modo === 'escala' && (

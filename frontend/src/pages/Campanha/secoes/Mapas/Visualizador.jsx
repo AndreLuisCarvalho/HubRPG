@@ -3,13 +3,26 @@ import CamadaNevoa from './CamadaNevoa';
 import IconePino from './IconePino';
 import RosaDosVentos from './RosaDosVentos';
 import {
-  caminhoDaRota, distanciaPx, formatarDistancia, limitar, PAPEL_EM_BRANCO, TIPOS_PINO,
+  caixaDe, caminhoDaRota, centroDe, distanciaPx, formatarDistancia, limitar, PAPEL_EM_BRANCO, retangulo, TIPOS_PINO,
 } from './regrasMapa';
 import styles from './Visualizador.module.scss';
 
 const ARRASTO_MINIMO = 4;   // px: menos que isso é clique, não arrasto
 const ZOOM_MAXIMO = 5;
-const FERRAMENTAS_DE_CLIQUE = ['pino', 'rota', 'token', 'texto'];
+const FERRAMENTAS_DE_CLIQUE = ['pino', 'rota', 'token', 'texto', 'comodo'];
+const VOO_MS = 700;   // duração do zoom até um cômodo
+const calmo = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+// Ponto dentro do polígono (raio cruzando as arestas)
+function pontoNoPoligono(p, pontos) {
+  let dentro = false;
+  for (let i = 0, j = pontos.length - 1; i < pontos.length; j = i, i += 1) {
+    const a = pontos[i];
+    const b = pontos[j];
+    if ((a.y > p.y) !== (b.y > p.y) && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) dentro = !dentro;
+  }
+  return dentro;
+}
+const suave = (k) => (k < 0.5 ? 2 * k * k : 1 - ((-2 * k + 2) ** 2) / 2);
 const MEDIDAS = ['regua', 'escala'];   // cliques que medem (não salvam nada)
 
 // Cada post-it fica um pouco torto, sempre do mesmo jeito (sai do id)
@@ -26,6 +39,10 @@ const PINCEIS = ['revelar', 'cobrir'];
  * selecionado: { tipo: 'pino' | 'token' | 'rota' | 'nota', id } — o que tem o cartão aberto
  * cartao(selecionado): conteúdo do cartão · ferramentas / rodape: barras do mestre dentro da moldura
  * barra: botões extras no canto (régua) · miniatura: só para ver (Visão geral), sem controles
+ * regioes: cômodos (polígonos). Ferramenta 'comodo': arrastar = retângulo, clicar = ponto do polígono
+ *   (rascunhoRegiao), clicar no 1º ponto fecha. Clicar num cômodo (mestre, ferramenta mover): a câmera
+ *   voa até ele e chama onEntrarRegiao. focoInicial: começa enquadrado nesses pontos e afasta (voltar
+ *   de um cômodo) · entrada: o mapa aparece com a transição de entrar num cômodo
  */
 export default function Visualizador({
   imagem, pergaminho = true, mestre, ferramenta = 'mover',
@@ -33,6 +50,8 @@ export default function Visualizador({
   nevoa = null, pincel = 60, escala = null, onMedirEscala,
   selecionado, onSelecionar, onClicarMapa, onMover, cartao,
   ferramentas, rodape, barra, miniatura = false,
+  regioes = [], rascunhoRegiao = null, onDesenharRegiao, onFecharRegiao, onEntrarRegiao,
+  entrada = false, focoInicial = null,
 }) {
   const moldura = useRef(null);
   const area = useRef(null);
@@ -56,21 +75,72 @@ export default function Visualizador({
   const tamanhoRef = useRef(tamanho);
   const caixaRef = useRef(caixa);
   const pintando = mestre && PINCEIS.includes(ferramenta) && nevoa?.ativa;
+  const [esboco, setEsboco] = useState(null);   // retângulo de cômodo sendo arrastado: { a, b }
+  const [acesa, setAcesa] = useState(null);   // cômodo aceso pelo 1º toque (celular)
+  const tipoDoToque = useRef('mouse');
+  const voo = useRef(0);
+  const focoRef = useRef(focoInicial);
+  const desenhandoPoligono = (rascunhoRegiao?.length ?? 0) > 0;
 
   const aplicar = useCallback((v) => {
     vistaRef.current = v;
     setVista(v);
   }, []);
 
-  // Mapa inteiro visível e centralizado
+  // A vista que enquadra uma caixa do mapa (frações), com folga
+  const vistaPara = useCallback((pontos, folga = 0.88) => {
+    const t = tamanhoRef.current;
+    const c = caixaRef.current;
+    const { x0, y0, x1, y1 } = caixaDe(pontos);
+    const w = Math.max((x1 - x0) * t.w, 1);
+    const h = Math.max((y1 - y0) * t.h, 1);
+    const s = Math.min((c.w * folga) / w, (c.h * folga) / h);
+    const cx = ((x0 + x1) / 2) * t.w;
+    const cy = ((y0 + y1) / 2) * t.h;
+    return { x: c.w / 2 - cx * s, y: c.h / 2 - cy * s, s };
+  }, []);
+
+  // Voo da câmera: o centro anda em linha reta e a escala muda "em proporção" (zoom natural)
+  const voar = useCallback((destino, aoFim) => {
+    cancelAnimationFrame(voo.current);
+    const ini = vistaRef.current;
+    const c = caixaRef.current;
+    const centro = (v) => ({ x: (c.w / 2 - v.x) / v.s, y: (c.h / 2 - v.y) / v.s });
+    const c0 = centro(ini);
+    const c1 = centro(destino);
+    const ms = calmo() ? 0 : VOO_MS;
+    const t0 = performance.now();
+    const passo = (agora) => {
+      const k = ms ? Math.min(1, (agora - t0) / ms) : 1;
+      const e = suave(k);
+      const s = Math.exp(Math.log(ini.s) + (Math.log(destino.s) - Math.log(ini.s)) * e);
+      const cx = c0.x + (c1.x - c0.x) * e;
+      const cy = c0.y + (c1.y - c0.y) * e;
+      aplicar({ x: c.w / 2 - cx * s, y: c.h / 2 - cy * s, s });
+      if (k < 1) voo.current = requestAnimationFrame(passo);
+      else aoFim?.();
+    };
+    voo.current = requestAnimationFrame(passo);
+  }, [aplicar]);
+
+  useEffect(() => () => cancelAnimationFrame(voo.current), []);
+
+  // Mapa inteiro visível e centralizado (voltando de um cômodo: começa nele e afasta)
   const enquadrar = useCallback(() => {
     const t = tamanhoRef.current;
     const c = caixaRef.current;
     if (!t || !c.w) return;
     const s = Math.min(c.w / t.w, c.h / t.h) * 0.94;
     zoomMinimo.current = s * 0.6;
-    aplicar({ x: (c.w - t.w * s) / 2, y: (c.h - t.h * s) / 2, s });
-  }, [aplicar]);
+    const inteira = { x: (c.w - t.w * s) / 2, y: (c.h - t.h * s) / 2, s };
+    if (focoRef.current) {
+      aplicar(vistaPara(focoRef.current));
+      focoRef.current = null;
+      voar(inteira);
+    } else {
+      aplicar(inteira);
+    }
+  }, [aplicar, vistaPara, voar]);
 
   // Mede a área e enquadra (de novo quando a janela muda ou entra em tela cheia)
   useEffect(() => {
@@ -142,6 +212,11 @@ export default function Visualizador({
         nevoaRef.current?.pintar(gesto.current.ultimo, gesto.current.ultimo, ferramenta, pincel / (vistaRef.current.s * tamanho.w));
         return;
       }
+      // Cômodo novo: arrastar desenha um retângulo (com o polígono começado, arrastar move o mapa)
+      if (mestre && ferramenta === 'comodo' && !desenhandoPoligono && gesto.current?.tipo !== 'pinca') {
+        gesto.current = { tipo: 'retangulo', inicio: lista[0], a: noMapa(lista[0]), moveu: false };
+        return;
+      }
       gesto.current = { tipo: 'mover', inicio: lista[0], vista0: vistaRef.current, moveu: gesto.current?.tipo === 'pinca' };
     } else if (lista.length === 2) {
       const [a, b] = lista;
@@ -155,19 +230,25 @@ export default function Visualizador({
 
   function aoApertar(e) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    cancelAnimationFrame(voo.current);
+    tipoDoToque.current = e.pointerType;
     area.current.setPointerCapture(e.pointerId);
     ponteiros.current.set(e.pointerId, relativo(e));
     comecarGesto();
   }
 
   function aoMover(e) {
-    if ((pintando || medindo) && e.pointerType === 'mouse') setMira(relativo(e));
+    if ((pintando || medindo || (mestre && ferramenta === 'comodo')) && e.pointerType === 'mouse') setMira(relativo(e));
     if (!ponteiros.current.has(e.pointerId)) return;
     ponteiros.current.set(e.pointerId, relativo(e));
     const g = gesto.current;
     if (!g) return;
 
-    if (g.tipo === 'pincel') {
+    if (g.tipo === 'retangulo') {
+      const p = ponteiros.current.get(e.pointerId);
+      if (Math.hypot(p.x - g.inicio.x, p.y - g.inicio.y) > ARRASTO_MINIMO) g.moveu = true;
+      if (g.moveu) setEsboco({ a: g.a, b: noMapa(p) });
+    } else if (g.tipo === 'pincel') {
       const ponto = noMapa(ponteiros.current.get(e.pointerId));
       nevoaRef.current?.pintar(g.ultimo, ponto, ferramenta, pincel / (vistaRef.current.s * tamanho.w));
       g.ultimo = ponto;
@@ -198,6 +279,13 @@ export default function Visualizador({
       gesto.current = null;
       if (g?.tipo === 'pincel') nevoaRef.current?.salvar();
       if (g?.tipo === 'mover' && !g.moveu && e.type === 'pointerup') clicouNoMapa(p);
+      if (g?.tipo === 'retangulo') {
+        setEsboco(null);
+        const b = noMapa(p);
+        const grande = Math.abs(b.x - g.a.x) * tamanho.w * vistaRef.current.s > 12 && Math.abs(b.y - g.a.y) * tamanho.h * vistaRef.current.s > 12;
+        if (g.moveu && grande) onDesenharRegiao?.(retangulo(g.a, b));
+        else if (!g.moveu && e.type === 'pointerup') clicouNoMapa(p);
+      }
     } else {
       comecarGesto();   // saiu um dedo da pinça: segue com o outro
     }
@@ -206,6 +294,24 @@ export default function Visualizador({
   function clicouNoMapa(p) {
     const { x, y } = noMapa(p);
     const dentro = x >= 0 && x <= 1 && y >= 0 && y <= 1;
+    // Clique dentro de um cômodo (o de cima, se houver vários)
+    if (clicaveis && dentro) {
+      const r = [...regioes].reverse().find((regiao) => pontoNoPoligono({ x, y }, regiao.pontos));
+      if (r) {
+        clicarRegiao(r);
+        return;
+      }
+    }
+    setAcesa(null);
+    // Polígono do cômodo: clicar perto do 1º ponto fecha
+    if (mestre && ferramenta === 'comodo' && rascunhoRegiao?.length >= 3) {
+      const v = vistaRef.current;
+      const primeiro = { x: v.x + rascunhoRegiao[0].x * tamanho.w * v.s, y: v.y + rascunhoRegiao[0].y * tamanho.h * v.s };
+      if (Math.hypot(p.x - primeiro.x, p.y - primeiro.y) < 14) {
+        onFecharRegiao?.();
+        return;
+      }
+    }
     if (medindo && dentro) {
       const pontos = [...pontosMedida, { x, y }];
       if (ferramenta === 'escala' && pontos.length === 2) {
@@ -249,7 +355,8 @@ export default function Visualizador({
     if (g?.tipo !== 'objeto') return;
     gesto.current = null;
     if (g.moveu && arrasto) {
-      engolirClique.current = true;   // o "click" que vem depois do arrasto não abre o cartão
+      // O "click" que vem depois do arrasto não abre o cartão (o ponto do cômodo não tem click)
+      engolirClique.current = g.alvo !== 'vertice';
       onMover?.(g.alvo, g.id, { x: arrasto.x, y: arrasto.y });
     }
     setArrasto(null);
@@ -263,6 +370,24 @@ export default function Visualizador({
     const mesmo = selecionado?.tipo === tipo && selecionado.id === id;
     onSelecionar?.(mesmo ? null : { tipo, id });
   }
+
+  /* ---------- Cômodos ---------- */
+  function clicarRegiao(r) {
+    if (ferramenta === 'comodo') {
+      clicarObjeto('regiao', r.id);   // editar: seleciona (mostra os pontos para ajustar)
+      return;
+    }
+    // No celular, o 1º toque acende o cômodo e o 2º entra
+    if (tipoDoToque.current !== 'mouse' && acesa !== r.id) {
+      setAcesa(r.id);
+      return;
+    }
+    setAcesa(null);
+    onSelecionar?.(null);
+    voar(vistaPara(r.pontos), () => onEntrarRegiao?.(r));
+  }
+
+  const clicaveis = mestre && !miniatura && (ferramenta === 'mover' || (ferramenta === 'comodo' && !desenhandoPoligono));
 
   /* ---------- Desenho ---------- */
   const naTela = (p) => ({ left: vista.x + p.x * tamanho.w * vista.s, top: vista.y + p.y * tamanho.h * vista.s });
@@ -278,6 +403,10 @@ export default function Visualizador({
     if (selecionado.tipo === 'pino') ancora = pinos.find((p) => p.id === selecionado.id);
     if (selecionado.tipo === 'token') ancora = tokens.find((t) => t.id === selecionado.id);
     if (selecionado.tipo === 'nota') ancora = notas.find((n) => n.id === selecionado.id);
+    if (selecionado.tipo === 'regiao') {
+      const r = regioes.find((x) => x.id === selecionado.id);
+      ancora = r && { id: r.id, ...centroDe(r.pontos) };
+    }
     if (selecionado.tipo === 'rota') {
       const r = rotas.find((x) => x.id === selecionado.id);
       ancora = r?.pontos[Math.floor((r.pontos.length - 1) / 2)];
@@ -298,7 +427,7 @@ export default function Visualizador({
   const rotuloDistancia = (px) => formatarDistancia(px, escala) ?? (ferramenta === 'escala' ? '' : 'sem escala');
 
   return (
-    <div ref={moldura} className={`${styles.moldura} ${telaCheia ? styles.cheia : ''} ${miniatura ? styles.mini : ''}`}>
+    <div ref={moldura} className={`${styles.moldura} ${telaCheia ? styles.cheia : ''} ${miniatura ? styles.mini : ''} ${entrada ? styles.entrando : ''}`}>
       <div
         ref={area}
         className={classesArea}
@@ -334,6 +463,60 @@ export default function Visualizador({
 
         {/* Imagem carregando: mede o tamanho natural antes de mostrar */}
         {imagem && !tamanho && <img className={styles.medir} src={imagem} alt="" onLoad={imagemCarregou} />}
+
+        {/* Cômodos: invisíveis; ao passar o mouse acendem com o contorno e o nome */}
+        {tamanho && (regioes.length > 0 || rascunhoRegiao || esboco) && (
+          <svg className={styles.regioes} width={caixa.w} height={caixa.h}>
+            {regioes.map((r) => {
+              const pontos = r.pontos.map((pt, i) => posicao('vertice', { id: `${r.id}:${i}`, ...pt }));
+              const tela = pontos.map(telaXY);
+              const centro = telaXY(centroDe(pontos));
+              const escolhida = selecionado?.tipo === 'regiao' && selecionado.id === r.id;
+              const classes = [
+                styles.regiao,
+                clicaveis && styles.clicavel,
+                (acesa === r.id || escolhida) && styles.acesa,
+                r.oculta && styles.regiaoOculta,
+              ].filter(Boolean).join(' ');
+              return (
+                <g key={r.id} className={classes}>
+                  <polygon points={tela.map((t) => `${t.x},${t.y}`).join(' ')}>
+                    <title>{r.nome || 'Cômodo'}</title>
+                  </polygon>
+                  {r.nome && <text x={centro.x} y={centro.y}>{r.nome}</text>}
+                  {/* Pontos para ajustar o contorno (cômodo selecionado) */}
+                  {escolhida && tela.map((t, i) => (
+                    <circle
+                      key={i}
+                      className={styles.vertice}
+                      cx={t.x}
+                      cy={t.y}
+                      r="7"
+                      onPointerDown={(e) => apertarObjeto(e, 'vertice', { id: `${r.id}:${i}`, ...r.pontos[i] })}
+                      onPointerMove={moverObjeto}
+                      onPointerUp={soltarObjeto}
+                      onPointerCancel={soltarObjeto}
+                    />
+                  ))}
+                </g>
+              );
+            })}
+
+            {/* Rascunho: retângulo arrastado ou polígono ponto a ponto (com o trecho até o mouse) */}
+            {esboco && (
+              <polygon className={styles.esboco} points={retangulo(esboco.a, esboco.b).map(telaXY).map((t) => `${t.x},${t.y}`).join(' ')} />
+            )}
+            {rascunhoRegiao?.length > 0 && (
+              <g className={styles.esboco}>
+                <polyline points={[...rascunhoRegiao, ...(sobOMouse ? [sobOMouse] : [])].map(telaXY).map((t) => `${t.x},${t.y}`).join(' ')} />
+                {rascunhoRegiao.map((pt, i) => {
+                  const t = telaXY(pt);
+                  return <circle key={i} cx={t.x} cy={t.y} r={i === 0 && rascunhoRegiao.length >= 3 ? 8 : 4} className={i === 0 ? styles.primeiro : ''} />;
+                })}
+              </g>
+            )}
+          </svg>
+        )}
 
         {/* Rotas tracejadas (em coordenadas de tela: o traço fica do mesmo tamanho em qualquer zoom) */}
         {tamanho && (rotas.length > 0 || rascunhoRota) && (
