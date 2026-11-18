@@ -21,6 +21,7 @@ const GRUPOS = [
   {
     titulo: 'Mesa',
     itens: [
+      { caminho: 'combate', rotulo: 'Combate', icone: '✸' },
       { caminho: 'mapas', rotulo: 'Mapas', icone: '▦' },
       { caminho: 'arquivos', rotulo: 'Arquivos', icone: '▤' },
       { caminho: 'itens', rotulo: 'Itens', icone: '⚔' },

@@ -105,7 +105,21 @@ export const api = {
   atualizarMapa: async (id, mapa) =>
     lerItem(await requisicao(`/mapas/${id}`, { method: 'PUT', body: escreverMapa(mapa) })),
   excluirMapa: (id) => requisicao(`/mapas/${id}`, { method: 'DELETE' }),
+
+  // Combates: "dados" entra e sai como objeto
+  listarCombates: async (campanhaId) => (await requisicao(`/campanhas/${campanhaId}/combates`)).map(lerItem),
+  criarCombate: async (campanhaId, combate) =>
+    lerItem(await requisicao(`/campanhas/${campanhaId}/combates`, { method: 'POST', body: escreverCombate(combate) })),
+  atualizarCombate: async (id, combate) =>
+    lerItem(await requisicao(`/combates/${id}`, { method: 'PUT', body: escreverCombate(combate) })),
+  excluirCombate: (id) => requisicao(`/combates/${id}`, { method: 'DELETE' }),
 };
+
+const escreverCombate = ({ nome, sessao_id, dados }) => ({
+  ...(nome !== undefined ? { nome } : {}),
+  ...(sessao_id !== undefined ? { sessao_id } : {}),
+  ...(dados ? { dados: JSON.stringify(dados) } : {}),
+});
 
 const escreverMapa = ({ nome, dados, imagem, nevoa }) => ({
   nome,

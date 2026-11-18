@@ -67,6 +67,14 @@ app.use('/api', criarRotasDeItens({
   ordem: 'id DESC',
 }));
 
+// Combates: "dados" também vem em texto JSON (participantes, rodada, vez); sessao_id liga à sessão do dia
+app.use('/api', criarRotasDeItens({
+  tabela: 'combates',
+  campos: { nome: '', sessao_id: null, dados: '{}' },
+  obrigatorio: 'nome',
+  ordem: 'id DESC',
+}));
+
 // Erros inesperados viram uma resposta JSON (em vez de derrubar a função na Vercel)
 app.use((erro, req, res, next) => {
   console.error(erro);

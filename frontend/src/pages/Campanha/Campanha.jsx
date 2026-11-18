@@ -18,6 +18,7 @@ const Dados = lazy(() => import('./secoes/Dados/Dados'));   // traz o three.js j
 const Itens = lazy(() => import('./secoes/Itens/Itens'));
 const Arquivos = lazy(() => import('./secoes/Arquivos/Arquivos'));
 const Mapas = lazy(() => import('./secoes/Mapas/Mapas'));
+const Combate = lazy(() => import('./secoes/Combate/Combate'));
 
 export default function Campanha() {
   const { id } = useParams();
@@ -71,6 +72,7 @@ export default function Campanha() {
             <Route path="itens" element={<Suspense fallback={null}><Itens campanha={campanha} /></Suspense>} />
             <Route path="arquivos" element={<Suspense fallback={null}><Arquivos campanha={campanha} /></Suspense>} />
             <Route path="mapas" element={<Suspense fallback={null}><Mapas campanha={campanha} /></Suspense>} />
+            <Route path="combate" element={<Suspense fallback={null}><Combate campanha={campanha} /></Suspense>} />
             <Route path=":secao" element={<EmBreve />} />
           </Routes>
         </main>
