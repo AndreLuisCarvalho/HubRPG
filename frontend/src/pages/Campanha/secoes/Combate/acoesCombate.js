@@ -243,17 +243,17 @@ export function lerResistenciaDoRitual(texto) {
 
 /* ---------- O que dá para fazer na arena ---------- */
 /** O que cada ação pede de alvo: um só (clicando no palco troca) ou vários (clicando liga/desliga) */
-export const MIRA_DA_ACAO = { atacar: 'um', ritual: 'varios', condicao: 'um', teste: null };
+export const MIRA_DA_ACAO = { atacar: 'um', ritual: 'varios', outros: 'um', teste: null };
 
-/** Quem dá para fazer o quê: rituais só para quem conhece; condições só o mestre aplica */
-export function acoesDisponiveis(ator, fichas, livro, mestre) {
+/** Quem dá para fazer o quê: rituais só para quem conhece (condições ficam em Item/Outros, só para o mestre) */
+export function acoesDisponiveis(ator, fichas, livro) {
   const base = baseDe(ator, fichas, livro);
   const temRituais = base.tipo === 'agente' && (base.dados?.rituais?.length ?? 0) > 0;
   return [
     { id: 'atacar', rotulo: 'Atacar', icone: '⚔' },
     temRituais && { id: 'ritual', rotulo: 'Ritual', icone: '✦' },
     { id: 'teste', rotulo: 'Teste', icone: '⚄' },
-    mestre && { id: 'condicao', rotulo: 'Condição', icone: '◎' },
+    { id: 'outros', rotulo: 'Item / Outros', icone: '✚' },
   ].filter(Boolean);
 }
 

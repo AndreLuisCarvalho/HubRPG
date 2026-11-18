@@ -1,0 +1,880 @@
+@use '../../../../styles/mixins' as *;
+
+$agentes: #4f8fd6;
+$ameacas: #c8423a;
+$ouro: #d9a54a;
+$sangue: #b3261c;
+
+/* =========================================================
+ * Layout: 4 zonas numa tela só (sem rolar a página)
+ *   topo  | log
+ *   centro| log
+ *   hud   | log
+ * ========================================================= */
+.arena {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'topo log'
+    'centro log'
+    'hud log';
+  gap: 10px;
+  height: calc(100dvh - 48px);
+  min-height: 0;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'topo' 'centro' 'hud' 'log';
+  }
+
+  // Celular: a arena ocupa a tela toda (o ← volta para a lista)
+  @include celular {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    height: 100dvh;
+    gap: 6px;
+    padding: 6px;
+    background: var(--fundo, #16181b);
+  }
+}
+
+// Visão Jogadores: tela cheia, sem o menu da campanha (TV, transmissão)
+.telaCheia {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  height: 100dvh;
+  padding: 10px 12px;
+  background: var(--fundo, #16181b);
+}
+
+.erro {
+  grid-area: centro;
+  align-self: start;
+  justify-self: center;
+  z-index: 6;
+  margin-top: 50px;
+}
+
+/* ---------- 1 · Topo: título + timeline ---------- */
+.topo {
+  grid-area: topo;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(179, 38, 28, 0.18), transparent 40%),
+    var(--superficie);
+
+  // Celular: a timeline desce para uma linha própria
+  @include celular {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+
+    .timeline { order: 3; flex-basis: 100%; }
+  }
+}
+
+.topoTitulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  max-width: 220px;
+
+  > div { display: grid; min-width: 0; }
+
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.72rem;
+    color: var(--texto-suave);
+  }
+
+  @include celular { max-width: 120px; }
+}
+
+.rodada {
+  @include fonte-titulo;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  color: $ouro;
+}
+
+.voltar {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  background: none;
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  &:hover { color: var(--texto); }
+}
+
+.topoAcoes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  margin-left: auto;
+
+  // A chave Mestre/Jogadores, discreta
+  > div[role='radiogroup'] button { padding: 5px 9px; font-size: 0.68rem; }
+}
+
+.icone {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  background: none;
+  color: var(--texto-suave);
+  font-size: 0.95rem;
+  cursor: pointer;
+
+  &:hover { border-color: $ouro; color: var(--texto); }
+}
+
+.textual {
+  padding: 5px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  background: none;
+  color: var(--texto-suave);
+  @include fonte-ficha;
+  font-size: 0.72rem;
+  cursor: pointer;
+
+  &:hover { color: var(--texto); }
+}
+
+.perigo { color: #e2675d; border-color: color-mix(in srgb, #e2675d 45%, transparent); }
+
+/* Timeline de iniciativa */
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 4px;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+
+  li { flex: 0 0 auto; }
+
+  button {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    width: 58px;
+    padding: 2px;
+    border: 0;
+    background: none;
+    color: var(--texto);
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  small { font-size: 0.66rem; font-weight: 700; color: var(--texto-suave); }
+
+  // Na vez: maior, borda dourada
+  li[aria-current='true'] button { transform: scale(1.18); }
+  li[aria-current='true'] .timelineRetrato {
+    border-color: $ouro;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6), 0 0 16px color-mix(in srgb, $ouro 70%, transparent);
+  }
+  li[aria-current='true'] small { color: $ouro; }
+
+  // O próximo: anel tracejado
+  li[data-proximo] .timelineRetrato { outline: 1px dashed $ouro; outline-offset: 2px; }
+
+  li[data-caido] button { opacity: 0.4; filter: grayscale(1); }
+  li[data-oculto] button { opacity: 0.55; }
+  button[aria-pressed='true'] .timelineNome { color: $ouro; }
+}
+
+.timelineRetrato {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 2px solid $agentes;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #0d0e10;
+  @include fonte-titulo;
+  font-size: 1rem;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+
+  li[data-lado='ameacas'] & {
+    border-color: #3fbf4a;
+    color: #3fbf4a;
+
+    &[data-estado='ferido'] { border-color: #e0c23a; color: #e0c23a; }
+    &[data-estado='muitoFerido'] { border-color: #e07a2b; color: #e07a2b; }
+    &[data-estado='caido'] { border-color: #7a7a7a; color: #7a7a7a; }
+  }
+}
+
+.timelineNome {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.62rem;
+}
+
+.timelineVazia { flex: 1; font-size: 0.82rem; color: var(--texto-suave); }
+
+/* ---------- 2 · Centro ---------- */
+.centro {
+  grid-area: centro;
+  position: relative;
+  min-height: 0;
+
+  > div:first-child { height: 100%; }
+}
+
+.rolagemRelatorio {
+  height: 100%;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+// Bandeja da ação: por cima da parte de baixo do palco
+.bandeja {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  z-index: 5;
+  display: grid;
+  gap: 10px;
+  width: min(600px, calc(100% - 16px));
+  max-height: calc(100% - 60px);
+  padding: 12px 14px;
+  border: 1px solid var(--borda);
+  border-top: 2px solid $ouro;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--superficie) 96%, transparent);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.55);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  translate: -50% 0;
+  animation: subir 0.25s ease-out;
+
+  > header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+
+    b { @include fonte-titulo; font-size: 1.2rem; color: $ouro; }
+    small { flex: 1; font-size: 0.8rem; color: var(--texto-suave); }
+
+    button {
+      border: 0;
+      background: none;
+      color: var(--texto-suave);
+      cursor: pointer;
+    }
+  }
+}
+
+@keyframes subir { from { opacity: 0; translate: -50% 14px; } }
+
+/* Ficha rápida (dentro do palco) */
+.inspecao {
+  position: absolute;
+  top: 52px;
+  right: 10px;
+  z-index: 4;
+  display: grid;
+  gap: 10px;
+  width: min(290px, calc(100% - 20px));
+  padding: 12px;
+  border: 1px solid var(--borda);
+  border-top: 3px solid $agentes;
+  border-radius: 4px;
+  background: rgba(20, 21, 24, 0.96);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+  animation: aparecer 0.2s ease-out;
+
+  &[data-lado='ameacas'] { border-top-color: $ameacas; }
+
+  > header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+
+    > div { display: grid; flex: 1; min-width: 0; }
+    b { @include fonte-titulo; font-size: 1.15rem; }
+    small { font-size: 0.74rem; color: var(--texto-suave); }
+
+    button { border: 0; background: none; color: var(--texto-suave); cursor: pointer; }
+  }
+}
+
+@keyframes aparecer { from { opacity: 0; transform: translateY(-6px); } }
+
+.inspecaoMarca {
+  justify-self: start;
+  padding: 0 8px;
+  border: 2px solid $sangue;
+  @include fonte-ficha;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #ff8a7d;
+}
+
+.inspecaoEstado {
+  @include fonte-ficha;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #6ad06f;
+
+  &[data-estado='ferido'] { color: #e0c23a; }
+  &[data-estado='muitoFerido'] { color: #ff8a4d; }
+  &[data-estado='caido'] { color: var(--texto-suave); }
+}
+
+.inspecaoBarras, .hudBarras {
+  display: grid;
+  gap: 5px;
+
+  > span {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  em { font-size: 0.66rem; font-style: normal; font-weight: 700; letter-spacing: 0.06em; color: var(--cor-barra); }
+
+  i {
+    display: block;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.55);
+
+    b { display: block; height: 100%; background: var(--cor-barra); transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  }
+
+  strong {
+    min-width: 50px;
+    font-size: 0.82rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+
+    small { font-weight: 400; color: var(--texto-suave); }
+  }
+}
+
+.inspecaoCondicoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 7px;
+    background: rgba(240, 180, 41, 0.14);
+    border: 1px solid rgba(240, 180, 41, 0.5);
+    @include fonte-ficha;
+    font-size: 0.68rem;
+    color: #f3cf74;
+    cursor: help;
+  }
+
+  button { padding: 0; border: 0; background: none; color: inherit; cursor: pointer; }
+}
+
+.inspecaoLinha {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  span { @include rotulo-campo; }
+
+  input {
+    width: 60px;
+    padding: 4px 6px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--texto);
+    font: inherit;
+    font-weight: 700;
+  }
+
+  button {
+    padding: 4px 8px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: none;
+    color: var(--texto);
+    font-size: 0.74rem;
+    cursor: pointer;
+  }
+}
+
+.inspecaoAjuste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+
+  input {
+    flex: 1 1 50px;
+    min-width: 0;
+    padding: 5px 7px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--texto);
+    font: inherit;
+  }
+
+  > button {
+    padding: 5px 10px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.72rem;
+    cursor: pointer;
+  }
+}
+
+.inspecaoRecursos {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  overflow: hidden;
+
+  button {
+    flex: 1;
+    padding: 3px 0;
+    border: 0;
+    background: none;
+    color: var(--texto-suave);
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    &[aria-checked='true'] { background: color-mix(in srgb, $ouro 28%, transparent); color: var(--texto); }
+  }
+}
+
+.inspecaoDano { border: 1px solid #a3332a; background: rgba(163, 51, 42, 0.3); color: #ffb3aa; }
+.inspecaoCura { border: 1px solid #2f7d4c; background: rgba(47, 125, 76, 0.25); color: #a9e5bf; }
+
+.inspecaoBotoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+
+  button {
+    padding: 5px 9px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: none;
+    color: var(--texto-suave);
+    font-size: 0.74rem;
+    cursor: pointer;
+
+    &:hover { color: var(--texto); }
+  }
+}
+
+.inspecaoAgir {
+  flex: 1 1 100%;
+  border-color: $ouro !important;
+  background: color-mix(in srgb, $ouro 22%, transparent) !important;
+  color: var(--texto) !important;
+  @include fonte-ficha;
+  font-weight: 700;
+}
+
+.inspecaoPerigo { color: #e2675d !important; }
+
+/* ---------- 3 · Barra do turno (HUD) ---------- */
+.hud {
+  grid-area: hud;
+  display: grid;
+  grid-template-columns: minmax(240px, 1.1fr) minmax(0, 2fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--borda);
+  border-top: 2px solid $agentes;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
+    var(--superficie);
+
+  &[data-lado='ameacas'] { border-top-color: $ameacas; }
+  &[data-modo='preparo'] { border-top-color: $ouro; }
+
+  @media (max-width: 900px) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+  }
+}
+
+.hudQuem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+
+  > small { font-size: 0.8rem; color: var(--texto-suave); }
+}
+
+.hudRetrato {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 62px;
+  height: 62px;
+  border: 2px solid $agentes;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #0d0e10;
+  @include fonte-titulo;
+  font-size: 1.6rem;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+
+  &[data-lado='ameacas'] { border-color: $ameacas; color: #e2675d; }
+
+  @include celular { width: 46px; height: 46px; font-size: 1.2rem; }
+}
+
+.hudFicha {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+
+  > small { font-size: 0.76rem; color: var(--texto-suave); }
+}
+
+.hudTitulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  @include fonte-titulo;
+  font-size: 1.25rem;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hudMarca {
+  padding: 0 6px;
+  border: 2px solid $sangue;
+  @include fonte-ficha;
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 700;
+  color: #ff8a7d;
+}
+
+.hudBarras { margin-top: 3px; }
+
+.hudCentro {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+
+  @media (max-width: 900px) { grid-column: 1 / -1; grid-row: 2; }
+}
+
+.hudEconomia {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px 3px 6px;
+    border: 1px solid color-mix(in srgb, $ouro 55%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, $ouro 10%, transparent);
+    color: var(--texto);
+    @include fonte-ficha;
+    font-size: 0.68rem;
+    cursor: pointer;
+
+    i {
+      width: 10px;
+      height: 10px;
+      border: 2px solid $ouro;
+      border-radius: 50%;
+      background: $ouro;
+    }
+
+    // Gasta: apagada e riscada
+    &[aria-pressed='true'] {
+      border-color: var(--borda);
+      background: none;
+      color: var(--texto-suave);
+      text-decoration: line-through;
+
+      i { background: none; border-color: var(--texto-suave); }
+    }
+  }
+}
+
+.hudAcoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid color-mix(in srgb, $sangue 70%, var(--borda));
+    border-radius: 4px;
+    background: linear-gradient(180deg, rgba(179, 38, 28, 0.22), rgba(179, 38, 28, 0.08));
+    color: var(--texto);
+    @include fonte-ficha;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s, border-color 0.15s;
+
+    span { font-size: 1.15rem; color: #ff8a7d; }
+
+    &:hover:not(:disabled) { transform: translateY(-1px); background: linear-gradient(180deg, rgba(179, 38, 28, 0.38), rgba(179, 38, 28, 0.14)); }
+    &[aria-pressed='true'] { border-color: $ouro; box-shadow: 0 0 0 1px $ouro inset; }
+    &:disabled { opacity: 0.45; cursor: default; }
+  }
+
+  @include celular {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    button { flex-direction: column; gap: 2px; min-height: 48px; padding: 4px; font-size: 0.68rem; }
+  }
+}
+
+.hudLembrete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border: 1px dashed color-mix(in srgb, $sangue 80%, transparent);
+  background: rgba(179, 38, 28, 0.12);
+  font-size: 0.8rem;
+
+  b { color: #ff8a7d; }
+
+  button {
+    margin-left: auto;
+    padding: 3px 10px;
+    border: 1px solid $sangue;
+    border-radius: 3px;
+    background: none;
+    color: #ffb3aa;
+    font-size: 0.72rem;
+    cursor: pointer;
+  }
+}
+
+.hudFim {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.hudFinalizar {
+  min-height: 52px;
+  padding: 10px 22px;
+  border: 1px solid #f0c46b;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #e3b356, #b8862f);
+  color: #1b1408;
+  @include fonte-ficha;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  box-shadow: 0 6px 18px rgba(217, 165, 74, 0.25);
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.15s;
+
+  &:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+  &:disabled { opacity: 0.5; cursor: default; }
+
+  @include celular { min-height: 44px; padding: 8px 14px; font-size: 0.8rem; }
+}
+
+.hudLink {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+  font-size: 0.72rem;
+  text-decoration: underline;
+  cursor: pointer;
+
+  .hudFim & { justify-self: end; }
+}
+
+/* ---------- 4 · Registro da missão ---------- */
+.log {
+  grid-area: log;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--borda);
+  border-top: 2px solid $sangue;
+  border-radius: 4px;
+  background: #121316;
+}
+
+.logTitulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--borda);
+  background: none;
+  color: var(--texto);
+  @include fonte-ficha;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-align: left;
+  cursor: default;
+
+  small { color: var(--texto-suave); letter-spacing: 0; }
+
+  @media (max-width: 1100px) {
+    cursor: pointer;
+
+    &::after { content: '▴'; margin-left: 8px; color: var(--texto-suave); }
+    .log[data-aberto] &::after { content: '▾'; }
+  }
+}
+
+.logLista {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-height: 0;
+  margin: 0;
+  padding: 8px 10px 12px;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  font-size: 0.8rem;
+  line-height: 1.4;
+
+  // Telas estreitas: o registro fica recolhido até tocar no título
+  @media (max-width: 1100px) {
+    display: none;
+    max-height: 32dvh;
+
+    .log[data-aberto] & { display: grid; }
+  }
+
+  li {
+    display: flex;
+    gap: 6px;
+    padding: 3px 0 3px 8px;
+    border-left: 2px solid transparent;
+    color: #c9c4ba;
+
+    > small { flex: 0 0 auto; padding-top: 1px; font-size: 0.64rem; font-weight: 700; color: #6f6a62; }
+
+    em {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 0 5px;
+      border: 1.5px solid currentColor;
+      @include fonte-ficha;
+      font-size: 0.6rem;
+      font-style: normal;
+      font-weight: 700;
+      transform: rotate(-3deg);
+
+      &[data-tom='acerto'], &[data-tom='sucesso'] { color: #6fcf97; }
+      &[data-tom='falha'], &[data-tom='fracasso'] { color: #e2675d; }
+      &[data-tom='critico'] { color: #ffcf5a; }
+    }
+
+    // Cores por tipo
+    &[data-tipo='dano'] { border-left-color: #c8423a; color: #f0a39b; }
+    &[data-tipo='dano'][data-recurso='san'] { border-left-color: #a24bff; color: #cfa8ff; }
+    &[data-tipo='dano'][data-recurso='pe'] { border-left-color: #f0b429; color: #f3cf74; }
+    &[data-tipo='cura'] { border-left-color: #2f9c5c; color: #a9e5bf; }
+    &[data-tipo='queda'] { border-left-color: #ff3b2f; color: #ff8a7d; font-weight: 700; }
+    &[data-tipo='ataque'], &[data-tipo='ritual'] { border-left-color: var(--borda); color: var(--texto); }
+    &[data-tipo='turno'] { color: $ouro; font-weight: 600; }
+    &[data-tipo='sistema'], &[data-tipo='condicao'] { font-style: italic; color: #8f8a81; }
+
+    &[data-tipo='rodada'] {
+      justify-content: center;
+      margin: 6px 0 2px;
+      padding: 2px 0;
+      border: 0;
+      border-block: 1px solid var(--borda);
+      @include fonte-ficha;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--texto);
+    }
+  }
+}
+
+.logVazio { color: var(--texto-suave); font-style: italic; }
+
+/* Alguém caiu: a tela pulsa em vermelho */
+.pulsoQueda {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(190, 20, 20, 0.55));
+  opacity: 0;
+  animation: pulso 1.1s ease-out;
+}
+
+@keyframes pulso {
+  15% { opacity: 1; }
+  40% { opacity: 0.4; }
+  55% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bandeja, .inspecao, .pulsoQueda { animation: none; }
+  .timeline button { transition: none; }
+}

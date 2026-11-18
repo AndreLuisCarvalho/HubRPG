@@ -5,11 +5,11 @@ import styles from './Palco.module.scss';
 
 /**
  * O palco da luta: agentes à esquerda (retratos redondos), ameaças à direita (caveiras na cor do
- * estado). Quem está na vez cresce e acende; o número pequeno é a posição na ordem dos turnos.
- * Clicar num retrato abre a gaveta dele — ou, durante uma ação, escolhe o alvo.
+ * estado). Quem está na vez cresce e acende. No topo, um banner com a última ação.
+ * Clicar num retrato abre a ficha rápida dele — ou, durante uma ação, escolhe o alvo (com dica no mouse).
  */
 export default function Palco({
-  participantes, ordem, vez, mestre, preparando, mirando, alvos, selecionado, golpes, legenda,
+  participantes, vez, mestre, preparando, mirando, alvos, selecionado, golpes, legenda, inspecao,
   onEscolher, onIniciativa,
 }) {
   const lado = (id) => participantes.filter((p) => p.lado === id);
@@ -17,7 +17,6 @@ export default function Palco({
     <Token
       key={p.id}
       p={p}
-      posicao={ordem.indexOf(p.id) + 1}
       daVez={p.id === vez}
       mestre={mestre}
       preparando={preparando}
@@ -33,7 +32,8 @@ export default function Palco({
   return (
     <div className={styles.palco} data-mirando={mirando || undefined}>
       <div className={styles.fundo} aria-hidden="true" />
-      {mirando && <p className={styles.dicaMira}>Clique em quem vai ser o alvo</p>}
+      {legenda && !mirando && <p key={legenda.id} className={styles.banner} data-tom={legenda.carimbo ?? undefined}>{legenda.mostrar}</p>}
+      {mirando && <p className={styles.dicaMira}>Clique no alvo</p>}
       <div className={styles.lados}>
         <ul className={styles.lado} data-lado="agentes" aria-label="Agentes">
           {lado('agentes').map(token)}
@@ -44,14 +44,14 @@ export default function Palco({
           {!lado('ameacas').length && <li className={styles.vazio}>Nenhuma ameaça</li>}
         </ul>
       </div>
-      {legenda && <p key={legenda.id} className={styles.legenda} data-tom={legenda.carimbo ?? undefined}>{legenda.mostrar}</p>}
+      {inspecao}
     </div>
   );
 }
 
 /* ---------- Um participante ---------- */
 function Token({
-  p, posicao, daVez, mestre, preparando, mirando, alvo, selecionado, golpe, onEscolher, onIniciativa,
+  p, daVez, mestre, preparando, mirando, alvo, selecionado, golpe, onEscolher, onIniciativa,
 }) {
   const ref = useRef(null);
   const { ver } = p;
@@ -92,25 +92,27 @@ function Token({
           {ameaca ? <Caveira /> : (
             ver.imagem ? <img src={ver.imagem} alt="" /> : <b>{ver.nome.charAt(0)}</b>
           )}
-          {posicao > 0 && !preparando && <span className={styles.posicao}>{posicao}</span>}
           {marca && <span className={styles.marca}>{marca}</span>}
         </span>
         <span className={styles.placa}>{ver.nome}</span>
+        {/* Dica ao mirar: nome e estado */}
+        {mirando && (
+          <span className={styles.dica} role="tooltip">
+            <b>{ver.nome}</b>
+            {segredo ? estado.rotulo : `${pv?.atual ?? '—'}/${pv?.maximo ?? '—'} PV · Defesa ${ver.defesa}`}
+            {(p.condicoes ?? []).length > 0 && <small>{p.condicoes.map((c) => condicaoPorId(c.id)?.nome ?? c.id).join(', ')}</small>}
+          </span>
+        )}
       </button>
 
       {daVez && <span className={styles.suaVez}>Vez</span>}
 
-      {/* Agentes (e o mestre): barras finas. Jogadores veem só o estado das ameaças, pela cor. */}
-      {!segredo && (
-        <span className={styles.barras} aria-hidden="true">
-          {ver.recursos.map((r) => (
-            <span key={r.id} style={{ '--cor-barra': r.cor }} title={`${r.sigla} ${r.atual}/${r.maximo}`}>
-              <i style={{ width: `${r.maximo ? Math.min(100, (r.atual / r.maximo) * 100) : 0}%` }} />
-            </span>
-          ))}
+      {/* Barra fina de PV (jogadores veem as ameaças só pela cor da caveira) */}
+      {!segredo && pv && (
+        <span className={styles.barraPv} aria-hidden="true" title={`PV ${pv.atual}/${pv.maximo}`}>
+          <i style={{ width: `${pv.maximo ? Math.min(100, (pv.atual / pv.maximo) * 100) : 0}%` }} />
         </span>
       )}
-      {!segredo && pv && <small className={styles.numeros}>{pv.atual}/{pv.maximo} PV</small>}
 
       {(p.condicoes ?? []).length > 0 && (
         <span className={styles.condicoes}>

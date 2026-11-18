@@ -12,7 +12,7 @@
  * A ordem do array é a ordem dos turnos.
  */
 import {
-  calcularDefesa, contagemDoRecurso, dadosDoTeste, definirAtual, ehMonstro, ehNpcSimples, perderRecurso, recursos,
+  calcularDefesa, contagemDoRecurso, dadosDoTeste, definirAtual, ehMonstro, ehNpcSimples, perderRecurso, recursos, resumo,
 } from '../../../../sistemas/ordemParanormal/regras';
 import { lerFormula, rolarTeste } from '../../../../components/Dados/formula';
 
@@ -79,6 +79,7 @@ export function verParticipante(p, fichas) {
     defesa: defesaDaFicha(dados),
     formula: formulaDeIniciativa(dados),
     tipo: ficha.tipo,
+    resumo: resumo(dados),   // "Combatente · NEX 40%", "VD 20 · Sangue"…
     // Morrendo / Enlouquecendo (só agentes): { id, rotulo, final, limite, valor }
     contagens: agente ? { pv: contagemDoRecurso(dados, 'pv'), san: contagemDoRecurso(dados, 'san') } : null,
     estilo: dados.dado,
