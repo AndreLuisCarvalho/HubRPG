@@ -147,7 +147,7 @@ export const ordenarPorIniciativa = (participantes) =>
 
 export function comecar(dados) {
   const participantes = ordenarPorIniciativa(dados.participantes);
-  return { ...dados, estado: 'andamento', rodada: 1, vez: participantes[0]?.id ?? null, participantes };
+  return { ...dados, estado: 'andamento', rodada: 1, vez: participantes[0]?.id ?? null, participantes, inicio: Date.now() };
 }
 
 // Ameaça com PV 0 não tem turno (agente caído tem: está morrendo e conta os turnos)

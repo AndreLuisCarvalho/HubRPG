@@ -3,7 +3,10 @@ import Modal from '../../../../components/Modal/Modal';
 import { definirContagem } from '../../../../sistemas/ordemParanormal/regras';
 import AdicionarParticipantes from './AdicionarParticipantes';
 import Gaveta from './Gaveta';
+import CaixaEncerrar from './CaixaEncerrar';
 import Palco from './Palco';
+import RelatorioCombate from './RelatorioCombate';
+import { montarRelatorio, relatorioPara } from './relatorio';
 import { MIRA_DA_ACAO, acoesDisponiveis, carregarLivros } from './acoesCombate';
 import { condicaoPorId, venceu } from './condicoes';
 import {
@@ -26,6 +29,8 @@ export default function Arena({
   const [gaveta, setGaveta] = useState(null);       // id de quem está na gaveta, ou 'registro'
   const [aba, setAba] = useState(null);             // ação aberta na gaveta (atacar, ritual…)
   const [alvoIds, setAlvoIds] = useState([]);       // alvos da ação (o palco também escolhe)
+  const [encerrando, setEncerrando] = useState(false);
+  const [verPalco, setVerPalco] = useState(false);  // combate encerrado: relatório (padrão) ou o palco
   const [livro, setLivro] = useState(null);         // bestiário e rituais (chegam depois)
   // Último golpe de cada participante (anima o número saltando e a tremida)
   const [golpes, setGolpes] = useState({});
@@ -47,15 +52,16 @@ export default function Arena({
   const daVez = vistos.find((p) => p.id === dados.vez);
 
   /*
-   * Registro: cada entrada é [texto do mestre, texto dos jogadores (null = não veem), tipo, carimbo]
+   * Registro: cada entrada é [texto do mestre, texto dos jogadores (null = não veem), tipo, carimbo, dados]
    * carimbo: 'acerto' | 'falha' | 'critico' | 'sucesso' | 'fracasso'
+   * dados: o que o relatório conta ({ alvo, autor, rid, valor } no dano/cura; { autor, alvo, resultado } no ataque)
    */
   const comLog = (novo, ...entradas) => ({
     ...novo,
     log: [
       ...(novo.log ?? []),
-      ...entradas.filter(Boolean).map(([texto, textoJogadores = texto, tipo = 'acao', carimbo = null]) => (
-        { id: novoId(), rodada: novo.rodada, tipo, texto, textoJogadores, carimbo })),
+      ...entradas.filter(Boolean).map(([texto, textoJogadores = texto, tipo = 'acao', carimbo = null, extra = null]) => (
+        { id: novoId(), rodada: novo.rodada, tipo, texto, textoJogadores, carimbo, ...(extra && { dados: extra }) })),
     ].slice(-LIMITE_LOG),
   });
 
@@ -68,7 +74,7 @@ export default function Arena({
   function aplicar({ efeitos = [], entradas = [], mudarDados = (d) => d }) {
     let lista = participantes;
     const novosGolpes = {};
-    let caiu = false;
+    const quedas = [];
 
     for (const { id, deltas } of efeitos) {
       const p = lista.find((x) => x.id === id);
@@ -102,16 +108,20 @@ export default function Arena({
       const total = mudancas.reduce((s, [, d]) => s + d, 0);
       novosGolpes[id] = { chave: novoId(), delta: Math.sign(delta) * Math.abs(total), sigla: recurso?.sigla, cor: recurso?.cor };
       const pvDepois = verDepois.recursos.find((r) => r.id === 'pv')?.atual;
-      if (pvAntes > 0 && pvDepois === 0) caiu = true;
+      if (pvAntes > 0 && pvDepois === 0) {
+        const nome = verAntes.nome;
+        const jogadores = p.oculto ? null : `${nome} ${p.lado === 'ameacas' ? 'foi derrotado' : 'caiu'}!`;
+        quedas.push([`${nome} ${p.lado === 'ameacas' ? 'foi derrotado' : 'caiu'}.`, jogadores, 'queda', 'falha', { alvo: id }]);
+      }
     }
 
-    salvar(comLog(mudarDados({ ...dados, participantes: lista }), ...entradas));
+    salvar(comLog(mudarDados({ ...dados, participantes: lista }), ...entradas, ...quedas));
     if (Object.keys(novosGolpes).length) setGolpes((g) => ({ ...g, ...novosGolpes }));
-    if (caiu) setQueda((q) => q + 1);
+    if (quedas.length) setQueda((q) => q + 1);
   }
 
   // Texto do registro para uma mudança de PV/SAN (o dos jogadores esconde os números das ameaças)
-  function entradaDeRecurso(p, rid, delta, depois, detalhe = '') {
+  function entradaDeRecurso(p, rid, delta, depois, detalhe = '', autor = null) {
     const recurso = p.ver.recursos.find((r) => r.id === rid);
     const nome = p.ver.nome;
     const verbo = delta < 0 ? `perdeu ${-delta} ${recurso.sigla}` : `recuperou ${delta} ${recurso.sigla}`;
@@ -122,18 +132,18 @@ export default function Arena({
       const aprox = estadoAproximado({ atual: depois, maximo: recurso.maximo });
       paraJogadores = delta < 0 ? `${nome} foi atingido: ${aprox.rotulo.toLowerCase()}.` : `${nome} se recuperou.`;
     }
-    return [texto, paraJogadores, delta < 0 ? 'dano' : 'cura'];
+    return [texto, paraJogadores, delta < 0 ? 'dano' : 'cura', null, { alvo: p.id, autor, rid, valor: Math.abs(delta) }];
   }
 
-  // Dano/cura de um recurso (à mão ou vindo de uma ação)
-  function mudarRecursos(p, deltas, detalhe = '') {
+  // Dano/cura de um recurso (à mão ou vindo de uma ação; "autor" = quem causou, para o relatório)
+  function mudarRecursos(p, deltas, detalhe = '', autor = null) {
     const entradas = Object.entries(deltas).filter(([, d]) => d).map(([rid, d]) => {
       const r = p.ver.recursos.find((x) => x.id === rid);
       const atual = r?.atual ?? 0;
       // O que de fato saiu/entrou: não passa de zero (temporários gastam primeiro) nem do máximo
       const efetivo = d < 0 ? -Math.min(-d, atual + (r?.temporario ?? 0)) : Math.min(d, Math.max(0, (r?.maximo ?? 0) - atual));
       const depois = d < 0 ? Math.max(0, atual - Math.max(0, -d - (r?.temporario ?? 0))) : atual + efetivo;
-      return entradaDeRecurso(p, rid, efetivo || d, depois, detalhe);
+      return entradaDeRecurso(p, rid, efetivo || d, depois, detalhe, autor);
     });
     // Golpe que as resistências zeraram: registra mesmo assim
     if (!entradas.length && detalhe) {
@@ -184,12 +194,33 @@ export default function Arena({
     ? [`Turno de ${p.ver.nome} (oculto).`, null, 'turno']
     : [`Turno de ${p.ver.nome}.`, `Turno de ${p.ver.nome}.`, 'turno']);
 
-  function encerrar() {
-    if (!window.confirm('Encerrar este combate? Ele fica salvo na lista como encerrado.')) return;
-    salvar(comLog({ ...dados, estado: 'encerrado' }, ['Combate encerrado.', 'Combate encerrado.', 'sistema']));
+  /*
+   * Encerrar: zera as contagens escolhidas na caixa (quem se estabilizou), tira as condições
+   * (elas valem só nesta cena) e guarda o relatório da missão.
+   */
+  function encerrar(zerar) {
+    for (const fichaId of zerar) {
+      const ficha = fichas[fichaId];
+      if (ficha) onMudarFicha(fichaId, { contagens: {} });
+    }
+    const final = comLog({ ...dados }, ['Combate encerrado.', 'Combate encerrado.', 'sistema']);
+    const relatorio = montarRelatorio(final, vistos);
+    salvar({
+      ...final,
+      estado: 'encerrado',
+      participantes: final.participantes.map((p) => ({ ...p, condicoes: [] })),
+      relatorio,
+    });
+    setEncerrando(false);
+    setGaveta(null);
+    setAba(null);
+    setVerPalco(false);
   }
 
-  const reabrir = () => salvar({ ...dados, estado: dados.rodada ? 'andamento' : 'preparando' });
+  const reabrir = () => {
+    const { relatorio: _relatorio, ...resto } = dados;
+    salvar({ ...resto, estado: dados.rodada ? 'andamento' : 'preparando' });
+  };
 
   // Morrendo / Enlouquecendo: o mestre avança a contagem na vez do agente
   function avancarContagem(p, recursoId) {
@@ -368,16 +399,22 @@ export default function Arena({
           <>
             <span className={styles.rodada}>Encerrado</span>
             <p>Combate encerrado{dados.rodada ? ` na rodada ${dados.rodada}` : ''}.</p>
-            {mestre && (
-              <div className={styles.botoes}>
-                <button type="button" className={styles.secundario} onClick={reabrir}>Reabrir</button>
-                <button type="button" className={styles.perigo} onClick={onExcluir}>Apagar</button>
-              </div>
-            )}
+            <div className={styles.botoes}>
+              {dados.relatorio && (
+                <button type="button" className={styles.secundario} onClick={() => setVerPalco((v) => !v)}>
+                  {verPalco ? 'Ver relatório' : 'Ver palco'}
+                </button>
+              )}
+              {mestre && <button type="button" className={styles.secundario} onClick={reabrir}>Reabrir</button>}
+              {mestre && <button type="button" className={styles.perigo} onClick={onExcluir}>Apagar</button>}
+            </div>
           </>
         )}
       </div>
 
+      {encerrado && dados.relatorio && !verPalco ? (
+        <RelatorioCombate relatorio={relatorioPara(dados.relatorio, mestre)} mestre={mestre} nome={combate.nome} sessao={sessao} />
+      ) : (
       <div className={styles.mesa} data-gaveta={gavetaAberta || undefined}>
         <div className={styles.areaPalco}>
           <Palco
@@ -398,7 +435,7 @@ export default function Arena({
             <button type="button" className={styles.discreto} onClick={() => (gaveta === 'registro' ? fecharGaveta() : setGaveta('registro'))}>
               {gaveta === 'registro' ? 'Esconder registro' : `Registro da missão (${log.filter((e) => e.tipo !== 'rodada').length})`}
             </button>
-            {mestre && andamento && <button type="button" className={styles.discreto} onClick={encerrar}>Encerrar combate</button>}
+            {mestre && andamento && <button type="button" className={styles.discreto} onClick={() => setEncerrando(true)}>Encerrar combate</button>}
           </div>
         </div>
 
@@ -442,6 +479,11 @@ export default function Arena({
           />
         )}
       </div>
+      )}
+
+      <Modal aberto={encerrando} onFechar={() => setEncerrando(false)} largura="520px" sobretitulo={combate.nome} titulo="Encerrar combate">
+        {encerrando && <CaixaEncerrar vistos={vistos} onEncerrar={encerrar} onCancelar={() => setEncerrando(false)} />}
+      </Modal>
 
       {queda > 0 && <div key={queda} className={styles.pulsoQueda} aria-hidden="true" />}
 

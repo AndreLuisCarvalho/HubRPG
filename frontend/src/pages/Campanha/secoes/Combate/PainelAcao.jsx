@@ -173,7 +173,9 @@ function AbaAtaque({
     const texto = `${ator.ver.nome} atacou ${alvo.ver.nome} com ${ataque.nome}: ${teste.total} contra Defesa ${defesa}${reagiu}.`;
     const jogadores = ator.oculto ? null : `${ator.ver.nome} atacou ${alvo.oculto ? 'alguém' : alvo.ver.nome} com ${ataque.nome}${reagiu}.`;
     aplicar({
-      entradas: [[texto, jogadores, 'ataque', critico ? 'critico' : acertou ? 'acerto' : 'falha']],
+      entradas: [[texto, jogadores, 'ataque', critico ? 'critico' : acertou ? 'acerto' : 'falha', {
+        autor: ator.id, alvo: alvo.id, resultado: critico ? 'critico' : acertou ? 'acerto' : 'falha',
+      }]],
       mudarDados: (d) => (reacao === 'nenhuma' ? d : {
         ...d, participantes: d.participantes.map((p) => (p.id === alvo.id ? { ...p, reacao: rodada } : p)),
       }),
@@ -199,7 +201,7 @@ function AbaAtaque({
     });
     // Jogadores: o dano entra sozinho (as resistências são descontadas por trás)
     if (!mestre) {
-      aplicar(mudarRecursos(alvo, { pv: -calculo.pv, san: -calculo.san }, detalheDoDano(calculo)));
+      aplicar(mudarRecursos(alvo, { pv: -calculo.pv, san: -calculo.san }, detalheDoDano(calculo), ator.id));
       setDano({ aplicado: true, total: rolagem.total });
       return;
     }
@@ -208,7 +210,7 @@ function AbaAtaque({
 
   function confirmar() {
     const deltas = { pv: -(Number(dano.pv) || 0), san: -(Number(dano.san) || 0) };
-    aplicar(mudarRecursos(alvo, deltas, detalheDoDano(dano.calculo)));
+    aplicar(mudarRecursos(alvo, deltas, detalheDoDano(dano.calculo), ator.id));
     onFechar();
   }
 
@@ -443,7 +445,7 @@ function AbaRitual({
       const d = porAlvo[alvo.id];
       if (!d) continue;
       const deltas = { pv: -(Number(d.pv) || 0), san: -(Number(d.san) || 0) };
-      const r = mudarRecursos(alvo, deltas, d.calculo ? detalheDoDano(d.calculo) : '');
+      const r = mudarRecursos(alvo, deltas, d.calculo ? detalheDoDano(d.calculo) : '', ator.id);
       efeitos.push(...r.efeitos);
       entradas.push(...r.entradas);
     }

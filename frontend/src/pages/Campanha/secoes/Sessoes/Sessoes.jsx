@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
+import Modal from '../../../../components/Modal/Modal';
 import { api } from '../../../../services/api';
+import { lerVisao } from '../../visao';
+import RelatorioCombate from '../Combate/RelatorioCombate';
+import { relatorioPara } from '../Combate/relatorio';
 import { formatarData, organizarSessoes, quantoFalta } from './agenda';
 import ResumoSessao from './ResumoSessao';
 import styles from './Sessoes.module.scss';
@@ -19,12 +23,19 @@ export default function Sessoes({ campanha }) {
   const [erro, setErro] = useState('');
   // null = nenhum formulário; 'nova' = criando; número = id da sessão em edição
   const [editando, setEditando] = useState(null);
+  // Combates encerrados (com relatório), para o bloco "Combates" de cada sessão
+  const [combates, setCombates] = useState([]);
+  const [lendo, setLendo] = useState(null);   // combate com o relatório aberto
+  const mestre = lerVisao(campanha.id) === 'mestre';
 
   useEffect(() => {
     const efeito = { ativo: true };
     api.listarSessoes(campanha.id)
       .then((s) => efeito.ativo && setSessoes(s))
       .catch((e) => efeito.ativo && setErro(e.message));
+    api.listarCombates(campanha.id)
+      .then((c) => efeito.ativo && setCombates(c.filter((x) => x.dados.estado === 'encerrado' && x.dados.relatorio)))
+      .catch(() => {});
     return () => { efeito.ativo = false; };
   }, [campanha.id]);
 
@@ -100,16 +111,35 @@ export default function Sessoes({ campanha }) {
                 onCancelar={() => setEditando(null)}
               />
             ) : (
-              <CartaoSessao sessao={s} marcada={futuras.includes(s)} onEditar={() => setEditando(s.id)} onExcluir={() => excluir(s)} />
+              <CartaoSessao
+                sessao={s}
+                marcada={futuras.includes(s)}
+                combates={combates.filter((c) => c.sessao_id === s.id)}
+                onLerCombate={setLendo}
+                onEditar={() => setEditando(s.id)}
+                onExcluir={() => excluir(s)}
+              />
             )}
           </li>
         ))}
       </ul>
+
+      <Modal aberto={Boolean(lendo)} onFechar={() => setLendo(null)} largura="960px" classeCaixa={styles.caixaRelatorio}>
+        {lendo && (
+          <RelatorioCombate
+            relatorio={relatorioPara(lendo.dados.relatorio, mestre)}
+            mestre={mestre}
+            nome={lendo.nome}
+            sessao={sessoes?.find((s) => s.id === lendo.sessao_id)}
+            compacto
+          />
+        )}
+      </Modal>
     </section>
   );
 }
 
-function CartaoSessao({ sessao, marcada, onEditar, onExcluir }) {
+function CartaoSessao({ sessao, marcada, combates, onLerCombate, onEditar, onExcluir }) {
   const [verNotas, setVerNotas] = useState(false);
 
   return (
@@ -123,6 +153,29 @@ function CartaoSessao({ sessao, marcada, onEditar, onExcluir }) {
       {sessao.resumo
         ? <ResumoSessao texto={sessao.resumo} previa />
         : !marcada && <p className={styles.semResumo}>Sem resumo ainda.</p>}
+
+      {/* Combates da sessão: o relatório de missão de cada um */}
+      {combates.length > 0 && (
+        <div className={styles.combates}>
+          <span className={styles.numero}>Combates</span>
+          <ul>
+            {combates.map((c) => {
+              const r = c.dados.relatorio;
+              const ameacas = r.participantes.filter((p) => p.lado === 'ameacas' && !p.oculto);
+              const derrotadas = ameacas.filter((p) => p.situacao === 'Derrotado').length;
+              return (
+                <li key={c.id}>
+                  <button type="button" onClick={() => onLerCombate(c)}>
+                    <b>{c.nome}</b>
+                    <small>{r.rodadas} rodada{r.rodadas === 1 ? '' : 's'} · {derrotadas}/{ameacas.length} ameaças derrotadas</small>
+                    <span>Ver relatório →</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
       {/* Escondidas por padrão: não é sigilo de verdade (ainda não há login), só discrição */}
       {sessao.notas_mestre && verNotas && (
