@@ -1,0 +1,345 @@
+@use '../../../../styles/mixins' as *;
+
+$agentes: #4f8fd6;
+$ameacas: #c8423a;
+// Ruído (feTurbulence) para o fundo manchado
+$ruido: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+$manchas: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='500'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 1.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+
+.palco {
+  position: relative;
+  display: grid;
+  min-height: 430px;
+  padding: 34px 28px 64px;
+  border: 1px solid #2a1414;
+  border-radius: 4px;
+  overflow: hidden;
+  isolation: isolate;
+
+  @include celular { padding: 26px 12px 64px; min-height: 0; }
+}
+
+// Fundo: vermelho de sangue com manchas escuras e granulado
+.fundo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    $ruido,
+    $manchas center / cover,
+    radial-gradient(ellipse at 30% 40%, #b0261c 0%, #7a1510 35%, #2b0807 75%, #120404 100%);
+  background-blend-mode: overlay, multiply, normal;
+  animation: respirar 9s ease-in-out infinite alternate;
+}
+
+@keyframes respirar {
+  from { filter: brightness(0.92) saturate(0.95); }
+  to { filter: brightness(1.05) saturate(1.1); }
+}
+
+.lados {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px 40px;
+
+  @include celular { justify-content: center; }
+}
+
+.lado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 22px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &[data-lado='ameacas'] { justify-content: flex-end; }
+
+  @include celular {
+    justify-content: center !important;
+    width: 100%;
+  }
+}
+
+.vazio {
+  padding: 14px 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+}
+
+.dicaMira {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  translate: -50% 0;
+  padding: 3px 12px;
+  background: rgba(0, 0, 0, 0.6);
+  @include fonte-ficha;
+  font-size: 0.78rem;
+  color: #ffd2cc;
+  animation: piscar 1.4s ease-in-out infinite;
+}
+
+@keyframes piscar { 50% { opacity: 0.55; } }
+
+/* ---------- Participante ---------- */
+.token {
+  --tam: 108px;
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  width: calc(var(--tam) + 22px);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s, filter 0.3s;
+
+  @include celular { --tam: 78px; }
+
+  &[data-vez] { transform: scale(1.14); z-index: 1; }
+  &[data-caido] { filter: grayscale(1) brightness(0.7); }
+  &[data-oculto] { opacity: 0.5; }
+}
+
+.botao {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+
+  &:focus-visible { outline: none; }
+  &:focus-visible .circulo { outline: 2px solid #fff; outline-offset: 4px; }
+}
+
+.circulo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--tam);
+  height: var(--tam);
+  border: 3px solid #0b0b0c;
+  border-radius: 50%;
+  background: #0d0e10;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12), 0 10px 22px rgba(0, 0, 0, 0.55);
+
+  img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  b { @include fonte-titulo; font-size: calc(var(--tam) * 0.42); color: var(--texto); }
+
+  // Ameaças: caveira, sem fundo redondo
+  .token[data-lado='ameacas'] & {
+    border-color: transparent;
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.55) 45%, transparent 70%);
+    box-shadow: none;
+    color: #3fbf4a;
+
+    &[data-estado='ferido'] { color: #e0c23a; }
+    &[data-estado='muitoFerido'] { color: #e07a2b; }
+    &[data-estado='caido'] { color: #7a7a7a; }
+  }
+
+  .token[data-oculto] & { outline: 2px dashed rgba(255, 255, 255, 0.6); outline-offset: 3px; }
+
+  // Na vez: anel aceso
+  .token[data-vez] & {
+    border-color: var(--cor);
+    box-shadow: 0 0 0 3px var(--cor), 0 0 28px color-mix(in srgb, var(--cor) 70%, transparent), 0 10px 22px rgba(0, 0, 0, 0.55);
+    animation: vez 2.2s ease-in-out infinite;
+  }
+
+  .token[data-lado='ameacas'][data-vez] & { border-color: transparent; box-shadow: 0 0 34px color-mix(in srgb, var(--cor) 60%, transparent); }
+
+  // Alvo escolhido (mira): anel vermelho pulsando
+  .token[data-alvo] & { outline: 3px solid #ff4b3e; outline-offset: 5px; animation: mira 1s ease-in-out infinite; }
+
+  // Gaveta aberta neste participante
+  .token[data-selecionado] & { outline: 2px solid rgba(255, 255, 255, 0.85); outline-offset: 5px; }
+
+  .palco[data-mirando] .botao:hover & { outline: 3px dashed #ff8a7d; outline-offset: 5px; }
+}
+
+@keyframes vez { 50% { box-shadow: 0 0 0 3px var(--cor), 0 0 44px color-mix(in srgb, var(--cor) 85%, transparent); } }
+@keyframes mira { 50% { outline-offset: 9px; } }
+
+.caveira { width: 92%; height: 92%; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6)); }
+
+.posicao {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid #0b0b0c;
+  border-radius: 50%;
+  background: #e9e2d0;
+  color: #1a1612;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.suaVez {
+  position: absolute;
+  top: -14px;
+  padding: 1px 8px;
+  background: var(--cor);
+  color: var(--sobre-cor, #16130d);
+  @include fonte-ficha;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.marca {
+  position: absolute;
+  bottom: 14%;
+  padding: 1px 6px;
+  border: 2px solid #ff5a4a;
+  background: rgba(0, 0, 0, 0.75);
+  @include fonte-ficha;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #ff8a7d;
+  white-space: nowrap;
+  transform: rotate(-8deg);
+}
+
+// Placa com o nome (como as legendas de uma transmissão)
+.placa {
+  max-width: calc(var(--tam) + 22px);
+  padding: 2px 10px;
+  background: rgba(8, 8, 9, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  @include fonte-ficha;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #f2eee6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barras {
+  display: grid;
+  gap: 2px;
+  width: calc(var(--tam) * 0.85);
+
+  span {
+    display: block;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  i {
+    display: block;
+    height: 100%;
+    background: var(--cor-barra);
+    transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+.numeros {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 2px #000;
+}
+
+.condicoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+
+  i {
+    padding: 0 5px;
+    background: rgba(240, 180, 41, 0.85);
+    color: #1a1406;
+    @include fonte-ficha;
+    font-size: 0.6rem;
+    font-style: normal;
+    font-weight: 700;
+  }
+}
+
+.ini {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.6);
+
+  span { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; color: #e9e2d0; }
+
+  input {
+    width: 48px;
+    padding: 2px 4px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    text-align: center;
+
+    &:focus { outline: none; border-color: var(--cor); }
+  }
+}
+
+/* ---------- Número saltando ---------- */
+.golpe {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  z-index: 2;
+  pointer-events: none;
+  @include fonte-titulo;
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: #ff5a4a;
+  text-shadow: 0 2px 0 #000, 0 0 14px rgba(0, 0, 0, 0.9);
+  opacity: 0;
+  animation: saltar 1.1s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  &[data-tipo='cura'] { color: #6fcf97; }
+}
+
+@keyframes saltar {
+  0% { opacity: 0; transform: translate(-50%, 10px) scale(0.6); }
+  15% { opacity: 1; transform: translate(-50%, -14px) scale(1.25); }
+  35% { transform: translate(-50%, -20px) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -46px) scale(0.95); }
+}
+
+/* ---------- Legenda: o último acontecimento ---------- */
+.legenda {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  max-width: calc(100% - 32px);
+  translate: -50% 0;
+  padding: 6px 16px;
+  background: rgba(6, 6, 7, 0.82);
+  border-left: 3px solid var(--cor);
+  font-size: 0.95rem;
+  color: #f2eee6;
+  text-align: center;
+  animation: legenda 0.4s ease-out;
+
+  &[data-tom='acerto'], &[data-tom='sucesso'] { border-left-color: #6fcf97; }
+  &[data-tom='falha'], &[data-tom='fracasso'] { border-left-color: #e2675d; }
+  &[data-tom='critico'] { border-left-color: #ffcf5a; }
+}
+
+@keyframes legenda { from { opacity: 0; translate: -50% 8px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .fundo, .circulo, .golpe, .legenda, .dicaMira { animation: none !important; }
+  .token { transition: none; }
+}

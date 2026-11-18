@@ -52,8 +52,9 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
   const formula = useMemo(() => lerFormula(pedido.formula) ?? VAZIA, [pedido.formula]);
   const ehDano = pedido.tipo === 'dano';
   const mult = pedido.mult ?? 1;
-  // Já abre rolando
-  const [resultado, setResultado] = useState(() => ({ ...rolarPedido(pedido, formula), rodada: 1 }));
+  // Já abre rolando. "pedido.resultado": quem pediu já rolou (a arena de combate) e a mesa só mostra
+  const pronto = Boolean(pedido.resultado);
+  const [resultado, setResultado] = useState(() => ({ ...(pedido.resultado ?? rolarPedido(pedido, formula)), rodada: 1 }));
   const [parou, setParou] = useState(false);
   // Dados em three.js; sem WebGL (navegador antigo, aceleração desligada) volta para os dados em CSS
   const [webgl, setWebgl] = useState(temWebGL);
@@ -183,13 +184,22 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
               <span className={styles.carimbo}>Crítico</span>
             </div>
           )}
+          {/* Carimbos de quem pediu (ex.: ACERTO / FALHA do combate) */}
+          {parou && pedido.carimbos?.length > 0 && (
+            <div className={styles.carimbos}>
+              {pedido.carimbos.map((c) => (
+                <span key={c.texto} className={styles.carimbo} data-tom={c.tom}>{c.texto}</span>
+              ))}
+            </div>
+          )}
+          {parou && pedido.nota && <p className={styles.conta}>{pedido.nota}</p>}
           <div className={`${styles.botoes} ${parou ? '' : styles.esperando}`}>
             {pedido.ataque?.partes?.length > 0 && (
               <button type="button" className={styles.primario} onClick={rolarDanoDoAtaque} disabled={!parou}>
                 Rolar dano{critico ? ` ×${pedido.ataque.critico?.mult ?? 2}` : ''}
               </button>
             )}
-            <button type="button" onClick={rolarDeNovo} disabled={!parou}>Rolar de novo</button>
+            {!pronto && <button type="button" onClick={rolarDeNovo} disabled={!parou}>Rolar de novo</button>}
             {/* Foco no Fechar: Enter/Esc saem rápido */}
             <button type="button" onClick={onFechar} autoFocus>Fechar</button>
           </div>

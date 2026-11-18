@@ -12,7 +12,7 @@
  * A ordem do array é a ordem dos turnos.
  */
 import {
-  calcularDefesa, dadosDoTeste, definirAtual, ehMonstro, ehNpcSimples, perderRecurso, recursos,
+  calcularDefesa, contagemDoRecurso, dadosDoTeste, definirAtual, ehMonstro, ehNpcSimples, perderRecurso, recursos,
 } from '../../../../sistemas/ordemParanormal/regras';
 import { lerFormula, rolarTeste } from '../../../../components/Dados/formula';
 
@@ -70,6 +70,7 @@ export function verParticipante(p, fichas) {
   const ficha = fichas[p.fichaId];
   if (!ficha) return { nome: 'Ficha apagada', imagem: '', recursos: [], defesa: '—', formula: '1d20', perdida: true };
   const { dados } = ficha;
+  const agente = !ehMonstro(dados) && !ehNpcSimples(dados);
   return {
     nome: ficha.nome,
     imagem: ficha.imagem,
@@ -78,6 +79,9 @@ export function verParticipante(p, fichas) {
     defesa: defesaDaFicha(dados),
     formula: formulaDeIniciativa(dados),
     tipo: ficha.tipo,
+    // Morrendo / Enlouquecendo (só agentes): { id, rotulo, final, limite, valor }
+    contagens: agente ? { pv: contagemDoRecurso(dados, 'pv'), san: contagemDoRecurso(dados, 'san') } : null,
+    estilo: dados.dado,
   };
 }
 
@@ -189,4 +193,19 @@ export function remover(dados, id, fichas) {
   const base = eraAVez ? passarVez(dados, fichas) : dados;
   const participantes = base.participantes.filter((p) => p.id !== id);
   return { ...base, participantes, vez: participantes.some((p) => p.id === base.vez) ? base.vez : participantes[0]?.id ?? null };
+}
+
+/** Carimbo do estado: Morto/Insano > Morrendo/Derrotado > Enlouquecendo (ou null) */
+export function marcaDe(p) {
+  const { ver } = p;
+  const pv = ver.recursos.find((r) => r.id === 'pv');
+  const san = ver.recursos.find((r) => r.id === 'san');
+  const c = (rid) => ver.contagens?.[rid];
+  const fim = (rid) => (c(rid) && c(rid).valor >= c(rid).limite ? c(rid).final : null);
+  const conta = (rid) => (c(rid)?.valor ? ` ${c(rid).valor}/${c(rid).limite}` : '');
+  const final = fim('pv') ?? fim('san');
+  if (final) return final;
+  if (pv && pv.maximo > 0 && pv.atual === 0) return p.lado === 'ameacas' ? 'Derrotado' : `Morrendo${conta('pv')}`;
+  if (san && san.atual === 0) return `Enlouquecendo${conta('san')}`;
+  return null;
 }

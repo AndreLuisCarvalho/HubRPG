@@ -242,6 +242,31 @@ $ameacas: #c8423a;
   font-weight: 700;
 }
 
+// Lembrete da vez (morrendo / enlouquecendo)
+.lembrete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px dashed color-mix(in srgb, var(--carimbo, #b3362c) 70%, transparent);
+  border-radius: 3px;
+  background: rgba(179, 54, 44, 0.12);
+  font-size: 0.86rem;
+
+  span { flex: 1 1 220px; }
+  b { color: #ff8a7d; }
+
+  button {
+    padding: 6px 12px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.76rem;
+    cursor: pointer;
+  }
+}
+
 // "Vez de Fulano": entra deslizando a cada troca de turno
 .vezAtual {
   @include fonte-titulo;
@@ -254,122 +279,62 @@ $ameacas: #c8423a;
   from { opacity: 0; transform: translateX(-24px); letter-spacing: 0.2em; }
 }
 
-/* ---------- Faixa de turnos ---------- */
-.faixa {
-  display: flex;
-  gap: 8px;
-  margin: 0;
-  padding: 4px 2px 8px;
-  list-style: none;
-  overflow-x: auto;
-  scrollbar-width: thin;
-
-  li {
-    flex: 0 0 auto;
-    display: grid;
-    justify-items: center;
-    gap: 3px;
-    width: 76px;
-    padding: 8px 4px 6px;
-    border: 1px solid var(--borda);
-    border-top: 3px solid $agentes;
-    border-radius: 3px;
-    background: var(--superficie);
-    cursor: default;
-    transition: transform 0.25s, border-color 0.25s, opacity 0.25s;
-
-    &[data-lado='ameacas'] { border-top-color: $ameacas; }
-    &[draggable='true'] { cursor: grab; }
-    &[data-caido] { opacity: 0.4; filter: grayscale(1); }
-    &[data-arrastando] { opacity: 0.5; }
-
-    &[aria-current='true'] {
-      border-color: var(--cor);
-      transform: translateY(-3px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--cor);
-    }
-
-    small { font-size: 0.72rem; font-weight: 700; color: var(--texto-suave); }
-  }
-}
-
-.ficha {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: #0d0e10;
-  @include fonte-titulo;
-  font-size: 1.1rem;
-
-  img { width: 100%; height: 100%; object-fit: cover; }
-}
-
-.nomeFaixa {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.72rem;
-}
-
-/* ---------- Mesa: campo de batalha + registro ---------- */
+/* ---------- Mesa: palco + gaveta ---------- */
 .mesa {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 
-  @media (max-width: 1100px) { grid-template-columns: minmax(0, 1fr); }
+  &[data-gaveta] {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+
+    @media (max-width: 1000px) { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  // A gaveta acompanha a rolagem da página
+  > aside {
+    position: sticky;
+    top: 12px;
+  }
 }
 
-.batalha {
+.areaPalco {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  gap: 12px;
-
-  @include celular { grid-template-columns: minmax(0, 1fr); }
-}
-
-.lado {
-  display: grid;
-  align-content: start;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-
-  h2 {
-    @include fonte-ficha;
-    padding-bottom: 6px;
-    border-bottom: 2px solid $agentes;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: $agentes;
-  }
-
-  &[data-lado='ameacas'] h2 { border-bottom-color: $ameacas; color: #e2675d; }
-
-  > ul {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
-    gap: 12px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
 }
 
-.versus {
-  align-self: start;
-  margin-top: 36px;
-  @include fonte-titulo;
-  font-size: 1.6rem;
-  font-style: italic;
-  color: var(--texto-suave);
-  opacity: 0.6;
+.rodapePalco {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
 
-  @include celular { display: none; }
+.discreto {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+  @include fonte-ficha;
+  font-size: 0.78rem;
+  cursor: pointer;
+
+  &:hover { color: var(--texto); }
+}
+
+// "Agir com Fulano": o botão que mais importa na vez
+.agir {
+  padding: 8px 16px;
+  border: 1px solid var(--cor);
+  border-radius: 3px;
+  background: var(--cor);
+  color: var(--sobre-cor, #16130d);
+  @include fonte-ficha;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .ladoVazio {
@@ -380,64 +345,20 @@ $ameacas: #c8423a;
   color: var(--texto-suave);
 }
 
-// Registro da missão: folha de relatório
-.registro {
-  position: sticky;
-  top: 12px;
-  display: grid;
-  gap: 8px;
-  max-height: calc(100dvh - 40px);
-  padding: 14px 14px 10px;
-  border-radius: 2px;
-  background: #e9e2d0;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
-  color: #2a241b;
+// Visão Jogadores: tela cheia (para a TV ou a transmissão), sem o menu da campanha
+.telaCheia {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  align-content: start;
+  padding: 14px 20px 20px;
+  background: var(--fundo, #16181b);
+  overflow-y: auto;
 
-  h2 {
-    @include fonte-ficha;
-    padding-bottom: 6px;
-    border-bottom: 1px solid rgba(42, 36, 27, 0.3);
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-  }
+  .topo h1 { font-size: 1.3rem; }
+  .sobre { display: none; }
 
-  .ladoVazio { border-color: rgba(42, 36, 27, 0.3); color: #6b604d; }
-
-  ol {
-    display: grid;
-    gap: 5px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    overflow-y: auto;
-    font-size: 0.82rem;
-    line-height: 1.35;
-  }
-
-  li {
-    display: flex;
-    gap: 6px;
-
-    small { flex: 0 0 auto; font-size: 0.68rem; font-weight: 700; color: #8a7d64; padding-top: 1px; }
-
-    &[data-tipo='dano'] span { color: #8f1f17; }
-    &[data-tipo='cura'] span { color: #1f6b3a; }
-    &[data-tipo='turno'] span { font-weight: 600; }
-
-    &[data-tipo='rodada'] {
-      justify-content: center;
-      margin: 4px 0;
-      padding: 2px 0;
-      border-block: 1px solid rgba(42, 36, 27, 0.25);
-      @include fonte-ficha;
-      font-weight: 700;
-    }
-
-    &[data-tipo='sistema'] span { font-style: italic; color: #5d5240; }
-  }
-
-  @media (max-width: 1100px) { position: static; max-height: 320px; }
+  @include celular { padding: 10px 10px 16px; }
 }
 
 // Alguém caiu: a tela pulsa em vermelho
@@ -599,5 +520,4 @@ $ameacas: #c8423a;
 
 @media (prefers-reduced-motion: reduce) {
   .vezAtual, .pulsoQueda { animation: none; }
-  .faixa li { transition: none; }
 }

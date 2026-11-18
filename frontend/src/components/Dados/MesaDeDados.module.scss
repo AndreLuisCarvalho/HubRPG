@@ -229,6 +229,10 @@
   color: var(--cor, #c4974a);
   transform: rotate(-5deg);
   animation: carimbar 0.3s cubic-bezier(0.2, 1.4, 0.5, 1);
+
+  &[data-tom='acerto'] { color: #6fcf97; }
+  &[data-tom='falha'] { color: #e2675d; transform: rotate(4deg); }
+  &[data-tom='critico'] { color: #ffcf5a; }
 }
 
 /* ---------- Histórico ---------- */
