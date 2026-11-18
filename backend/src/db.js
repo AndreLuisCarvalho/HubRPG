@@ -125,6 +125,16 @@ async function iniciar() {
       imagem      TEXT NOT NULL DEFAULT '',
       criado_em   TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Combates (aba Combate): "dados" tem participantes, iniciativa, rodada e de quem é a vez em JSON
+    CREATE TABLE IF NOT EXISTS combates (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      campanha_id INTEGER NOT NULL REFERENCES campanhas(id) ON DELETE CASCADE,
+      nome        TEXT NOT NULL,
+      sessao_id   INTEGER,
+      dados       TEXT NOT NULL DEFAULT '{}',
+      criado_em   TEXT DEFAULT CURRENT_TIMESTAMP
+    );
   `);
  
   await adicionarColuna('campanhas', 'mapa', "TEXT DEFAULT ''");
