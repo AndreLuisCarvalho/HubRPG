@@ -361,7 +361,11 @@ function AbaAtaque({
           opcoes={ataques.map((a) => ({
             valor: a.id,
             rotulo: a.nome,
-            detalhe: [a.formula, a.partes.map((p) => `${p.formula} ${p.rotulo}`).join(' + ') || 'sem dano', a.alcance].filter(Boolean).join(' · '),
+            detalhe: [
+              a.testePadrao ? `${a.formula} (sem teste na ficha: usando ${a.testePadrao})` : a.formula,
+              a.partes.map((p) => `${p.formula} ${p.rotulo}`).join(' + ') || 'sem dano',
+              a.alcance,
+            ].filter(Boolean).join(' · '),
           }))}
           onMudar={(v) => { setAtaqueId(v); setResultado(null); setDano(null); }}
         />
