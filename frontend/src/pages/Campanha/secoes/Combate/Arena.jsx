@@ -2,8 +2,15 @@ import { useEffect, useState } from 'react';
 import Modal from '../../../../components/Modal/Modal';
 import { definirContagem } from '../../../../sistemas/ordemParanormal/regras';
 import AdicionarParticipantes from './AdicionarParticipantes';
-import Gaveta from './Gaveta';
+import CaixaEncerrar from './CaixaEncerrar';
+import Hud from './Hud';
+import Inspecao from './Inspecao';
+import LogCombate from './LogCombate';
+import PainelAcao from './PainelAcao';
 import Palco from './Palco';
+import RelatorioCombate from './RelatorioCombate';
+import Timeline from './Timeline';
+import { montarRelatorio, relatorioPara } from './relatorio';
 import { MIRA_DA_ACAO, acoesDisponiveis, carregarLivros } from './acoesCombate';
 import { condicaoPorId, venceu } from './condicoes';
 import {
@@ -11,21 +18,28 @@ import {
   ordenarPorIniciativa, passarVez, remover, rolarIniciativa, verParticipante,
 } from './regrasCombate';
 import styles from './Combate.module.scss';
+import estilo from './Arena.module.scss';
 
 const LIMITE_LOG = 150;
 
 /**
- * A arena: o palco (retratos dos agentes e caveiras das ameaças) e a gaveta lateral de quem foi
- * clicado, com as ações. mestre: vê os números de tudo e tem os controles. Jogadores (tela cheia):
- * ameaças só pela cor do estado, ocultos não aparecem; agem com os próprios agentes.
+ * A arena, numa tela só, em 4 zonas: timeline de iniciativa (topo), palco (centro), barra do turno
+ * (embaixo) e registro da missão (direita). Fluxo: escolher a ação na barra → clicar no alvo no
+ * palco → ver o resultado no registro e no banner.
+ * mestre: vê os números de tudo e tem os controles. Jogadores (tela cheia): ameaças só pela cor do
+ * estado, ocultos não aparecem; agem com os próprios agentes.
  */
 export default function Arena({
   combate, fichas, sessao, mestre, chaveVisao, erro, onSalvar, onMudarFicha, onVoltar, onExcluir,
 }) {
   const [adicionando, setAdicionando] = useState(false);
-  const [gaveta, setGaveta] = useState(null);       // id de quem está na gaveta, ou 'registro'
-  const [aba, setAba] = useState(null);             // ação aberta na gaveta (atacar, ritual…)
+  const [atorId, setAtorId] = useState(null);       // quem está na barra de turno (null = o da vez)
+  const [inspecionado, setInspecionado] = useState(null);   // ficha rápida aberta no palco
+  const [logAberto, setLogAberto] = useState(false);        // celular: o registro abre por cima
+  const [aba, setAba] = useState(null);             // ação aberta na bandeja (atacar, ritual…)
   const [alvoIds, setAlvoIds] = useState([]);       // alvos da ação (o palco também escolhe)
+  const [encerrando, setEncerrando] = useState(false);
+  const [verPalco, setVerPalco] = useState(false);  // combate encerrado: relatório (padrão) ou o palco
   const [livro, setLivro] = useState(null);         // bestiário e rituais (chegam depois)
   // Último golpe de cada participante (anima o número saltando e a tremida)
   const [golpes, setGolpes] = useState({});
@@ -47,15 +61,16 @@ export default function Arena({
   const daVez = vistos.find((p) => p.id === dados.vez);
 
   /*
-   * Registro: cada entrada é [texto do mestre, texto dos jogadores (null = não veem), tipo, carimbo]
+   * Registro: cada entrada é [texto do mestre, texto dos jogadores (null = não veem), tipo, carimbo, dados]
    * carimbo: 'acerto' | 'falha' | 'critico' | 'sucesso' | 'fracasso'
+   * dados: o que o relatório conta ({ alvo, autor, rid, valor } no dano/cura; { autor, alvo, resultado } no ataque)
    */
   const comLog = (novo, ...entradas) => ({
     ...novo,
     log: [
       ...(novo.log ?? []),
-      ...entradas.filter(Boolean).map(([texto, textoJogadores = texto, tipo = 'acao', carimbo = null]) => (
-        { id: novoId(), rodada: novo.rodada, tipo, texto, textoJogadores, carimbo })),
+      ...entradas.filter(Boolean).map(([texto, textoJogadores = texto, tipo = 'acao', carimbo = null, extra = null]) => (
+        { id: novoId(), rodada: novo.rodada, tipo, texto, textoJogadores, carimbo, ...(extra && { dados: extra }) })),
     ].slice(-LIMITE_LOG),
   });
 
@@ -68,7 +83,7 @@ export default function Arena({
   function aplicar({ efeitos = [], entradas = [], mudarDados = (d) => d }) {
     let lista = participantes;
     const novosGolpes = {};
-    let caiu = false;
+    const quedas = [];
 
     for (const { id, deltas } of efeitos) {
       const p = lista.find((x) => x.id === id);
@@ -102,16 +117,20 @@ export default function Arena({
       const total = mudancas.reduce((s, [, d]) => s + d, 0);
       novosGolpes[id] = { chave: novoId(), delta: Math.sign(delta) * Math.abs(total), sigla: recurso?.sigla, cor: recurso?.cor };
       const pvDepois = verDepois.recursos.find((r) => r.id === 'pv')?.atual;
-      if (pvAntes > 0 && pvDepois === 0) caiu = true;
+      if (pvAntes > 0 && pvDepois === 0) {
+        const nome = verAntes.nome;
+        const jogadores = p.oculto ? null : `${nome} ${p.lado === 'ameacas' ? 'foi derrotado' : 'caiu'}!`;
+        quedas.push([`${nome} ${p.lado === 'ameacas' ? 'foi derrotado' : 'caiu'}.`, jogadores, 'queda', 'falha', { alvo: id }]);
+      }
     }
 
-    salvar(comLog(mudarDados({ ...dados, participantes: lista }), ...entradas));
+    salvar(comLog(mudarDados({ ...dados, participantes: lista }), ...entradas, ...quedas));
     if (Object.keys(novosGolpes).length) setGolpes((g) => ({ ...g, ...novosGolpes }));
-    if (caiu) setQueda((q) => q + 1);
+    if (quedas.length) setQueda((q) => q + 1);
   }
 
   // Texto do registro para uma mudança de PV/SAN (o dos jogadores esconde os números das ameaças)
-  function entradaDeRecurso(p, rid, delta, depois, detalhe = '') {
+  function entradaDeRecurso(p, rid, delta, depois, detalhe = '', autor = null) {
     const recurso = p.ver.recursos.find((r) => r.id === rid);
     const nome = p.ver.nome;
     const verbo = delta < 0 ? `perdeu ${-delta} ${recurso.sigla}` : `recuperou ${delta} ${recurso.sigla}`;
@@ -122,18 +141,18 @@ export default function Arena({
       const aprox = estadoAproximado({ atual: depois, maximo: recurso.maximo });
       paraJogadores = delta < 0 ? `${nome} foi atingido: ${aprox.rotulo.toLowerCase()}.` : `${nome} se recuperou.`;
     }
-    return [texto, paraJogadores, delta < 0 ? 'dano' : 'cura'];
+    return [texto, paraJogadores, delta < 0 ? 'dano' : 'cura', null, { alvo: p.id, autor, rid, valor: Math.abs(delta) }];
   }
 
-  // Dano/cura de um recurso (à mão ou vindo de uma ação)
-  function mudarRecursos(p, deltas, detalhe = '') {
+  // Dano/cura de um recurso (à mão ou vindo de uma ação; "autor" = quem causou, para o relatório)
+  function mudarRecursos(p, deltas, detalhe = '', autor = null) {
     const entradas = Object.entries(deltas).filter(([, d]) => d).map(([rid, d]) => {
       const r = p.ver.recursos.find((x) => x.id === rid);
       const atual = r?.atual ?? 0;
       // O que de fato saiu/entrou: não passa de zero (temporários gastam primeiro) nem do máximo
       const efetivo = d < 0 ? -Math.min(-d, atual + (r?.temporario ?? 0)) : Math.min(d, Math.max(0, (r?.maximo ?? 0) - atual));
       const depois = d < 0 ? Math.max(0, atual - Math.max(0, -d - (r?.temporario ?? 0))) : atual + efetivo;
-      return entradaDeRecurso(p, rid, efetivo || d, depois, detalhe);
+      return entradaDeRecurso(p, rid, efetivo || d, depois, detalhe, autor);
     });
     // Golpe que as resistências zeraram: registra mesmo assim
     if (!entradas.length && detalhe) {
@@ -176,7 +195,8 @@ export default function Arena({
     }
 
     if (passo > 0 && proximo) entradas.push(textoDeTurno(proximo));
-    salvar(comLog(novo, ...entradas));
+    // Turno novo: a economia de ação volta a ficar livre
+    salvar(comLog({ ...novo, economia: {} }, ...entradas));
   }
 
   // [texto do mestre, texto dos jogadores (null se oculto), tipo]
@@ -184,12 +204,34 @@ export default function Arena({
     ? [`Turno de ${p.ver.nome} (oculto).`, null, 'turno']
     : [`Turno de ${p.ver.nome}.`, `Turno de ${p.ver.nome}.`, 'turno']);
 
-  function encerrar() {
-    if (!window.confirm('Encerrar este combate? Ele fica salvo na lista como encerrado.')) return;
-    salvar(comLog({ ...dados, estado: 'encerrado' }, ['Combate encerrado.', 'Combate encerrado.', 'sistema']));
+  /*
+   * Encerrar: zera as contagens escolhidas na caixa (quem se estabilizou), tira as condições
+   * (elas valem só nesta cena) e guarda o relatório da missão.
+   */
+  function encerrar(zerar) {
+    for (const fichaId of zerar) {
+      const ficha = fichas[fichaId];
+      if (ficha) onMudarFicha(fichaId, { contagens: {} });
+    }
+    const final = comLog({ ...dados }, ['Combate encerrado.', 'Combate encerrado.', 'sistema']);
+    const relatorio = montarRelatorio(final, vistos);
+    salvar({
+      ...final,
+      estado: 'encerrado',
+      participantes: final.participantes.map((p) => ({ ...p, condicoes: [] })),
+      relatorio,
+    });
+    setEncerrando(false);
+    setInspecionado(null);
+    setAtorId(null);
+    setAba(null);
+    setVerPalco(false);
   }
 
-  const reabrir = () => salvar({ ...dados, estado: dados.rodada ? 'andamento' : 'preparando' });
+  const reabrir = () => {
+    const { relatorio: _relatorio, ...resto } = dados;
+    salvar({ ...resto, estado: dados.rodada ? 'andamento' : 'preparando' });
+  };
 
   // Morrendo / Enlouquecendo: o mestre avança a contagem na vez do agente
   function avancarContagem(p, recursoId) {
@@ -249,201 +291,223 @@ export default function Arena({
 
   const reordenar = (de, para) => salvar({ ...dados, participantes: mover(participantes, de, para) });
 
-  /* ---------- Gaveta, ações e mira ---------- */
+  /* ---------- Quem age, ações e mira ---------- */
   const podeAgirCom = (p) => andamento && (mestre || (p.lado === 'agentes' && !p.oculto));
-
-  function abrir(p) {
-    setGaveta(p.id);
-    setAba(null);
-    setAlvoIds([]);
-  }
+  // Quem está na barra de turno: o da vez, ou outro que o mestre (ou o jogador) escolheu
+  const ator = vistos.find((p) => p.id === atorId && (mestre || !p.oculto)) ?? daVez ?? null;
+  const acoes = ator && podeAgirCom(ator) ? acoesDisponiveis(ator, fichas, livro) : [];
 
   function escolherAba(id) {
     setAba(id);
-    const ator = vistos.find((p) => p.id === gaveta);
+    setInspecionado(null);
     if (!id || !ator) return setAlvoIds([]);
-    // Alvo inicial: o primeiro inimigo de pé (atacar) ou o próprio (condição)
+    // Alvo inicial: o primeiro inimigo de pé (atacar) ou o próprio (item/outros)
     const lista = mestre ? vistos : visiveis;
     const inimigo = lista.find((p) => p.lado !== ator.lado && p.id !== ator.id && !estaCaido(p));
     if (id === 'atacar') setAlvoIds(inimigo ? [inimigo.id] : []);
-    else if (id === 'condicao') setAlvoIds([ator.id]);
+    else if (id === 'outros') setAlvoIds([ator.id]);
     else setAlvoIds([]);
+  }
+
+  function agirCom(p) {
+    setAtorId(p.id === daVez?.id ? null : p.id);
+    setInspecionado(null);
+    setAba(null);
+    setAlvoIds([]);
   }
 
   const mira = aba ? MIRA_DA_ACAO[aba] : null;
 
-  // Clique no palco: durante uma ação escolhe o alvo; fora dela abre a gaveta
+  // Clique num retrato: durante uma ação escolhe o alvo; fora dela abre a ficha rápida
   function clicarNoPalco(p) {
     if (mira === 'um') return setAlvoIds([p.id]);
     if (mira === 'varios') return setAlvoIds((ids) => (ids.includes(p.id) ? ids.filter((x) => x !== p.id) : [...ids, p.id]));
-    if (gaveta === p.id) return fecharGaveta();
-    abrir(p);
+    setInspecionado((atual) => (atual === p.id ? null : p.id));
   }
 
-  function fecharGaveta() {
-    setGaveta(null);
+  function fecharAcao() {
     setAba(null);
     setAlvoIds([]);
   }
+
+  function finalizarTurno() {
+    fecharAcao();
+    setAtorId(null);
+    setInspecionado(null);
+    passar(1);
+  }
+
+  // Economia de ação: só visual, guardada no combate (todos veem) e zerada a cada turno
+  const alternarEconomia = (id) => salvar({ ...dados, economia: { ...dados.economia, [id]: !dados.economia?.[id] } });
 
   /* ---------- Desenho ---------- */
   const log = (dados.log ?? [])
     .map((e) => ({ ...e, mostrar: mestre ? e.texto : e.textoJogadores }))
     .filter((e) => e.mostrar)
     .reverse();
-  const legenda = log.find((e) => e.tipo !== 'rodada');
-
-  let faixaVez = null;
-  if (andamento && daVez) {
-    faixaVez = !mestre && daVez.oculto ? 'Algo se move nas sombras…' : `Vez de ${daVez.ver.nome}`;
-  }
+  const legenda = log.find((e) => !['rodada', 'turno', 'sistema'].includes(e.tipo));
 
   // Lembretes da vez: morrendo / enlouquecendo
-  const lembretes = andamento && daVez?.ver.contagens
+  const lembretes = andamento && ator?.ver.contagens
     ? ['pv', 'san'].flatMap((rid) => {
-      const r = daVez.ver.recursos.find((x) => x.id === rid);
-      const c = daVez.ver.contagens[rid];
+      const r = ator.ver.recursos.find((x) => x.id === rid);
+      const c = ator.ver.contagens[rid];
       if (!r || r.atual > 0 || !c || c.valor >= c.limite) return [];
       return [{ rid, c }];
     })
     : [];
 
-  const naGaveta = gaveta === 'registro' ? null : vistos.find((p) => p.id === gaveta && (mestre || !p.oculto));
-  const gavetaAberta = gaveta === 'registro' || Boolean(naGaveta);
-  const telaCheia = !mestre;
+  const inspecao = vistos.find((p) => p.id === inspecionado && (mestre || !p.oculto));
+  const verRelatorio = encerrado && dados.relatorio && !verPalco;
+  const rotuloAcao = acoes.find((a) => a.id === aba)?.rotulo;
 
   return (
-    <section className={`${styles.pagina} ${styles.arena} ${telaCheia ? styles.telaCheia : ''}`}>
-      <header className={styles.topo}>
-        {!telaCheia && <button type="button" className={styles.voltar} onClick={onVoltar} aria-label="Voltar para a lista de combates">← Combates</button>}
-        <div className={styles.titulo}>
-          <span className={styles.sobre}>{sessao ? `Sessão ${sessao.numero}${sessao.titulo ? ` · ${sessao.titulo}` : ''}` : 'Combate'}</span>
-          <h1>{combate.nome}</h1>
+    <section className={`${estilo.arena} ${!mestre ? estilo.telaCheia : ''}`} aria-label={`Combate: ${combate.nome}`}>
+      {/* 1 · Topo: timeline de iniciativa */}
+      <header className={estilo.topo}>
+        <div className={estilo.topoTitulo}>
+          {mestre && <button type="button" className={estilo.voltar} onClick={onVoltar} aria-label="Voltar para a lista de combates">←</button>}
+          <div>
+            <small>{sessao ? `Sessão ${sessao.numero}` : 'Combate'} · {combate.nome}</small>
+            <b className={estilo.rodada}>
+              {preparando && 'Preparando'}
+              {andamento && `Rodada ${dados.rodada}`}
+              {encerrado && 'Encerrado'}
+            </b>
+          </div>
         </div>
-        <div className={styles.acoesTopo}>
+        <Timeline
+          participantes={visiveis}
+          vez={andamento ? dados.vez : null}
+          mestre={mestre}
+          preparando={preparando}
+          inspecionado={inspecionado}
+          onEscolher={(p) => setInspecionado((atual) => (atual === p.id ? null : p.id))}
+        />
+        <div className={estilo.topoAcoes}>
           {chaveVisao}
           {mestre && !encerrado && (
-            <button type="button" className={styles.secundario} onClick={() => setAdicionando(true)}>+ Participantes</button>
+            <button type="button" className={estilo.icone} onClick={() => setAdicionando(true)} title="Pôr participantes na luta" aria-label="Pôr participantes na luta">+</button>
           )}
+          {mestre && andamento && (
+            <button type="button" className={estilo.icone} onClick={() => setEncerrando(true)} title="Encerrar combate" aria-label="Encerrar combate">■</button>
+          )}
+          {encerrado && dados.relatorio && (
+            <button type="button" className={estilo.textual} onClick={() => setVerPalco((v) => !v)}>{verPalco ? 'Relatório' : 'Palco'}</button>
+          )}
+          {mestre && encerrado && <button type="button" className={estilo.textual} onClick={reabrir}>Reabrir</button>}
+          {mestre && encerrado && <button type="button" className={`${estilo.textual} ${estilo.perigo}`} onClick={onExcluir}>Apagar</button>}
         </div>
       </header>
 
-      {erro && <p className="erro">{erro}</p>}
+      {erro && <p className={`erro ${estilo.erro}`}>{erro}</p>}
 
-      {/* Barra de comando: o que fazer agora */}
-      <div className={styles.comando}>
-        {preparando && (
-          <>
-            <span className={styles.rodada}>Preparando</span>
-            <p>{mestre ? 'Digite a iniciativa embaixo de cada retrato e role a das ameaças.' : 'O combate vai começar…'}</p>
-            {mestre && (
-              <div className={styles.botoes}>
-                <button type="button" className={styles.secundario} onClick={rolarAmeacas} disabled={!participantes.some((p) => p.lado === 'ameacas' && p.iniciativa == null)}>Rolar ameaças</button>
-                <button type="button" className={styles.secundario} onClick={() => salvar({ ...dados, participantes: ordenarPorIniciativa(participantes) })}>Ordenar</button>
-                <button type="button" className={styles.primario} onClick={iniciar} disabled={!participantes.length}>Começar combate</button>
-              </div>
-            )}
-          </>
-        )}
-        {andamento && (
-          <>
-            <span className={styles.rodada}>Rodada {dados.rodada}</span>
-            <p className={styles.vezAtual} key={dados.vez}>{faixaVez}</p>
-            <div className={styles.botoes}>
-              {daVez && podeAgirCom(daVez) && (
-                <button type="button" className={styles.agir} onClick={() => abrir(daVez)}>Agir com {daVez.ver.nome}</button>
-              )}
-              {mestre && <button type="button" className={styles.secundario} onClick={() => passar(-1)} aria-label="Voltar um turno">◂</button>}
-              <button type="button" className={styles.primario} onClick={() => passar(1)}>Próximo turno ▸</button>
-            </div>
-            {mestre && lembretes.map(({ rid, c }) => (
-              <div key={rid} className={styles.lembrete}>
-                <span>{daVez.ver.nome} está <b>{c.rotulo.toLowerCase()}</b> ({c.valor}/{c.limite}). Na {c.limite}ª, fica {c.final.toLowerCase()}.</span>
-                <button type="button" className={styles.perigo} onClick={() => avancarContagem(daVez, rid)}>Avançar contagem</button>
-              </div>
-            ))}
-          </>
-        )}
-        {encerrado && (
-          <>
-            <span className={styles.rodada}>Encerrado</span>
-            <p>Combate encerrado{dados.rodada ? ` na rodada ${dados.rodada}` : ''}.</p>
-            {mestre && (
-              <div className={styles.botoes}>
-                <button type="button" className={styles.secundario} onClick={reabrir}>Reabrir</button>
-                <button type="button" className={styles.perigo} onClick={onExcluir}>Apagar</button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      <div className={styles.mesa} data-gaveta={gavetaAberta || undefined}>
-        <div className={styles.areaPalco}>
+      {/* 2 · Centro: o palco (ou o relatório, depois de encerrar) */}
+      <div className={estilo.centro}>
+        {verRelatorio ? (
+          <div className={estilo.rolagemRelatorio}>
+            <RelatorioCombate relatorio={relatorioPara(dados.relatorio, mestre)} mestre={mestre} nome={combate.nome} sessao={sessao} />
+          </div>
+        ) : (
           <Palco
             participantes={visiveis}
-            ordem={visiveis.map((p) => p.id)}
             vez={andamento ? dados.vez : null}
             mestre={mestre}
             preparando={preparando}
             mirando={Boolean(mira)}
             alvos={alvoIds}
-            selecionado={naGaveta?.id}
+            selecionado={inspecao?.id}
             golpes={golpes}
             legenda={legenda}
             onEscolher={clicarNoPalco}
             onIniciativa={(p, v) => trocar(p.id, { iniciativa: v })}
+            inspecao={inspecao && !aba && (
+              <Inspecao
+                key={inspecao.id}
+                p={inspecao}
+                mestre={mestre}
+                preparando={preparando}
+                podeAgir={podeAgirCom(inspecao) && inspecao.id !== ator?.id}
+                onFechar={() => setInspecionado(null)}
+                onAgir={() => agirCom(inspecao)}
+                onAjustar={(recursoId, delta) => aplicar(mudarRecursos(inspecao, { [recursoId]: delta }))}
+                onTirarCondicao={(c) => tirarCondicao(inspecao, c)}
+                onIniciativa={(v) => trocar(inspecao.id, { iniciativa: v })}
+                onRolarIniciativa={() => trocar(inspecao.id, { iniciativa: rolarIniciativa(inspecao.ver.formula) })}
+                onMover={(passo) => {
+                  const i = participantes.findIndex((x) => x.id === inspecao.id);
+                  reordenar(i, i + passo);
+                }}
+                onRevelar={() => revelar(inspecao)}
+                onTirar={() => { setInspecionado(null); tirar(inspecao); }}
+              />
+            )}
           />
-          <div className={styles.rodapePalco}>
-            <button type="button" className={styles.discreto} onClick={() => (gaveta === 'registro' ? fecharGaveta() : setGaveta('registro'))}>
-              {gaveta === 'registro' ? 'Esconder registro' : `Registro da missão (${log.filter((e) => e.tipo !== 'rodada').length})`}
-            </button>
-            {mestre && andamento && <button type="button" className={styles.discreto} onClick={encerrar}>Encerrar combate</button>}
-          </div>
-        </div>
+        )}
 
-        {gavetaAberta && (
-          <Gaveta
-            key={naGaveta?.id ?? 'registro'}
-            p={naGaveta}
-            aba={aba}
-            acoes={naGaveta ? acoesDisponiveis(naGaveta, fichas, livro, mestre) : []}
-            mestre={mestre}
-            preparando={preparando}
-            podeAgir={naGaveta ? podeAgirCom(naGaveta) : false}
-            log={log}
-            painel={naGaveta && {
-              ator: naGaveta,
-              mestre,
+        {/* Bandeja da ação: o passo a passo, por cima do palco (o alvo se escolhe clicando nele) */}
+        {aba && ator && !verRelatorio && (
+          <div className={estilo.bandeja} role="dialog" aria-label={`${rotuloAcao} com ${ator.ver.nome}`}>
+            <header>
+              <b>{rotuloAcao}</b>
+              <small>{ator.ver.nome}{mira ? ' · clique no alvo no palco' : ''}</small>
+              <button type="button" onClick={fecharAcao} aria-label="Fechar ação">✕</button>
+            </header>
+            <PainelAcao
+              key={`${ator.id}-${aba}`}
+              aba={aba}
+              ator={ator}
+              mestre={mestre}
               // Jogadores não miram em quem está oculto
-              participantes: mestre ? vistos : visiveis,
-              fichas,
-              livro,
-              rodada: dados.rodada || 1,
-              vez: dados.vez,
-              alvoIds,
-              setAlvoIds,
-              aplicar,
-              mudarRecursos,
-              onFechar: () => setAba(null),
-            }}
-            onAba={escolherAba}
-            onFechar={fecharGaveta}
-            onAjustar={(recursoId, delta) => aplicar(mudarRecursos(naGaveta, { [recursoId]: delta }))}
-            onTirarCondicao={(c) => tirarCondicao(naGaveta, c)}
-            onIniciativa={(v) => trocar(naGaveta.id, { iniciativa: v })}
-            onRolarIniciativa={() => trocar(naGaveta.id, { iniciativa: rolarIniciativa(naGaveta.ver.formula) })}
-            onMover={(passo) => {
-              const i = participantes.findIndex((x) => x.id === naGaveta.id);
-              reordenar(i, i + passo);
-            }}
-            onRevelar={() => revelar(naGaveta)}
-            onTirar={() => { tirar(naGaveta); }}
-          />
+              participantes={mestre ? vistos : visiveis}
+              fichas={fichas}
+              livro={livro}
+              rodada={dados.rodada || 1}
+              vez={dados.vez}
+              alvoIds={alvoIds}
+              setAlvoIds={setAlvoIds}
+              aplicar={aplicar}
+              mudarRecursos={mudarRecursos}
+              onMudarFicha={onMudarFicha}
+              onFechar={fecharAcao}
+            />
+          </div>
         )}
       </div>
 
-      {queda > 0 && <div key={queda} className={styles.pulsoQueda} aria-hidden="true" />}
+      {/* 3 · Embaixo: a barra do turno */}
+      {!encerrado && (
+        <Hud
+          ator={ator}
+          daVez={daVez}
+          mestre={mestre}
+          preparando={preparando}
+          acoes={acoes}
+          economia={dados.economia}
+          aba={aba}
+          lembretes={lembretes}
+          onAba={escolherAba}
+          onEconomia={alternarEconomia}
+          onFinalizar={finalizarTurno}
+          onVoltarTurno={() => { fecharAcao(); setAtorId(null); passar(-1); }}
+          onVoltarParaVez={() => agirCom(daVez)}
+          onAvancarContagem={(rid) => avancarContagem(ator, rid)}
+          podeRolarAmeacas={participantes.some((p) => p.lado === 'ameacas' && p.iniciativa == null)}
+          onRolarAmeacas={rolarAmeacas}
+          onOrdenar={() => salvar({ ...dados, participantes: ordenarPorIniciativa(participantes) })}
+          onComecar={iniciar}
+          podeComecar={participantes.length > 0}
+        />
+      )}
+
+      {/* 4 · Direita: o registro da missão */}
+      <LogCombate log={log} aberto={logAberto} onAlternar={() => setLogAberto((v) => !v)} />
+
+      <Modal aberto={encerrando} onFechar={() => setEncerrando(false)} largura="520px" sobretitulo={combate.nome} titulo="Encerrar combate">
+        {encerrando && <CaixaEncerrar vistos={vistos} onEncerrar={encerrar} onCancelar={() => setEncerrando(false)} />}
+      </Modal>
+
+      {queda > 0 && <div key={queda} className={estilo.pulsoQueda} aria-hidden="true" />}
 
       <Modal aberto={adicionando} onFechar={() => setAdicionando(false)} largura="720px" titulo="Participantes" classeCaixa={styles.caixa}>
         {adicionando && (

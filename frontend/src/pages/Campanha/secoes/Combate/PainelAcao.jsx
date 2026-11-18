@@ -14,8 +14,8 @@ import { novoId } from './regrasCombate';
 import styles from './PainelAcao.module.scss';
 
 /**
- * Uma ação de um participante, dentro da gaveta: atacar (com reações e dano), conjurar ritual,
- * rolar perícia ou aplicar condição. As rolagens aparecem na mesa de dados 3D.
+ * Uma ação de quem está na barra de turno: atacar (com reações e dano), conjurar ritual, rolar
+ * perícia ou "outros" (item, ação livre, condição). As rolagens aparecem na mesa de dados 3D.
  * alvoIds / setAlvoIds vêm da arena: clicar no palco também escolhe o alvo.
  */
 export default function PainelAcao(props) {
@@ -27,8 +27,141 @@ export default function PainelAcao(props) {
       {aba === 'atacar' && <AbaAtaque {...props} base={base} />}
       {aba === 'ritual' && <AbaRitual {...props} base={base} />}
       {aba === 'teste' && <AbaTeste {...props} base={base} />}
-      {aba === 'condicao' && <AbaCondicao {...props} />}
+      {aba === 'outros' && <AbaOutros {...props} base={base} />}
     </div>
+  );
+}
+
+/* ---------- Item / Outros ---------- */
+function AbaOutros(props) {
+  const { mestre } = props;
+  const [modo, setModo] = useState('item');
+  const modos = [
+    { id: 'item', rotulo: 'Usar item' },
+    { id: 'livre', rotulo: 'Ação livre' },
+    mestre && { id: 'condicao', rotulo: 'Condição' },
+  ].filter(Boolean);
+  return (
+    <div className={styles.aba}>
+      <div className={styles.segmentos} role="radiogroup" aria-label="Tipo de ação">
+        {modos.map((m) => (
+          <button key={m.id} type="button" role="radio" aria-checked={modo === m.id} onClick={() => setModo(m.id)}>{m.rotulo}</button>
+        ))}
+      </div>
+      {modo === 'item' && <AbaItem {...props} />}
+      {modo === 'livre' && <AbaLivre {...props} />}
+      {modo === 'condicao' && <AbaCondicao {...props} />}
+    </div>
+  );
+}
+
+const ACOES_LIVRES = ['Padrão', 'Movimento', 'Completa', 'Livre', 'Reação'];
+
+// Usar um item do inventário: registra; se curar ou ferir, aplica no alvo; pode gastar o item
+function AbaItem({ ator, participantes, base, mestre, alvoIds, setAlvoIds, aplicar, mudarRecursos, onMudarFicha, onFechar }) {
+  const itens = base.tipo === 'agente' ? base.dados?.inventario ?? [] : [];
+  const [uid, setUid] = useState(itens[0]?.uid ?? '');
+  const [efeito, setEfeito] = useState('nenhum');   // nenhum | cura | dano
+  const [recurso, setRecurso] = useState('pv');
+  const [valor, setValor] = useState('');
+  const [gastar, setGastar] = useState(false);
+  const item = itens.find((i) => i.uid === uid) ?? itens[0];
+  const alvo = participantes.find((p) => p.id === (alvoIds[0] ?? ator.id));
+
+  if (!itens.length) return <p className={styles.vazio}>{ator.ver.nome} não tem itens no inventário.</p>;
+
+  function usar() {
+    const n = Math.abs(Number(valor) || 0);
+    const emQuem = alvo && alvo.id !== ator.id ? ` em ${alvo.ver.nome}` : '';
+    const texto = `${ator.ver.nome} usou ${item.nome}${emQuem}.`;
+    const entradas = [[texto, ator.oculto ? null : texto, 'acao']];
+    let efeitos = [];
+    if (efeito !== 'nenhum' && n && alvo) {
+      const r = mudarRecursos(alvo, { [recurso]: efeito === 'cura' ? n : -n }, item.nome, ator.id);
+      efeitos = r.efeitos;
+      entradas.push(...r.entradas);
+    }
+    if (gastar && ator.fichaId) {
+      onMudarFicha(ator.fichaId, { inventario: itens.filter((i) => i.uid !== item.uid) });
+    }
+    aplicar({ efeitos, entradas });
+    onFechar();
+  }
+
+  return (
+    <>
+      <div className={styles.campo}>
+        <span>Qual item</span>
+        <Seletor
+          rotulo="Item"
+          valor={item.uid}
+          opcoes={itens.map((i) => ({ valor: i.uid, rotulo: i.nome }))}
+          onMudar={setUid}
+        />
+        {item.descricao && <small className={styles.ajuda}>{item.descricao}</small>}
+      </div>
+      <div className={styles.campo}>
+        <span>Em quem <small>(ou clique no palco)</small></span>
+        <EscolherAlvos lista={participantes} selecionados={[alvo?.id]} mestre={mestre} onEscolher={(id) => setAlvoIds([id])} />
+      </div>
+      <div className={styles.campo}>
+        <span>Efeito</span>
+        <div className={styles.segmentos} role="radiogroup" aria-label="Efeito">
+          {[['nenhum', 'Só registrar'], ['cura', 'Cura'], ['dano', 'Dano']].map(([id, r]) => (
+            <button key={id} type="button" role="radio" aria-checked={efeito === id} onClick={() => setEfeito(id)}>{r}</button>
+          ))}
+        </div>
+        {efeito !== 'nenhum' && (
+          <div className={styles.rodape}>
+            <div className={styles.segmentos} role="radiogroup" aria-label="Recurso">
+              {alvo?.ver.recursos.map((r) => (
+                <button key={r.id} type="button" role="radio" aria-checked={recurso === r.id} onClick={() => setRecurso(r.id)}>{r.sigla}</button>
+              ))}
+            </div>
+            <Numero rotulo="Quanto" valor={valor} min={0} onMudar={setValor} />
+          </div>
+        )}
+      </div>
+      <label className={styles.marcar}>
+        <input type="checkbox" checked={gastar} onChange={(e) => setGastar(e.target.checked)} />
+        Gastar o item (tira do inventário)
+      </label>
+      <div className={styles.rodape}>
+        <button type="button" className={styles.grande} onClick={usar}>Usar {item.nome}</button>
+      </div>
+    </>
+  );
+}
+
+// Ação livre: o que o personagem faz, em texto, direto no registro
+function AbaLivre({ ator, aplicar, onFechar }) {
+  const [texto, setTexto] = useState('');
+  const [tipo, setTipo] = useState('Padrão');
+
+  function registrar(e) {
+    e.preventDefault();
+    const t = texto.trim();
+    if (!t) return;
+    const linha = `${ator.ver.nome} (${tipo.toLowerCase()}): ${t}`;
+    aplicar({ entradas: [[linha, ator.oculto ? null : linha, 'acao']] });
+    onFechar();
+  }
+
+  return (
+    <form className={styles.aba} onSubmit={registrar}>
+      <label className={styles.campo}>
+        <span>O que {ator.ver.nome} faz</span>
+        <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Ex.: derruba a estante na porta" maxLength={140} autoFocus />
+      </label>
+      <div className={styles.segmentos} role="radiogroup" aria-label="Tipo de ação">
+        {ACOES_LIVRES.map((a) => (
+          <button key={a} type="button" role="radio" aria-checked={tipo === a} onClick={() => setTipo(a)}>{a}</button>
+        ))}
+      </div>
+      <div className={styles.rodape}>
+        <button type="submit" className={styles.grande} disabled={!texto.trim()}>Registrar ação</button>
+      </div>
+    </form>
   );
 }
 
@@ -170,10 +303,16 @@ function AbaAtaque({
     });
 
     const reagiu = reacao !== 'nenhuma' ? ` (${reacao})` : '';
-    const texto = `${ator.ver.nome} atacou ${alvo.ver.nome} com ${ataque.nome}: ${teste.total} contra Defesa ${defesa}${reagiu}.`;
-    const jogadores = ator.oculto ? null : `${ator.ver.nome} atacou ${alvo.oculto ? 'alguém' : alvo.ver.nome} com ${ataque.nome}${reagiu}.`;
+    // A rolagem no registro: "21 (1d20+5, d20 16)"; os jogadores veem a dos agentes, nunca a Defesa das ameaças
+    const rolagem = `${teste.total} (${formula}, d20 ${teste.natural})`;
+    const texto = `${ator.ver.nome} atacou ${alvo.ver.nome} com ${ataque.nome}: ${rolagem} contra Defesa ${defesa}${reagiu}.`;
+    const nomeAlvo = alvo.oculto ? 'alguém' : alvo.ver.nome;
+    let jogadores = `${ator.ver.nome} atacou ${nomeAlvo} com ${ataque.nome}${ator.lado === 'agentes' ? `: ${rolagem}` : ''}${reagiu}.`;
+    if (ator.oculto) jogadores = null;
     aplicar({
-      entradas: [[texto, jogadores, 'ataque', critico ? 'critico' : acertou ? 'acerto' : 'falha']],
+      entradas: [[texto, jogadores, 'ataque', critico ? 'critico' : acertou ? 'acerto' : 'falha', {
+        autor: ator.id, alvo: alvo.id, resultado: critico ? 'critico' : acertou ? 'acerto' : 'falha',
+      }]],
       mudarDados: (d) => (reacao === 'nenhuma' ? d : {
         ...d, participantes: d.participantes.map((p) => (p.id === alvo.id ? { ...p, reacao: rodada } : p)),
       }),
@@ -199,7 +338,7 @@ function AbaAtaque({
     });
     // Jogadores: o dano entra sozinho (as resistências são descontadas por trás)
     if (!mestre) {
-      aplicar(mudarRecursos(alvo, { pv: -calculo.pv, san: -calculo.san }, detalheDoDano(calculo)));
+      aplicar(mudarRecursos(alvo, { pv: -calculo.pv, san: -calculo.san }, detalheDoDano(calculo), ator.id));
       setDano({ aplicado: true, total: rolagem.total });
       return;
     }
@@ -208,7 +347,7 @@ function AbaAtaque({
 
   function confirmar() {
     const deltas = { pv: -(Number(dano.pv) || 0), san: -(Number(dano.san) || 0) };
-    aplicar(mudarRecursos(alvo, deltas, detalheDoDano(dano.calculo)));
+    aplicar(mudarRecursos(alvo, deltas, detalheDoDano(dano.calculo), ator.id));
     onFechar();
   }
 
@@ -222,7 +361,11 @@ function AbaAtaque({
           opcoes={ataques.map((a) => ({
             valor: a.id,
             rotulo: a.nome,
-            detalhe: [a.formula, a.partes.map((p) => `${p.formula} ${p.rotulo}`).join(' + ') || 'sem dano', a.alcance].filter(Boolean).join(' · '),
+            detalhe: [
+              a.testePadrao ? `${a.formula} (sem teste na ficha: usando ${a.testePadrao})` : a.formula,
+              a.partes.map((p) => `${p.formula} ${p.rotulo}`).join(' + ') || 'sem dano',
+              a.alcance,
+            ].filter(Boolean).join(' · '),
           }))}
           onMudar={(v) => { setAtaqueId(v); setResultado(null); setDano(null); }}
         />
@@ -443,7 +586,7 @@ function AbaRitual({
       const d = porAlvo[alvo.id];
       if (!d) continue;
       const deltas = { pv: -(Number(d.pv) || 0), san: -(Number(d.san) || 0) };
-      const r = mudarRecursos(alvo, deltas, d.calculo ? detalheDoDano(d.calculo) : '');
+      const r = mudarRecursos(alvo, deltas, d.calculo ? detalheDoDano(d.calculo) : '', ator.id);
       efeitos.push(...r.efeitos);
       entradas.push(...r.entradas);
     }
@@ -608,7 +751,7 @@ function AbaTeste({ ator, base, aplicar }) {
       carimbos: temDt ? [{ texto: passou ? 'Sucesso' : 'Fracasso', tom: passou ? 'acerto' : 'falha' }] : [],
       estilo: ator.ver.estilo,
     });
-    const texto = `${ator.ver.nome} rolou ${pericia.nome}: ${teste.total}${temDt ? ` (DT ${dt})` : ''}.`;
+    const texto = `${ator.ver.nome} rolou ${pericia.nome}: ${teste.total} (${formula}, d20 ${teste.natural})${temDt ? ` contra DT ${dt}` : ''}.`;
     let jogadores = texto;
     if (ator.oculto) jogadores = null;
     else if (ator.lado === 'ameacas') jogadores = `${ator.ver.nome} fez um teste de ${pericia.nome}.`;

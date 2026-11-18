@@ -46,22 +46,41 @@ const corpoACorpo = (alcance) => {
   return null;
 };
 
-/** [{ id, nome, alcance, formula, partes, critico, corpo }] — só os que dá para rolar */
+/**
+ * [{ id, nome, alcance, formula, partes, critico, corpo, testePadrao }]
+ * Ataque sem teste preenchido (ou ilegível) não some: usa Luta (Pontaria, se for à distância) para
+ * agentes e 1d20 para os outros, e avisa em "testePadrao". Só some a linha totalmente vazia.
+ */
 export function ataquesDe(base) {
   const { tipo, dados } = base;
   if (!dados) return [];
   const lista = tipo === 'npc' ? dados.npc?.ataques ?? [] : dados.ataques ?? [];
   return lista.flatMap((a, i) => {
-    const formula = formulaDoTeste(a.teste, tipo === 'agente' ? dados : null) ?? (tipo === 'npc' ? '1d20' : null);
-    if (!formula) return [];
+    const partes = partesParaRolar(danosDe(a, dados.elemento));
+    if (!a.nome && !partes.length && !a.teste) return [];
+    const alcance = a.alcance ?? '';
+    const corpo = corpoACorpo(alcance || a.especial);
+    let formula = formulaDoTeste(a.teste, tipo === 'agente' ? dados : null);
+    let testePadrao = null;
+    if (!formula) {
+      if (tipo === 'agente') {
+        const pericia = corpo === false ? 'pontaria' : 'luta';
+        formula = dadosDoTeste(dados, pericia);
+        testePadrao = pericia === 'luta' ? 'Luta' : 'Pontaria';
+      } else {
+        formula = '1d20';
+        testePadrao = '1d20';
+      }
+    }
     return [{
       id: a.id ?? a.uid ?? `a${i}`,
       nome: a.nome || 'Ataque',
-      alcance: a.alcance ?? '',
+      alcance,
       formula,
-      partes: partesParaRolar(danosDe(a, dados.elemento)),
+      partes,
       critico: lerCritico(a.critico ?? a.especial),
-      corpo: corpoACorpo(a.alcance),
+      corpo,
+      testePadrao,
     }];
   });
 }
@@ -243,17 +262,17 @@ export function lerResistenciaDoRitual(texto) {
 
 /* ---------- O que dá para fazer na arena ---------- */
 /** O que cada ação pede de alvo: um só (clicando no palco troca) ou vários (clicando liga/desliga) */
-export const MIRA_DA_ACAO = { atacar: 'um', ritual: 'varios', condicao: 'um', teste: null };
+export const MIRA_DA_ACAO = { atacar: 'um', ritual: 'varios', outros: 'um', teste: null };
 
-/** Quem dá para fazer o quê: rituais só para quem conhece; condições só o mestre aplica */
-export function acoesDisponiveis(ator, fichas, livro, mestre) {
+/** Quem dá para fazer o quê: rituais só para quem conhece (condições ficam em Item/Outros, só para o mestre) */
+export function acoesDisponiveis(ator, fichas, livro) {
   const base = baseDe(ator, fichas, livro);
   const temRituais = base.tipo === 'agente' && (base.dados?.rituais?.length ?? 0) > 0;
   return [
     { id: 'atacar', rotulo: 'Atacar', icone: '⚔' },
     temRituais && { id: 'ritual', rotulo: 'Ritual', icone: '✦' },
     { id: 'teste', rotulo: 'Teste', icone: '⚄' },
-    mestre && { id: 'condicao', rotulo: 'Condição', icone: '◎' },
+    { id: 'outros', rotulo: 'Item / Outros', icone: '✚' },
   ].filter(Boolean);
 }
 

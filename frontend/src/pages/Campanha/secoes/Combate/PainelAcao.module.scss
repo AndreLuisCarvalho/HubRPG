@@ -400,3 +400,13 @@
 @media (prefers-reduced-motion: reduce) {
   .carimbo { animation: none; }
 }
+
+.marcar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  cursor: pointer;
+
+  input { accent-color: var(--cor); }
+}

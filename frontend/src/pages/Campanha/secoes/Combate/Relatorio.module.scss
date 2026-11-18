@@ -1,0 +1,256 @@
+@use '../../../../styles/mixins' as *;
+
+/* ---------- Relatório de missão: folha de dossiê ---------- */
+.relatorio {
+  position: relative;
+  display: grid;
+  gap: 18px;
+  max-width: 920px;
+  padding: 28px 32px;
+  border-radius: 2px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.35), transparent 30%),
+    #ece5d4;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  color: #231d16;
+  animation: chegar 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  @include celular { padding: 20px 16px; }
+
+  h3 {
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(35, 29, 22, 0.25);
+    @include fonte-ficha;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+  }
+}
+
+@keyframes chegar { from { opacity: 0; transform: translateY(14px) rotate(-0.6deg); } }
+
+// Dentro da sessão: menor e sem animação
+.compacto {
+  gap: 14px;
+  padding: 18px 20px;
+  box-shadow: none;
+  animation: none;
+}
+
+.cabeca {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  padding-right: 130px;
+
+  h2 { @include fonte-titulo; font-size: 1.9rem; line-height: 1.05; }
+  p { font-size: 0.86rem; color: #5d5240; }
+
+  @include celular { padding-right: 0; }
+}
+
+.sobre {
+  @include fonte-ficha;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #8f1f17;
+}
+
+.carimbo {
+  position: absolute;
+  top: 6px;
+  right: 0;
+  padding: 4px 14px;
+  border: 3px solid #a3261c;
+  outline: 1px solid #a3261c;
+  outline-offset: 3px;
+  @include fonte-ficha;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #a3261c;
+  opacity: 0.85;
+  transform: rotate(-8deg);
+  animation: carimbar 0.35s 0.3s cubic-bezier(0.2, 1.4, 0.5, 1) backwards;
+
+  @include celular { position: static; justify-self: start; margin-top: 8px; }
+}
+
+@keyframes carimbar { from { transform: rotate(-8deg) scale(2); opacity: 0; } }
+
+.saldo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+
+  div {
+    display: grid;
+    justify-items: center;
+    padding: 10px 6px;
+    border: 1px solid rgba(35, 29, 22, 0.25);
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+  b { @include fonte-titulo; font-size: 2.2rem; line-height: 1; }
+  small { font-size: 0.55em; color: #6b604d; }
+  span { @include fonte-ficha; font-size: 0.68rem; letter-spacing: 0.1em; color: #5d5240; text-align: center; }
+}
+
+.destaques {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+
+  div {
+    display: grid;
+    gap: 1px;
+    padding: 10px 12px;
+    border-left: 4px solid #8f1f17;
+    background: rgba(143, 31, 23, 0.07);
+  }
+
+  span { @include fonte-ficha; font-size: 0.66rem; letter-spacing: 0.12em; color: #8f1f17; }
+  b { @include fonte-titulo; font-size: 1.25rem; }
+  small { font-size: 0.8rem; color: #5d5240; }
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+
+  th {
+    padding: 4px 6px;
+    @include fonte-ficha;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-align: left;
+    color: #6b604d;
+  }
+
+  td {
+    padding: 6px;
+    border-top: 1px solid rgba(35, 29, 22, 0.15);
+    font-variant-numeric: tabular-nums;
+
+    small { color: #8a7d64; }
+
+    &[data-situacao='Morto'], &[data-situacao='Insano'], &[data-situacao='Morrendo'] { color: #8f1f17; font-weight: 700; }
+  }
+
+  td:first-child { font-weight: 600; }
+
+  @include celular {
+    font-size: 0.8rem;
+    th, td { padding: 4px 3px; }
+  }
+}
+
+.ameacas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    gap: 1px;
+    min-width: 150px;
+    padding: 8px 10px;
+    border: 1px solid rgba(35, 29, 22, 0.25);
+    background: rgba(255, 255, 255, 0.3);
+
+    b { font-weight: 600; }
+    span { font-size: 0.82rem; color: #5d5240; }
+    small { font-size: 0.74rem; color: #8a7d64; }
+
+    // Derrotada: riscada
+    &[data-derrotado] b { text-decoration: line-through; text-decoration-color: #8f1f17; text-decoration-thickness: 2px; }
+    &[data-derrotado] span { color: #8f1f17; font-weight: 700; }
+  }
+}
+
+.momentos {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.88rem;
+
+  li { display: flex; gap: 8px; }
+  small { flex: 0 0 auto; font-size: 0.7rem; font-weight: 700; color: #8a7d64; padding-top: 2px; }
+  [data-tom='critico'] span { color: #8a5a00; font-weight: 600; }
+  [data-tom='falha'] span { color: #8f1f17; }
+}
+
+/* ---------- Caixa de encerramento ---------- */
+.caixa {
+  display: grid;
+  gap: 16px;
+
+  section { display: grid; gap: 8px; }
+  h3 { @include rotulo-campo; }
+}
+
+.listaSimples {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.88rem;
+}
+
+.marcar {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  cursor: pointer;
+
+  input { margin-top: 3px; accent-color: var(--cor); }
+  small { color: var(--texto-suave); }
+}
+
+.ajuda {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--texto-suave);
+}
+
+.botoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+
+  button {
+    padding: 9px 16px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+}
+
+.primario {
+  border: 1px solid var(--cor);
+  background: color-mix(in srgb, var(--cor) 25%, #121315);
+  color: var(--texto);
+}
+
+.secundario {
+  border: 1px solid var(--borda);
+  background: none;
+  color: var(--texto-suave);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .relatorio, .carimbo { animation: none; }
+}
