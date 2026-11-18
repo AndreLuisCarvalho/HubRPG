@@ -1,0 +1,387 @@
+@use '../../../../styles/mixins' as *;
+
+$agentes: #4f8fd6;
+$ameacas: #c8423a;
+
+.gaveta {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  max-height: calc(100dvh - 40px);
+  padding: 16px;
+  border: 1px solid var(--borda);
+  border-top: 3px solid $agentes;
+  border-radius: 4px;
+  background: var(--superficie);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: entrar 0.25s ease-out;
+
+  &[data-lado='ameacas'] { border-top-color: $ameacas; }
+
+  // Celular: vira uma folha que sobe de baixo
+  @include celular {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 30;
+    max-height: 72dvh;
+    border-radius: 12px 12px 0 0;
+    animation-name: subir;
+  }
+}
+
+@keyframes entrar { from { opacity: 0; transform: translateX(16px); } }
+@keyframes subir { from { transform: translateY(40px); opacity: 0; } }
+
+.cabeca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.retrato {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  border: 2px solid $agentes;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #0d0e10;
+  @include fonte-titulo;
+  font-size: 1.5rem;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+
+  .gaveta[data-lado='ameacas'] & {
+    border-color: currentColor;
+    color: #3fbf4a;
+
+    &[data-estado='ferido'] { color: #e0c23a; }
+    &[data-estado='muitoFerido'] { color: #e07a2b; }
+    &[data-estado='caido'] { color: #7a7a7a; }
+  }
+}
+
+.identidade {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+
+  h2 { @include fonte-titulo; font-size: 1.4rem; line-height: 1.1; }
+  small { font-size: 0.78rem; color: var(--texto-suave); }
+}
+
+.fechar {
+  align-self: flex-start;
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  cursor: pointer;
+
+  &:hover { color: var(--texto); }
+}
+
+.marca {
+  justify-self: start;
+  padding: 1px 10px;
+  border: 2px solid var(--carimbo, #b3362c);
+  color: #ff8a7d;
+  @include fonte-ficha;
+  font-size: 0.8rem;
+  font-weight: 700;
+  transform: rotate(-3deg);
+}
+
+.corpo, .acao { display: grid; gap: 14px; }
+
+.voltar {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cor);
+  @include fonte-ficha;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.estado {
+  @include fonte-ficha;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #6ad06f;
+
+  &[data-estado='ferido'] { color: #e0c23a; }
+  &[data-estado='muitoFerido'] { color: #ff8a4d; }
+  &[data-estado='caido'] { color: var(--texto-suave); }
+}
+
+.barras {
+  display: grid;
+  gap: 7px;
+
+  > div {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  span { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; color: var(--cor-barra); }
+
+  i {
+    height: 10px;
+    background: rgba(0, 0, 0, 0.5);
+
+    b { display: block; height: 100%; background: var(--cor-barra); transition: width 0.5s; }
+  }
+
+  em {
+    min-width: 56px;
+    font-size: 0.9rem;
+    font-style: normal;
+    font-weight: 700;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+
+    small { font-weight: 400; color: var(--texto-suave); }
+  }
+}
+
+.condicoes {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    position: relative;
+    display: grid;
+    gap: 2px;
+    padding: 6px 28px 6px 10px;
+    border-left: 3px solid #f0b429;
+    background: rgba(240, 180, 41, 0.08);
+  }
+
+  b { @include fonte-ficha; font-size: 0.82rem; color: #f3cf74; }
+  small { font-size: 0.76rem; line-height: 1.4; color: var(--texto-suave); }
+
+  button {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    border: 0;
+    background: none;
+    color: var(--texto-suave);
+    cursor: pointer;
+  }
+}
+
+// Ações: azulejos grandes
+.acoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+
+  button {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    padding: 14px 8px;
+    border: 1px solid var(--cor);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--cor) 16%, #121315);
+    color: var(--texto);
+    @include fonte-ficha;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+
+    span { font-size: 1.4rem; line-height: 1; color: var(--cor); }
+
+    &:hover { background: color-mix(in srgb, var(--cor) 30%, #121315); transform: translateY(-1px); }
+  }
+}
+
+.linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+
+  > span { @include rotulo-campo; }
+
+  input {
+    width: 70px;
+    padding: 6px 8px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    font: inherit;
+    font-weight: 700;
+  }
+
+  button {
+    padding: 6px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: none;
+    color: var(--texto);
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+}
+
+.ajuste {
+  display: grid;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--borda);
+
+  > span { @include rotulo-campo; }
+
+  > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  input {
+    flex: 1 1 70px;
+    min-width: 0;
+    padding: 6px 8px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    font: inherit;
+  }
+
+  > div > button {
+    padding: 6px 12px;
+    border-radius: 3px;
+    @include fonte-ficha;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+}
+
+.recursos {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  overflow: hidden;
+
+  button {
+    flex: 1;
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    color: var(--texto-suave);
+    font-size: 0.74rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    &[aria-checked='true'] { background: color-mix(in srgb, var(--cor) 28%, transparent); color: var(--texto); }
+  }
+}
+
+.dano { border: 1px solid #a3332a; background: rgba(163, 51, 42, 0.3); color: #ffb3aa; }
+.cura { border: 1px solid #2f7d4c; background: rgba(47, 125, 76, 0.25); color: #a9e5bf; }
+
+.mestre {
+  display: grid;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--borda);
+
+  > span { @include rotulo-campo; }
+
+  > div { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  button {
+    padding: 5px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: none;
+    color: var(--texto-suave);
+    font-size: 0.78rem;
+    cursor: pointer;
+
+    &:hover { color: var(--texto); }
+  }
+
+  .perigo { border-color: color-mix(in srgb, #e2675d 50%, transparent); color: #e2675d; }
+}
+
+/* ---------- Registro da missão ---------- */
+.registro {
+  border-top-color: var(--cor);
+  background: #e9e2d0;
+  color: #2a241b;
+
+  .identidade h2 { @include fonte-ficha; font-size: 0.95rem; letter-spacing: 0.14em; }
+  .fechar { color: #6b604d; }
+
+  ol {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+
+  li {
+    display: flex;
+    gap: 6px;
+
+    small { flex: 0 0 auto; font-size: 0.68rem; font-weight: 700; color: #8a7d64; padding-top: 1px; }
+
+    &[data-tipo='dano'] span { color: #8f1f17; }
+    &[data-tipo='cura'] span { color: #1f6b3a; }
+    &[data-tipo='turno'] span { font-weight: 600; }
+    &[data-tipo='sistema'] span { font-style: italic; color: #5d5240; }
+
+    &[data-tipo='rodada'] {
+      justify-content: center;
+      margin: 4px 0;
+      padding: 2px 0;
+      border-block: 1px solid rgba(42, 36, 27, 0.25);
+      @include fonte-ficha;
+      font-weight: 700;
+    }
+  }
+
+  em {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 0 5px;
+    border: 1.5px solid currentColor;
+    @include fonte-ficha;
+    font-size: 0.64rem;
+    font-style: normal;
+    font-weight: 700;
+    transform: rotate(-4deg);
+
+    &[data-tom='acerto'], &[data-tom='sucesso'] { color: #1f6b3a; }
+    &[data-tom='falha'], &[data-tom='fracasso'] { color: #9b2218; }
+    &[data-tom='critico'] { color: #8a5a00; }
+  }
+}
+
+.vazio { font-size: 0.85rem; color: #6b604d; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gaveta { animation: none; }
+}

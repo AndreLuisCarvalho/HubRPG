@@ -34,6 +34,13 @@ const PALAVRAS = {
 const DO_ELEMENTO = { san: 'sangue', mor: 'morte', con: 'conhecimento', ene: 'energia', med: 'medo' };
 
 const normalizar = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/** Uma palavra solta ("Balístico", "perfuração", "Sangue") → id do tipo de dano, ou null */
+export const tipoDaPalavra = (palavra) => PALAVRAS[normalizar(String(palavra ?? '')).replace(/[^a-z]/g, '')] ?? null;
+
+/** Nome do tipo para mostrar ("perfuração", "Sangue") */
+export const nomeDoTipo = (id) => tipoPorId(id)?.nome ?? '';
+
 const novoUid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 /** "10 cortante + 1d4 de morte" → [{ formula: '10', tipo: 'corte' }, { formula: '1d4', tipo: 'morte' }] */
