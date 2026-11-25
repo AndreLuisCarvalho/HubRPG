@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db.js';
-import { ehMestre, fichaBasica, fichasEmCombate, soDadosDeCombate } from '../permissoes.js';
+import { ehMestre, fichaBasica, fichaDaLuta, fichasEmCombate, soDadosDeCombate } from '../permissoes.js';
 
 const router = Router();
 const TIPOS = ['jogador', 'npc', 'monstro'];
@@ -9,7 +9,7 @@ const TIPOS = ['jogador', 'npc', 'monstro'];
  * Fichas. dono_id = a conta do jogador que usa o agente (o mestre liga; o jogador que cria o
  * próprio agente já vira o dono).
  * O jogador vê: o próprio agente inteiro, os agentes dos outros só no básico (nome, foto, resumo)
- * e, durante um combate em andamento, as fichas de quem está na luta. Edita só o próprio agente
+ * e, só na arena, os números da luta de quem está num combate em andamento. Edita só o próprio agente
  * (e, na luta, só os recursos de quem está no combate). Cria um agente só.
  */
 
@@ -20,9 +20,15 @@ function formatar(ficha) {
 
 const buscarFicha = async (id) => formatar(await db.get('SELECT * FROM fichas WHERE id = ?', Number(id)));
 
-/** O que esta conta pode ver da ficha: 'tudo', 'basico' ou null (nada) */
-function acesso(req, ficha, emCombate) {
-  if (ehMestre(req) || ficha.dono_id === req.usuario.id || emCombate.has(ficha.id)) return 'tudo';
+/**
+ * O que esta conta pode ver da ficha: 'tudo', 'basico' ou null (nada).
+ * O jogador vê inteiro só o próprio agente. Os agentes dos outros: só o básico (um vislumbre).
+ * A exceção é a arena (?combate=1): quem está num combate em andamento vem com os números da luta,
+ * que as regras do combate precisam (PV, defesa…). Fora da arena, nem as ameaças da luta aparecem.
+ */
+function acesso(req, ficha, emCombate, naArena = false) {
+  if (ehMestre(req) || ficha.dono_id === req.usuario.id) return 'tudo';
+  if (naArena && emCombate.has(ficha.id)) return 'luta';
   if (ficha.tipo === 'jogador') return 'basico';
   return null;
 }
@@ -41,10 +47,12 @@ router.get('/campanhas/:campanhaId/fichas', async (req, res) => {
   ).map(formatar);
 
   if (ehMestre(req)) return res.json(fichas);
-  const emCombate = await fichasEmCombate(campanhaId);
+  const naArena = req.query.combate === '1';
+  const emCombate = naArena ? await fichasEmCombate(campanhaId) : new Set();
   res.json(fichas.flatMap((f) => {
-    const a = acesso(req, f, emCombate);
+    const a = acesso(req, f, emCombate, naArena);
     if (a === 'tudo') return [f];
+    if (a === 'luta') return [fichaDaLuta(f)];
     if (a === 'basico') return [fichaBasica(f)];
     return [];
   }));
@@ -54,7 +62,8 @@ router.get('/campanhas/:campanhaId/fichas', async (req, res) => {
 router.get('/fichas/:id', async (req, res) => {
   const ficha = await buscarFicha(req.params.id);
   if (!ficha) return res.status(404).json({ erro: 'Ficha não encontrada' });
-  const a = acesso(req, ficha, ehMestre(req) ? new Set() : await fichasEmCombate(ficha.campanha_id));
+  // A ficha aberta (fora da arena): do outro jogador, só o básico
+  const a = acesso(req, ficha, new Set());
   if (!a) return res.status(403).json({ erro: 'Você não pode ver esta ficha' });
   res.json(a === 'tudo' ? ficha : fichaBasica(ficha));
 });

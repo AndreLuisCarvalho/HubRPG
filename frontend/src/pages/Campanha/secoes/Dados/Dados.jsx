@@ -26,8 +26,9 @@ export default function Dados({ campanha }) {
 
   useEffect(() => {
     const efeito = { ativo: true };
+    // O jogador monta só o kit do próprio agente (os dos outros vêm só no básico)
     api.listarFichas(campanha.id)
-      .then((f) => efeito.ativo && setFichas(f))
+      .then((f) => efeito.ativo && setFichas(f.filter((x) => !x.basica)))
       .catch((e) => efeito.ativo && setErro(e.message));
     return () => { efeito.ativo = false; };
   }, [campanha.id]);

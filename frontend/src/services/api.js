@@ -81,6 +81,8 @@ export const api = {
   // Fichas
   listarFichas: (campanhaId, tipo) =>
     requisicao(`/campanhas/${campanhaId}/fichas${tipo ? `?tipo=${tipo}` : ''}`),
+  // Na arena: quem está na luta vem com os números do combate (o jogador não recebe a ficha toda dos outros)
+  listarFichasDaLuta: (campanhaId) => requisicao(`/campanhas/${campanhaId}/fichas?combate=1`),
   buscarFicha: (id) => requisicao(`/fichas/${id}`),
   criarFicha: (campanhaId, ficha) =>
     requisicao(`/campanhas/${campanhaId}/fichas`, { method: 'POST', body: ficha }),
