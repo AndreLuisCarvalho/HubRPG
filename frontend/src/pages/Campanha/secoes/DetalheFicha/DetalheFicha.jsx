@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../../../../services/api';
+import { useAoMudar } from '../../../../services/tempoReal';
 import { obterSistema } from '../../../../sistemas';
 import styles from './DetalheFicha.module.scss';
 
@@ -37,6 +38,14 @@ export default function DetalheFicha({ campanha }) {
   useEffect(() => {
     api.buscarFicha(fichaId).then(setFicha).catch((e) => setErro(e.message));
   }, [fichaId]);
+
+  // Tempo real: esta ficha mudou em outra tela (o mestre deu dano, o jogador gastou PE…).
+  // Se a pessoa estiver digitando aqui, espera ela sair do campo.
+  useAoMudar(campanha.id, ['fichas'], (eventos) => {
+    if (!eventos.some((e) => e.tabela === '*' || e.id === Number(fichaId))) return;
+    if (eventos.some((e) => e.acao === 'apagou' && e.id === Number(fichaId))) return setErro('Esta ficha foi apagada.');
+    api.buscarFicha(fichaId).then(setFicha).catch(() => {});
+  });
 
   // Atualização otimista: a tela muda na hora e o servidor salva em seguida
   function alterarDados(parcial) {

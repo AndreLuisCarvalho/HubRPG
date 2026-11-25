@@ -25,11 +25,18 @@ export function guardarToken(token) {
 }
 
 /* ---------- Requisição ---------- */
+// Identifica esta aba: o servidor repassa no aviso de tempo real, e a aba ignora o aviso do que ela mesma fez
+export const ORIGEM = Math.random().toString(36).slice(2, 10);
+
 async function requisicao(caminho, opcoes = {}) {
   const token = lerToken();
   const resposta = await fetch(`${BASE}/api${caminho}`, {
     ...opcoes,
-    headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Origem': ORIGEM,
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
     body: opcoes.body ? JSON.stringify(opcoes.body) : undefined,
   });
 
@@ -68,6 +75,8 @@ export const api = {
   novoCodigo: (id) => requisicao(`/campanhas/${id}/codigo`, { method: 'POST' }),
   listarMembros: (id) => requisicao(`/campanhas/${id}/membros`),
   tirarMembro: (id, usuarioId) => requisicao(`/campanhas/${id}/membros/${usuarioId}`, { method: 'DELETE' }),
+  // Tempo real: { ligado, canal, token } (ligado = false quando o servidor não tem o Ably configurado)
+  tokenTempoReal: (id) => requisicao(`/campanhas/${id}/tempo-real`),
  
   // Fichas
   listarFichas: (campanhaId, tipo) =>

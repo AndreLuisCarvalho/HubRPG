@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Modal from '../../../../components/Modal/Modal';
 import { api } from '../../../../services/api';
+import { useAoMudar } from '../../../../services/tempoReal';
 import { ARQUIVO_NOVO, estadoDo, porCaso } from './regras';
 import FormArquivo from './FormArquivo';
 import Pasta from './Pasta';
@@ -42,6 +43,11 @@ export default function Arquivos({ campanha }) {
       .catch((e) => efeito.ativo && setErro(e.message));
     return () => { efeito.ativo = false; };
   }, [campanha.id]);
+
+  // Tempo real: o mestre criou, liberou ou mudou um arquivo (espera fechar a janela aberta)
+  useAoMudar(campanha.id, ['arquivos'], () => {
+    api.listarArquivos(campanha.id).then(setArquivos).catch(() => {});
+  });
 
   const fechar = () => setJanela(null);
   const trocarNaLista = (salvo) =>

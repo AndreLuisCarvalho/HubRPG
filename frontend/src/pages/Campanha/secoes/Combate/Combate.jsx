@@ -3,6 +3,7 @@ import Modal from '../../../../components/Modal/Modal';
 import Seletor from '../../../../components/Seletor/Seletor';
 import { api } from '../../../../services/api';
 import { useConta } from '../../../../conta/conta';
+import { useAoMudar } from '../../../../services/tempoReal';
 import { pedidoDeAbrir, useVisao } from '../../visao';
 import Arena from './Arena';
 import { COMBATE_NOVO } from './regrasCombate';
@@ -22,6 +23,8 @@ export default function Combate({ campanha }) {
   const [visao, trocarVisao, podeTrocarVisao] = useVisao(campanha.id);
   const { usuario } = useConta();
   const fila = useRef(Promise.resolve());
+  const combatesRef = useRef(combates);
+  useEffect(() => { combatesRef.current = combates; });
   const ehOrdem = campanha.sistema_id === 'ordem-paranormal';
 
   useEffect(() => {
@@ -44,6 +47,27 @@ export default function Combate({ campanha }) {
       .catch((e) => vivo.ok && setErro(e.message));
     return () => { vivo.ok = false; };
   }, [campanha.id]);
+
+  // Tempo real: alguém agiu em outra tela. Recarrega na fila (depois do que esta tela ainda está salvando),
+  // e o combate novo chega à arena, que anima o que mudou (golpes, quedas, vez, vitória)
+  useAoMudar(campanha.id, ['combates', 'fichas', 'sessoes'], (eventos) => {
+    const tabelas = new Set(eventos.map((e) => e.tabela));
+    const tudo = tabelas.has('*');
+    fila.current = fila.current.then(async () => {
+      const [c, f, s] = await Promise.all([
+        tudo || tabelas.has('combates') ? api.listarCombates(campanha.id) : null,
+        tudo || tabelas.has('fichas') ? api.listarFichas(campanha.id) : null,
+        tudo || tabelas.has('sessoes') ? api.listarSessoes(campanha.id).catch(() => null) : null,
+      ]);
+      // O mestre começou um combate agora: os jogadores que estão na lista entram nele
+      const comecou = c?.find((x) => x.dados.estado === 'andamento'
+        && combatesRef.current?.find((y) => y.id === x.id)?.dados.estado !== 'andamento');
+      if (c) setCombates(c);
+      if (f) setFichas(Object.fromEntries(f.map((x) => [x.id, x])));
+      if (s) setSessoes(s);
+      if (comecou && !podeTrocarVisao) setAbertoId((atual) => atual ?? comecou.id);
+    }).catch(() => {});
+  }, { esperar: false });
 
   const aberto = combates?.find((c) => c.id === abertoId);
 

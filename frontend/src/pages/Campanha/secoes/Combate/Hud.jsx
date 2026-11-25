@@ -117,7 +117,7 @@ export default function Hud({
             ))}
           </div>
         )}
-        <button type="button" className={styles.hudFinalizar} onClick={onFinalizar}>Finalizar turno</button>
+        {onFinalizar && <button type="button" className={styles.hudFinalizar} onClick={onFinalizar}>Finalizar turno</button>}
         {mestre && <button type="button" className={styles.hudLink} onClick={onVoltarTurno}>◂ voltar um turno</button>}
       </div>
     </div>

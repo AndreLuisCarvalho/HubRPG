@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../../../services/api';
+import { useAoMudar } from '../../../../services/tempoReal';
 import Visualizador from '../Mapas/Visualizador';
 import styles from './VisaoGeral.module.scss';
 
@@ -10,6 +11,9 @@ import styles from './VisaoGeral.module.scss';
  */
 export default function MapaAtual({ campanha, agentes }) {
   const [mapa, setMapa] = useState(null);
+
+  const [versao, setVersao] = useState(0);   // sobe quando um mapa muda em outra tela (tempo real)
+  useAoMudar(campanha.id, ['mapas'], () => setVersao((v) => v + 1));
 
   useEffect(() => {
     const efeito = { ativo: true };
@@ -21,7 +25,7 @@ export default function MapaAtual({ campanha, agentes }) {
       .then((m) => efeito.ativo && setMapa(m))
       .catch(() => {});   // sem mapa na Visão geral não é erro
     return () => { efeito.ativo = false; };
-  }, [campanha.id]);
+  }, [campanha.id, versao]);
 
   if (!mapa) return null;
   const { dados } = mapa;

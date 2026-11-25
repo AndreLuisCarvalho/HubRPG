@@ -8,6 +8,7 @@ import fichasRouter from './routes/fichas.js';
 import arquivosRouter from './routes/arquivos.js';
 import mapasRouter from './routes/mapas.js';
 import contasRouter from './routes/contas.js';
+import { avisarMudancas, rotasTempoReal } from './tempoReal.js';
 import parentesRouter from './routes/parentes.js';
 
 const app = express();
@@ -29,6 +30,9 @@ app.use(async (req, res, next) => {
 app.use('/api', identificar);
 app.use('/api', rotasDeLogin);
 app.use('/api', exigirLogin, exigirCampanha);
+// Tempo real: avisa a campanha a cada mudança, e dá ao site o token para ouvir
+app.use('/api', avisarMudancas);
+app.use('/api', rotasTempoReal);
 
 app.use('/api', contasRouter);
 app.use('/api/campanhas', campanhasRouter);

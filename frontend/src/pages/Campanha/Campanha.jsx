@@ -11,6 +11,7 @@ import { FundoOutroLado } from '../../components';
 import RolagemProvider from '../../components/Dados/RolagemProvider';
 import { obterSistema } from '../../sistemas';
 import { definirPapel } from './visao';
+import AvisosTempoReal from './AvisosTempoReal';
 
 // Leitor do livro: só baixa ao abrir a seção
 const Livro = lazy(() => import('./secoes/Livro/Livro'));
@@ -84,6 +85,7 @@ export default function Campanha() {
           </Routes>
         </main>
         </RolagemProvider>
+        <AvisosTempoReal campanha={campanha} onAtualizar={setCampanha} />
       </div>
   );
 }

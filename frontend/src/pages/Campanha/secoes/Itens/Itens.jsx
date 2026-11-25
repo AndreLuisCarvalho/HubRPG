@@ -3,6 +3,7 @@ import Modal from '../../../../components/Modal/Modal';
 import Seletor from '../../../../components/Seletor/Seletor';
 import { useRolagem } from '../../../../components/Dados/rolagem';
 import { api } from '../../../../services/api';
+import { useAoMudar } from '../../../../services/tempoReal';
 import {
   comOItem, ITEM_NOVO, itemDoLivro, semOItem, temDano, TIPOS_DE_ITEM,
 } from '../../../../sistemas/ordemParanormal/itensCampanha';
@@ -52,6 +53,13 @@ export default function Itens({ campanha }) {
       .catch((e) => efeito.ativo && setErro(e.message));
     return () => { efeito.ativo = false; };
   }, [campanha.id]);
+
+  // Tempo real: item novo, liberado ou entregue a um agente (espera fechar a carta aberta)
+  useAoMudar(campanha.id, ['itens', 'fichas'], (eventos) => {
+    const tudo = eventos.some((e) => e.tabela === '*');
+    if (tudo || eventos.some((e) => e.tabela === 'itens')) api.listarItens(campanha.id).then(setItens).catch(() => {});
+    if (tudo || eventos.some((e) => e.tabela === 'fichas')) api.listarFichas(campanha.id, 'jogador').then(setAgentes).catch(() => {});
+  });
 
   const fechar = () => setJanela(null);
 

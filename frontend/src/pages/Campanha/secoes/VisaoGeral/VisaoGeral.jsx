@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '../../../../components';
 import { api } from '../../../../services/api';
+import { useAoMudar } from '../../../../services/tempoReal';
 import { reduzirBanner } from '../../../../services/imagem';
 import { formatarData, organizarSessoes, quantoFalta } from '../Sessoes/agenda';
 import ResumoSessao from '../Sessoes/ResumoSessao';
@@ -35,6 +36,13 @@ export default function VisaoGeral({ campanha, onAtualizar }) {
       .catch((e) => efeito.ativo && setErro(e.message));
     return () => { efeito.ativo = false; };
   }, [campanha.id]);
+
+  // Tempo real: sessão nova, agente mudou (a campanha em si é recarregada pela página da campanha)
+  useAoMudar(campanha.id, ['sessoes', 'fichas'], (eventos) => {
+    const tudo = eventos.some((e) => e.tabela === '*');
+    if (tudo || eventos.some((e) => e.tabela === 'sessoes')) api.listarSessoes(campanha.id).then(setSessoes).catch(() => {});
+    if (tudo || eventos.some((e) => e.tabela === 'fichas')) api.listarFichas(campanha.id, 'jogador').then(setAgentes).catch(() => {});
+  });
 
   return (
     <section className={styles.visao}>
