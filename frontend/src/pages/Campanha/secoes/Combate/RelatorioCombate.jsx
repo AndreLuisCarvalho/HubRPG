@@ -32,7 +32,7 @@ export default function RelatorioCombate({ relatorio, mestre, nome, sessao, comp
             tempo,
           ].filter(Boolean).join(' · ')}
         </p>
-        <span className={styles.carimbo} aria-hidden="true">Encerrado</span>
+        <span className={styles.carimbo} data-vitoria={relatorio.vitoria ? true : undefined} aria-hidden="true">{relatorio.vitoria ?? 'Encerrado'}</span>
       </header>
 
       <div className={styles.saldo}>

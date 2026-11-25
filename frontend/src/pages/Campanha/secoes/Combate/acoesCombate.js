@@ -261,19 +261,62 @@ export function lerResistenciaDoRitual(texto) {
 }
 
 /* ---------- O que dá para fazer na arena ---------- */
-/** O que cada ação pede de alvo: um só (clicando no palco troca) ou vários (clicando liga/desliga) */
-export const MIRA_DA_ACAO = { atacar: 'um', ritual: 'varios', outros: 'um', teste: null };
+/** O que cada carta pede de alvo: um só (clicando no campo troca) ou vários (clicando liga/desliga) */
+export function miraDaCarta(carta) {
+  if (!carta) return null;
+  if (carta.aba === 'atacar') return 'um';
+  if (carta.aba === 'ritual') return 'varios';
+  if (carta.aba === 'outros' && carta.escolha !== 'livre') return 'um';
+  return null;
+}
 
-/** Quem dá para fazer o quê: rituais só para quem conhece (condições ficam em Item/Outros, só para o mestre) */
-export function acoesDisponiveis(ator, fichas, livro) {
+/**
+ * A mão de quem age: uma carta por ataque e por ritual da ficha, mais Teste, Item, Ação livre e
+ * (só o mestre) Condição. Cada carta abre a ação já escolhida no painel.
+ * [{ id, aba, escolha, tipo, nome, detalhe, icone, tom, elemento }]
+ */
+export function cartasDaMao(ator, fichas, livro, mestre) {
   const base = baseDe(ator, fichas, livro);
-  const temRituais = base.tipo === 'agente' && (base.dados?.rituais?.length ?? 0) > 0;
-  return [
-    { id: 'atacar', rotulo: 'Atacar', icone: '⚔' },
-    temRituais && { id: 'ritual', rotulo: 'Ritual', icone: '✦' },
-    { id: 'teste', rotulo: 'Teste', icone: '⚄' },
-    { id: 'outros', rotulo: 'Item / Outros', icone: '✚' },
-  ].filter(Boolean);
+  const ataques = ataquesDe(base);
+  const cartas = ataques.map((a) => ({
+    id: `atacar:${a.id}`,
+    aba: 'atacar',
+    escolha: a.id,
+    tipo: 'Ataque',
+    nome: a.nome,
+    detalhe: a.partes.map((p) => `${p.formula} ${p.rotulo}`).join(' + ') || 'sem dano',
+    icone: '⚔',
+    tom: 'ataque',
+  }));
+  if (!ataques.length) {
+    cartas.push({ id: 'atacar', aba: 'atacar', tipo: 'Ataque', nome: 'Atacar', detalhe: 'sem ataques na ficha', icone: '⚔', tom: 'ataque' });
+  }
+  for (const r of rituaisDe(base, livro)) {
+    cartas.push({
+      id: `ritual:${r.id}`,
+      aba: 'ritual',
+      escolha: r.id,
+      tipo: `Ritual · ${r.circulo}º`,
+      nome: r.nome,
+      detalhe: `${r.formas[0]?.custo ?? '—'} PE${r.formas[0]?.dano ? ` · ${r.formas[0].dano}` : ''}`,
+      icone: '✦',
+      tom: 'ritual',
+      elemento: r.elemento,
+    });
+  }
+  cartas.push({ id: 'teste', aba: 'teste', tipo: 'Teste', nome: 'Perícia', detalhe: 'rolar um teste', icone: '⚄', tom: 'teste' });
+  if (base.tipo === 'agente') {
+    const n = base.dados?.inventario?.length ?? 0;
+    cartas.push({
+      id: 'outros:item', aba: 'outros', escolha: 'item', tipo: 'Item', nome: 'Usar item',
+      detalhe: n ? `${n} no inventário` : 'inventário vazio', icone: '✚', tom: 'item',
+    });
+  }
+  cartas.push({ id: 'outros:livre', aba: 'outros', escolha: 'livre', tipo: 'Livre', nome: 'Ação livre', detalhe: 'descrever o que faz', icone: '✎', tom: 'livre' });
+  if (mestre) {
+    cartas.push({ id: 'outros:condicao', aba: 'outros', escolha: 'condicao', tipo: 'Condição', nome: 'Condição', detalhe: 'aplicar em alguém', icone: '◈', tom: 'condicao' });
+  }
+  return cartas;
 }
 
 export { nomeDoTipo };

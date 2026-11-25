@@ -47,6 +47,7 @@ export function montarRelatorio(dados, vistos) {
     .map((e) => ({ id: e.id, rodada: e.rodada, tipo: e.tipo, carimbo: e.carimbo, texto: e.texto, textoJogadores: e.textoJogadores }));
 
   return {
+    vitoria: dados.vitoria?.palavra ?? null,
     rodadas: dados.rodada || 0,
     inicio: dados.inicio ?? null,
     fim: Date.now(),

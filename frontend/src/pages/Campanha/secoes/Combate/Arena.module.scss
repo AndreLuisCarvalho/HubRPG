@@ -6,28 +6,21 @@ $ouro: #d9a54a;
 $sangue: #b3261c;
 
 /* =========================================================
- * Layout: 4 zonas numa tela só (sem rolar a página)
- *   topo  | log
- *   centro| log
- *   hud   | log
+ * Layout de duelo numa tela só (sem rolar a página)
+ *   topo   (timeline)
+ *   centro (campo + painel da carta em jogo)
+ *   hud    (quem age, mão de cartas, fim do turno)
+ * O registro abre numa gaveta por cima.
  * ========================================================= */
 .arena {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr) auto;
-  grid-template-areas:
-    'topo log'
-    'centro log'
-    'hud log';
-  gap: 10px;
+  grid-template-areas: 'topo' 'centro' 'hud';
+  gap: 8px;
   height: calc(100dvh - 48px);
   min-height: 0;
-
-  @media (max-width: 1100px) {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto auto;
-    grid-template-areas: 'topo' 'centro' 'hud' 'log';
-  }
 
   // Celular: a arena ocupa a tela toda (o ← volta para a lista)
   @include celular {
@@ -160,6 +153,33 @@ $sangue: #b3261c;
 
 .perigo { color: #e2675d; border-color: color-mix(in srgb, #e2675d 45%, transparent); }
 
+.soCelular { display: none; }
+
+@include celular {
+  .soLargo { display: none; }
+  .soCelular { display: inline; }
+
+  .topo .timeline {
+    padding: 2px;
+
+    button { width: 44px; }
+  }
+
+  .topo .timelineRetrato { width: 30px; height: 30px; font-size: 0.85rem; }
+}
+
+.conta {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, $sangue 70%, transparent);
+  color: #fff;
+  font-size: 0.66rem;
+  text-align: center;
+}
+
 /* Timeline de iniciativa */
 .timeline {
   display: flex;
@@ -244,9 +264,136 @@ $sangue: #b3261c;
 .centro {
   grid-area: centro;
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
   min-height: 0;
 
-  > div:first-child { height: 100%; }
+  > div:first-child { height: 100%; min-height: 0; }
+
+  // Carta em jogo: o campo encolhe e o painel fica ao lado (os alvos continuam à vista)
+  &[data-acao] { grid-template-columns: minmax(0, 1fr) min(390px, 40%); }
+
+  // Mestre: a coluna da ordem à esquerda
+  &[data-ordem] { grid-template-columns: 190px minmax(0, 1fr); }
+  &[data-ordem][data-acao] { grid-template-columns: 190px minmax(0, 1fr) min(360px, 36%); }
+
+  @media (max-width: 900px) {
+    &[data-ordem] { grid-template-columns: minmax(0, 1fr); }
+    &[data-ordem][data-acao] { grid-template-columns: minmax(0, 1fr) min(340px, 45%); }
+    .ordem { display: none; }
+  }
+
+  @include celular {
+    &[data-acao], &[data-ordem][data-acao] { grid-template-columns: minmax(0, 1fr); }
+  }
+}
+
+/* Coluna da ordem (mestre) */
+.ordem {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--borda);
+  border-top: 2px solid $ouro;
+  border-radius: 4px;
+  background: #121316;
+
+  h3 {
+    margin: 0;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--borda);
+    @include fonte-ficha;
+    font-size: 0.74rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+
+  ol {
+    flex: 1;
+    display: grid;
+    align-content: start;
+    gap: 3px;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    overflow-y: auto;
+  }
+
+  button {
+    display: grid;
+    grid-template-columns: 16px 30px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid transparent;
+    border-left: 3px solid $agentes;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--texto);
+    text-align: left;
+    cursor: pointer;
+
+    &:hover { background: rgba(255, 255, 255, 0.07); }
+    &[aria-pressed='true'] { border-color: rgba(255, 255, 255, 0.4); border-left-color: inherit; }
+
+    strong {
+      @include fonte-titulo;
+      font-size: 1.15rem;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  li[data-lado='ameacas'] button { border-left-color: $ameacas; }
+
+  // Na vez: dourado
+  li[data-vez] button {
+    border-color: $ouro;
+    background: color-mix(in srgb, $ouro 16%, transparent);
+    box-shadow: 0 0 12px color-mix(in srgb, $ouro 30%, transparent);
+
+    strong { color: $ouro; }
+  }
+
+  li[data-proximo] .ordemPos { outline: 1px dashed $ouro; }
+  li[data-caido] button { opacity: 0.45; filter: grayscale(1); }
+  li[data-oculto] button { opacity: 0.65; border-style: dashed; }
+}
+
+.ordemPos {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
+.ordemRetrato {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #0d0e10;
+  @include fonte-titulo;
+  font-size: 0.9rem;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.ordemNome {
+  display: grid;
+  min-width: 0;
+
+  b, small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  b { font-size: 0.78rem; }
+  small { font-size: 0.64rem; color: var(--texto-suave); }
 }
 
 .rolagemRelatorio {
@@ -255,45 +402,86 @@ $sangue: #b3261c;
   padding: 4px;
 }
 
-// Bandeja da ação: por cima da parte de baixo do palco
+// Painel da carta em jogo: ao lado do campo, como a carta ampliada
 .bandeja {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
+  --tom: #c8423a;
+  position: relative;
   z-index: 5;
   display: grid;
+  align-content: start;
   gap: 10px;
-  width: min(600px, calc(100% - 16px));
-  max-height: calc(100% - 60px);
+  min-height: 0;
   padding: 12px 14px;
   border: 1px solid var(--borda);
-  border-top: 2px solid $ouro;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--superficie) 96%, transparent);
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.55);
+  border-top: 3px solid var(--tom);
+  border-radius: 6px;
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--tom) 16%, transparent), transparent 60%),
+    var(--superficie);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
   overflow-y: auto;
   overscroll-behavior: contain;
-  translate: -50% 0;
-  animation: subir 0.25s ease-out;
+  animation: entrar 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  &[data-tom='ritual'] { --tom: #a24bff; }
+  &[data-tom='teste'] { --tom: #{$ouro}; }
+  &[data-tom='item'] { --tom: #3f9d63; }
+  &[data-tom='livre'] { --tom: #8b8f99; }
+  &[data-tom='condicao'] { --tom: #e09a2b; }
 
   > header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 10px;
 
-    b { @include fonte-titulo; font-size: 1.2rem; color: $ouro; }
-    small { flex: 1; font-size: 0.8rem; color: var(--texto-suave); }
+    > div { display: grid; flex: 1; min-width: 0; }
+    b { @include fonte-titulo; font-size: 1.2rem; line-height: 1.15; color: var(--texto); }
+    small { font-size: 0.72rem; color: var(--texto-suave); }
 
     button {
+      align-self: flex-start;
       border: 0;
       background: none;
       color: var(--texto-suave);
       cursor: pointer;
     }
   }
+
+  // Celular: abre por cima da parte de baixo do campo
+  @include celular {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    max-height: 62%;
+    animation-name: subir;
+  }
 }
 
-@keyframes subir { from { opacity: 0; translate: -50% 14px; } }
+.bandejaIcone {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 50px;
+  border: 2px solid var(--tom);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--tom) 18%, #0c0d10);
+  font-size: 1.3rem;
+  color: var(--tom);
+}
+
+.bandejaDica {
+  margin: 0;
+  padding: 4px 8px;
+  border-left: 2px solid #ff4b3e;
+  background: rgba(255, 75, 62, 0.08);
+  font-size: 0.76rem;
+  color: #ffc2bb;
+}
+
+@keyframes entrar { from { opacity: 0; transform: translateX(24px) rotate(2deg); } }
+@keyframes subir { from { opacity: 0; transform: translateY(24px); } }
 
 /* Ficha rápida (dentro do palco) */
 .inspecao {
@@ -516,24 +704,78 @@ $sangue: #b3261c;
 .hud {
   grid-area: hud;
   display: grid;
-  grid-template-columns: minmax(240px, 1.1fr) minmax(0, 2fr) auto;
-  align-items: center;
-  gap: 16px;
-  padding: 10px 14px;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 14px;
+  padding: 6px 14px 10px;
   border: 1px solid var(--borda);
   border-top: 2px solid $agentes;
   border-radius: 4px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
+    linear-gradient(180deg, color-mix(in srgb, $agentes 10%, transparent), transparent 70%),
     var(--superficie);
 
-  &[data-lado='ameacas'] { border-top-color: $ameacas; }
-  &[data-modo='preparo'] { border-top-color: $ouro; }
+  > .hudQuem, > .hudFim { align-self: center; }
 
+  &[data-lado='ameacas'] {
+    border-top-color: $ameacas;
+    background: linear-gradient(180deg, color-mix(in srgb, $ameacas 12%, transparent), transparent 70%), var(--superficie);
+  }
+  &[data-modo='preparo'] { align-items: center; border-top-color: $ouro; }
+
+  // Telas estreitas: quem age e o fim do turno em cima, a mão embaixo
   @media (max-width: 900px) {
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px 12px;
+    gap: 4px 10px;
+    padding: 6px 8px 8px;
+
+    > .hudMao { grid-column: 1 / -1; grid-row: 2; }
   }
+}
+
+.hudMao {
+  display: grid;
+  min-width: 0;
+}
+
+.hudAviso {
+  justify-self: center;
+  margin: 0;
+  padding: 2px 12px;
+  border: 1px dashed color-mix(in srgb, $agentes 70%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, $agentes 12%, transparent);
+  font-size: 0.74rem;
+  color: #b9d3f2;
+  text-align: center;
+}
+
+.hudPreparo {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 6px 14px;
+    border: 1px solid color-mix(in srgb, $sangue 70%, var(--borda));
+    border-radius: 4px;
+    background: linear-gradient(180deg, rgba(179, 38, 28, 0.22), rgba(179, 38, 28, 0.08));
+    color: var(--texto);
+    @include fonte-ficha;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    span { color: #ff8a7d; }
+    &:disabled { opacity: 0.45; cursor: default; }
+  }
+
+  @media (max-width: 900px) { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; }
 }
 
 .hudQuem {
@@ -596,19 +838,19 @@ $sangue: #b3261c;
   color: #ff8a7d;
 }
 
-.hudBarras { margin-top: 3px; }
+.hudBarras {
+  margin-top: 3px;
 
-.hudCentro {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
+  strong span[data-correndo='desce'] { color: #ff6b5f; }
+  strong span[data-correndo='sobe'] { color: #6fcf97; }
 
-  @media (max-width: 900px) { grid-column: 1 / -1; grid-row: 2; }
+  @include celular { gap: 2px; i { height: 6px; } strong { font-size: 0.74rem; } }
 }
 
 .hudEconomia {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
 
   button {
@@ -644,48 +886,13 @@ $sangue: #b3261c;
   }
 }
 
-.hudAcoes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-  gap: 8px;
-
-  button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 44px;
-    padding: 8px 12px;
-    border: 1px solid color-mix(in srgb, $sangue 70%, var(--borda));
-    border-radius: 4px;
-    background: linear-gradient(180deg, rgba(179, 38, 28, 0.22), rgba(179, 38, 28, 0.08));
-    color: var(--texto);
-    @include fonte-ficha;
-    font-size: 0.86rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s, transform 0.15s, border-color 0.15s;
-
-    span { font-size: 1.15rem; color: #ff8a7d; }
-
-    &:hover:not(:disabled) { transform: translateY(-1px); background: linear-gradient(180deg, rgba(179, 38, 28, 0.38), rgba(179, 38, 28, 0.14)); }
-    &[aria-pressed='true'] { border-color: $ouro; box-shadow: 0 0 0 1px $ouro inset; }
-    &:disabled { opacity: 0.45; cursor: default; }
-  }
-
-  @include celular {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-
-    button { flex-direction: column; gap: 2px; min-height: 48px; padding: 4px; font-size: 0.68rem; }
-  }
-}
-
 .hudLembrete {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding: 4px 10px;
+  margin-top: 3px;
+  padding: 2px 8px;
   border: 1px dashed color-mix(in srgb, $sangue 80%, transparent);
   background: rgba(179, 38, 28, 0.12);
   font-size: 0.8rem;
@@ -707,14 +914,15 @@ $sangue: #b3261c;
 .hudFim {
   display: grid;
   justify-items: end;
-  gap: 4px;
+  gap: 6px;
 }
 
+// Finalizar turno: o botão redondo e dourado do canto
 .hudFinalizar {
   min-height: 52px;
   padding: 10px 22px;
   border: 1px solid #f0c46b;
-  border-radius: 4px;
+  border-radius: 999px;
   background: linear-gradient(180deg, #e3b356, #b8862f);
   color: #1b1408;
   @include fonte-ficha;
@@ -745,15 +953,31 @@ $sangue: #b3261c;
 }
 
 /* ---------- 4 · Registro da missão ---------- */
+// Gaveta pela direita, por cima de tudo
 .log {
-  grid-area: log;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 12;
   display: flex;
   flex-direction: column;
+  width: min(340px, 92vw);
   min-height: 0;
   border: 1px solid var(--borda);
   border-top: 2px solid $sangue;
   border-radius: 4px;
   background: #121316;
+  box-shadow: -14px 0 40px rgba(0, 0, 0, 0.6);
+  transform: translateX(calc(100% + 30px));
+  visibility: hidden;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s 0.3s;
+
+  &[data-aberto] {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
 }
 
 .logTitulo {
@@ -761,25 +985,14 @@ $sangue: #b3261c;
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border: 0;
   border-bottom: 1px solid var(--borda);
-  background: none;
   color: var(--texto);
   @include fonte-ficha;
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.12em;
-  text-align: left;
-  cursor: default;
 
-  small { color: var(--texto-suave); letter-spacing: 0; }
-
-  @media (max-width: 1100px) {
-    cursor: pointer;
-
-    &::after { content: '▴'; margin-left: 8px; color: var(--texto-suave); }
-    .log[data-aberto] &::after { content: '▾'; }
-  }
+  button { border: 0; background: none; color: var(--texto-suave); cursor: pointer; }
 }
 
 .logLista {
@@ -795,14 +1008,6 @@ $sangue: #b3261c;
   overscroll-behavior: contain;
   font-size: 0.8rem;
   line-height: 1.4;
-
-  // Telas estreitas: o registro fica recolhido até tocar no título
-  @media (max-width: 1100px) {
-    display: none;
-    max-height: 32dvh;
-
-    .log[data-aberto] & { display: grid; }
-  }
 
   li {
     display: flex;
@@ -837,6 +1042,7 @@ $sangue: #b3261c;
     &[data-tipo='queda'] { border-left-color: #ff3b2f; color: #ff8a7d; font-weight: 700; }
     &[data-tipo='ataque'], &[data-tipo='ritual'] { border-left-color: var(--borda); color: var(--texto); }
     &[data-tipo='turno'] { color: $ouro; font-weight: 600; }
+    &[data-tipo='vitoria'] { border-left-color: #6fcf97; color: #a9e5bf; font-weight: 700; }
     &[data-tipo='sistema'], &[data-tipo='condicao'] { font-style: italic; color: #8f8a81; }
 
     &[data-tipo='rodada'] {
@@ -874,7 +1080,108 @@ $sangue: #b3261c;
   100% { opacity: 0; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .bandeja, .inspecao, .pulsoQueda { animation: none; }
-  .timeline button { transition: none; }
+/* Carimbo de vitória: bate no meio da tela, fica um pouco e some */
+.vitoria {
+  position: absolute;
+  inset: 0;
+  z-index: 13;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), transparent 70%);
+  pointer-events: none;
+  animation: vitoriaFundo 3s ease-out forwards;
+
+  span {
+    padding: 10px 28px;
+    border: 6px double #6fcf97;
+    border-radius: 8px;
+    @include fonte-titulo;
+    font-size: clamp(2.2rem, 8vw, 5rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6fcf97;
+    text-align: center;
+    // Tinta de carimbo: falhas no preenchimento
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.4 2.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.4 2.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+    box-shadow: inset 0 0 0 2px rgba(111, 207, 151, 0.4);
+    transform: rotate(-8deg);
+    animation: carimbar 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  }
+
+  small {
+    @include fonte-ficha;
+    font-size: clamp(0.8rem, 2.2vw, 1.05rem);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #f2eee6;
+    animation: aparecer 0.4s ease-out 0.4s both;
+  }
 }
+
+@keyframes carimbar {
+  from { opacity: 0; transform: rotate(-14deg) scale(2.6); }
+  to { opacity: 1; transform: rotate(-8deg) scale(1); }
+}
+
+@keyframes vitoriaFundo {
+  0%, 82% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Faixa de turno: cruza a tela da esquerda para a direita */
+.anuncio {
+  position: absolute;
+  top: 42%;
+  left: 0;
+  right: 0;
+  z-index: 11;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 12px 16px;
+  background: linear-gradient(90deg, transparent, rgba(8, 8, 10, 0.92) 18%, rgba(8, 8, 10, 0.92) 82%, transparent);
+  border-block: 2px solid $agentes;
+  pointer-events: none;
+  animation: cruzar 1.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+
+  &[data-lado='ameacas'] { border-color: $ameacas; }
+
+  b {
+    @include fonte-titulo;
+    font-size: clamp(2rem, 7vw, 3.6rem);
+    line-height: 1;
+    letter-spacing: 0.06em;
+    color: $ouro;
+    text-shadow: 0 0 24px color-mix(in srgb, $ouro 60%, transparent);
+  }
+
+  span {
+    @include fonte-ficha;
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #f2eee6;
+  }
+}
+
+@keyframes cruzar {
+  0% { opacity: 0; transform: translateX(-60%) skewX(-12deg); }
+  18% { opacity: 1; transform: translateX(0) skewX(0); }
+  78% { opacity: 1; transform: translateX(0); }
+  100% { opacity: 0; transform: translateX(60%) skewX(10deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bandeja, .inspecao, .pulsoQueda, .vitoria span, .vitoria small { animation: none; }
+  .anuncio { animation: cruzarSuave 1.6s forwards; }
+  .timeline button, .log { transition: none; }
+}
+
+@keyframes cruzarSuave { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }

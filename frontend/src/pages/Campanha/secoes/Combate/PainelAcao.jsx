@@ -34,8 +34,18 @@ export default function PainelAcao(props) {
 
 /* ---------- Item / Outros ---------- */
 function AbaOutros(props) {
-  const { mestre } = props;
-  const [modo, setModo] = useState('item');
+  const { mestre, escolha } = props;
+  const [modo, setModo] = useState(escolha ?? 'item');
+  // Veio de uma carta da mão: a carta já diz o que é, sem a troca de modo
+  if (escolha) {
+    return (
+      <div className={styles.aba}>
+        {modo === 'item' && <AbaItem {...props} />}
+        {modo === 'livre' && <AbaLivre {...props} />}
+        {modo === 'condicao' && <AbaCondicao {...props} />}
+      </div>
+    );
+  }
   const modos = [
     { id: 'item', rotulo: 'Usar item' },
     { id: 'livre', rotulo: 'Ação livre' },
@@ -246,12 +256,12 @@ const detalheDoDano = (calculo) => calculo.linhas
 
 /* ---------- Atacar ---------- */
 function AbaAtaque({
-  ator, participantes, fichas, livro, rodada, base, mestre, alvoIds, setAlvoIds, aplicar, mudarRecursos, onFechar,
+  ator, participantes, fichas, livro, rodada, base, mestre, alvoIds, setAlvoIds, aplicar, mudarRecursos, onFechar, escolha,
 }) {
   const { rolar } = useRolagem();
   const ataques = ataquesDe(base);
   const outros = participantes.filter((p) => p.id !== ator.id);
-  const [ataqueId, setAtaqueId] = useState(ataques[0]?.id ?? '');
+  const [ataqueId, setAtaqueId] = useState(escolha ?? ataques[0]?.id ?? '');
   // Reação e resultado valem para o alvo em que foram escolhidos (trocar o alvo no palco recomeça)
   const [reacaoDe, setReacaoDe] = useState({ alvoId: null, tipo: 'nenhuma' });
   const [ajuste, setAjuste] = useState('');
@@ -353,6 +363,15 @@ function AbaAtaque({
 
   return (
     <div className={styles.aba}>
+      {escolha && ataque ? (
+        <p className={styles.ajuda}>
+          {[
+            ataque.testePadrao ? `${ataque.formula} (sem teste na ficha: usando ${ataque.testePadrao})` : ataque.formula,
+            ataque.partes.map((p) => `${p.formula} ${p.rotulo}`).join(' + ') || 'sem dano',
+            ataque.alcance,
+          ].filter(Boolean).join(' · ')}
+        </p>
+      ) : (
       <div className={styles.campo}>
         <span>1 · Com o quê</span>
         <Opcoes
@@ -370,9 +389,10 @@ function AbaAtaque({
           onMudar={(v) => { setAtaqueId(v); setResultado(null); setDano(null); }}
         />
       </div>
+      )}
 
       <div className={styles.campo}>
-        <span>2 · Em quem <small>(ou clique no palco)</small></span>
+        <span>Em quem <small>(ou clique na carta no campo)</small></span>
         <EscolherAlvos
           lista={outros}
           selecionados={alvoIds}
@@ -469,11 +489,11 @@ function AbaAtaque({
 
 /* ---------- Ritual ---------- */
 function AbaRitual({
-  ator, participantes, fichas, livro, base, mestre, alvoIds, setAlvoIds, aplicar, mudarRecursos, onFechar,
+  ator, participantes, fichas, livro, base, mestre, alvoIds, setAlvoIds, aplicar, mudarRecursos, onFechar, escolha,
 }) {
   const { rolar } = useRolagem();
   const rituais = rituaisDe(base, livro);
-  const [ritualId, setRitualId] = useState(rituais[0]?.id ?? '');
+  const [ritualId, setRitualId] = useState(escolha ?? rituais[0]?.id ?? '');
   const ritual = rituais.find((r) => r.id === ritualId) ?? rituais[0];
   const [formaId, setFormaId] = useState('basico');
   const forma = ritual?.formas.find((f) => f.id === formaId) ?? ritual?.formas[0];
@@ -669,15 +689,17 @@ function AbaRitual({
   const cor = ELEMENTOS[ritual.elemento]?.cor;
   return (
     <div className={styles.aba}>
-      <div className={styles.campo}>
-        <span>1 · Qual ritual</span>
-        <Opcoes
-          rotulo="Ritual"
-          valor={ritual.id}
-          opcoes={rituais.map((r) => ({ valor: r.id, rotulo: r.nome, detalhe: `${r.circulo}º círculo · ${ELEMENTOS[r.elemento]?.nome ?? ''}` }))}
-          onMudar={escolherRitual}
-        />
-      </div>
+      {!escolha && (
+        <div className={styles.campo}>
+          <span>1 · Qual ritual</span>
+          <Opcoes
+            rotulo="Ritual"
+            valor={ritual.id}
+            opcoes={rituais.map((r) => ({ valor: r.id, rotulo: r.nome, detalhe: `${r.circulo}º círculo · ${ELEMENTOS[r.elemento]?.nome ?? ''}` }))}
+            onMudar={escolherRitual}
+          />
+        </div>
+      )}
       <div className={styles.campo}>
         <span>Forma</span>
         <div className={styles.segmentos} role="radiogroup" aria-label="Forma">
