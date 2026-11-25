@@ -46,6 +46,127 @@
 
 .subtitulo { color: var(--texto-suave); }
 
+/* A conta, no topo da lateral */
+.conta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--borda);
+
+  button {
+    padding: 5px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    background: none;
+    color: var(--texto-suave);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+
+    &:hover { color: var(--texto); border-color: var(--texto-suave); }
+  }
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--cor) 30%, #111);
+  font-weight: 700;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.contaNome {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+
+  b, small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  b { font-size: 0.9rem; }
+  small { font-size: 0.72rem; color: var(--texto-suave); }
+}
+
+/* Criar / entrar */
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  button {
+    flex: 1 1 140px;
+    padding: 10px 14px;
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover { border-color: var(--texto-suave); }
+  }
+}
+
+.principal {
+  border-color: var(--cor) !important;
+  background: color-mix(in srgb, var(--cor) 28%, transparent) !important;
+  color: var(--texto);
+}
+
+/* Formulários (nova campanha, código) */
+.form {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+
+  label { display: grid; gap: 4px; }
+  label > span { @include rotulo-campo; }
+
+  input, select, textarea {
+    padding: 8px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    font: inherit;
+  }
+
+  textarea { resize: vertical; }
+
+  > button {
+    padding: 10px 14px;
+    border: 1px solid var(--cor);
+    border-radius: 4px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:disabled { opacity: 0.5; cursor: default; }
+  }
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.cor input { width: 56px; height: 38px; padding: 2px; }
+
+.codigo {
+  font-size: 1.6rem !important;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .lista {
   display: flex;
   flex-direction: column;

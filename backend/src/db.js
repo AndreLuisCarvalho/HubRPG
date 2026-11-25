@@ -1,4 +1,5 @@
 import { createClient } from '@libsql/client';
+import { randomBytes } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
  
@@ -39,6 +40,22 @@ export const db = {
   },
 };
  
+/* ---------- Código da campanha ("K7Q-2MX") ---------- */
+// Sem letras que se confundem (0/O, 1/I/L)
+const LETRAS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function gerarCodigo() {
+  const s = [...randomBytes(6)].map((b) => LETRAS[b % LETRAS.length]).join('');
+  return `${s.slice(0, 3)}-${s.slice(3)}`;
+}
+
+/** Um código que nenhuma campanha usa */
+export async function codigoLivre() {
+  for (;;) {
+    const codigo = gerarCodigo();
+    if (!(await db.get('SELECT id FROM campanhas WHERE codigo = ?', codigo))) return codigo;
+  }
+}
+
 // Migrações: adicionam colunas novas em bancos que já existiam
 async function adicionarColuna(tabela, coluna, definicao) {
   const existentes = (await db.all(`PRAGMA table_info(${tabela})`)).map((c) => c.name);
@@ -135,6 +152,26 @@ async function iniciar() {
       dados       TEXT NOT NULL DEFAULT '{}',
       criado_em   TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Contas (login com o Google; "teste" = conta de teste criada no PC)
+    CREATE TABLE IF NOT EXISTS usuarios (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      google_sub TEXT NOT NULL UNIQUE,
+      email      TEXT DEFAULT '',
+      nome       TEXT DEFAULT '',
+      foto       TEXT DEFAULT '',
+      teste      INTEGER NOT NULL DEFAULT 0,
+      criado_em  TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Quem participa de cada campanha: papel 'mestre' ou 'jogador'
+    CREATE TABLE IF NOT EXISTS membros (
+      campanha_id INTEGER NOT NULL,
+      usuario_id  INTEGER NOT NULL,
+      papel       TEXT NOT NULL DEFAULT 'jogador',
+      criado_em   TEXT DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (campanha_id, usuario_id)
+    );
   `);
  
   await adicionarColuna('campanhas', 'mapa', "TEXT DEFAULT ''");
@@ -144,6 +181,9 @@ async function iniciar() {
   await adicionarColuna('sessoes', 'notas_mestre', "TEXT DEFAULT ''");
   // Névoa do mapa: máscara em PNG (data URL), separada para os pinos continuarem leves
   await adicionarColuna('mapas', 'nevoa', "TEXT DEFAULT ''");
+  // Código para entrar na campanha como jogador ("K7Q-2MX")
+  await adicionarColuna('campanhas', 'codigo', 'TEXT');
+  await db.run('CREATE UNIQUE INDEX IF NOT EXISTS campanhas_codigo ON campanhas (codigo)');
  
   // Dados iniciais, só se o banco estiver vazio
   const { total } = await db.get('SELECT COUNT(*) AS total FROM campanhas');
@@ -153,6 +193,11 @@ async function iniciar() {
       [inserir, 'A Cidade Sem Sol', 'Ordem Paranormal', 'ordem-paranormal', 'Investigação em uma cidade onde o sol nunca nasce.', '#a347ff'],
       [inserir, 'Ruínas de Valkaria', 'Tormenta20', 'tormenta20', 'Exploração das ruínas da antiga capital.', '#c68f3f'],
     ]);
+  }
+
+  // Campanhas antigas ganham um código
+  for (const { id } of await db.all('SELECT id FROM campanhas WHERE codigo IS NULL')) {
+    await db.run('UPDATE campanhas SET codigo = ? WHERE id = ?', await codigoLivre(), id);
   }
 }
  
