@@ -492,7 +492,8 @@ export default function Arena({
       {/* 1 · Topo: timeline de iniciativa */}
       <header className={estilo.topo}>
         <div className={estilo.topoTitulo}>
-          {mestre && <button type="button" className={estilo.voltar} onClick={onVoltar} aria-label="Voltar para a lista de combates">←</button>}
+          {/* Todos saem da arena (o jogador também: a tela cheia cobre o menu da campanha) */}
+          <button type="button" className={estilo.voltar} onClick={onVoltar} aria-label="Sair do combate" title="Sair do combate">←</button>
           <div>
             <small>{sessao ? `Sessão ${sessao.numero}` : 'Combate'} · {combate.nome}</small>
             <b className={estilo.rodada}>

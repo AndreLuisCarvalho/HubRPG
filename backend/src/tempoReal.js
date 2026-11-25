@@ -112,6 +112,25 @@ export async function avisarMudancas(req, res, next) {
 /* ---------- Token para o site ouvir o canal ---------- */
 export const rotasTempoReal = Router();
 
+/*
+ * Onde o mestre está no mapa: ao trocar de mapa ou entrar/sair de um cômodo, a tela dos jogadores
+ * vai junto. Fica salvo na campanha, para quem abrir os Mapas depois cair no mesmo lugar.
+ * "como" é a animação: { tipo: 'entrar' } ou { tipo: 'sair', foco: pontos do cômodo }.
+ */
+rotasTempoReal.get('/campanhas/:campanhaId/foco-mapa', async (req, res) => {
+  const c = await db.get('SELECT foco_mapa FROM campanhas WHERE id = ?', req.campanhaId);
+  res.json({ mapaId: c?.foco_mapa ?? null });
+});
+
+rotasTempoReal.put('/campanhas/:campanhaId/foco-mapa', async (req, res) => {
+  if (req.papel !== 'mestre') return res.status(403).json({ erro: 'Só o mestre conduz o mapa' });
+  const mapaId = Number(req.body?.mapaId) || null;
+  await db.run('UPDATE campanhas SET foco_mapa = ? WHERE id = ?', mapaId, req.campanhaId);
+  const como = req.body?.como ?? null;
+  await publicar(req.campanhaId, { tabela: 'foco-mapa', id: mapaId, acao: 'foco', como, origem: req.get('x-origem') ?? null });
+  res.status(204).end();
+});
+
 rotasTempoReal.get('/campanhas/:campanhaId/tempo-real', async (req, res) => {
   if (!chave()) return res.json({ ligado: false });
   try {

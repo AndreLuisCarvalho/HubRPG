@@ -40,6 +40,7 @@ export default function Mapas({ campanha }) {
   const [agenteEscolhido, setAgenteEscolhido] = useState(null);   // ficha a pôr no mapa
   const [rascunho, setRascunho] = useState(null);   // pontos da rota sendo desenhada
   const [rascunhoRegiao, setRascunhoRegiao] = useState([]);   // pontos do cômodo (polígono) sendo desenhado
+  const [formaComodo, setFormaComodo] = useState('retangulo');   // cômodo novo: 'retangulo' | 'livre'
   // Como o mapa entrou: { tipo: 'entrar' } (de um cômodo) ou { tipo: 'sair', foco: pontos do cômodo }
   const [transicao, setTransicao] = useState(null);
   const [selecionado, setSelecionado] = useState(null);
@@ -55,14 +56,19 @@ export default function Mapas({ campanha }) {
       ou(api.listarArquivos(campanha.id)),
       ou(api.listarItens(campanha.id)),
       ou(api.listarFichas(campanha.id)),
+      api.focoDoMapa(campanha.id).catch(() => ({ mapaId: null })),
     ])
-      .then(([m, sessoes, arquivos, itens, fichas]) => {
+      .then(([m, sessoes, arquivos, itens, fichas, foco]) => {
         if (!efeito.ativo) return;
         setMapas(m.map(comPadroes));
         setCatalogo({ sessoes, arquivos, itens, fichas });
+        // Sem um mapa pedido no endereço: abre onde o mestre está (se a conta puder ver)
+        const pedido = new URLSearchParams(window.location.search).get('mapa');
+        if (!pedido && foco.mapaId && m.some((x) => x.id === foco.mapaId)) setBusca({ mapa: String(foco.mapaId) }, { replace: true });
       })
       .catch((e) => efeito.ativo && setErro(e.message));
     return () => { efeito.ativo = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- só ao abrir a campanha
   }, [campanha.id]);
 
   // Tempo real: o mestre mexeu num mapa (pinos, névoa, revelou outro). Recarrega a lista e,
@@ -78,6 +84,22 @@ export default function Mapas({ campanha }) {
   const visiveis = (mapas ?? []).filter((m) => mestre || !m.dados.oculto);
   const pedido = Number(busca.get('mapa'));
   const atual = visiveis.find((m) => m.id === pedido) ?? visiveis[0] ?? null;
+
+  // Tempo real: o mestre trocou de mapa ou entrou/saiu de um cômodo. As telas na visão dos
+  // Jogadores vão junto: a dos jogadores e a do próprio mestre em Jogadores (a da TV da mesa).
+  // Se o mapa for oculto para os jogadores, ficam onde estão.
+  const conduzido = !mestre;
+  useAoMudar(campanha.id, ['foco-mapa'], (eventos) => {
+    if (!conduzido) return;
+    const ultimo = eventos.filter((e) => e.tabela === 'foco-mapa').at(-1);
+    if (!ultimo?.id) return;
+    const seguir = (lista) => {
+      const mapa = lista.find((x) => x.id === ultimo.id && !x.dados.oculto);
+      if (mapa && mapa.id !== atual?.id) irPara(mapa.id, ultimo.como ?? null, false);
+    };
+    if (mapas?.some((x) => x.id === ultimo.id)) seguir(mapas);
+    else api.listarMapas(campanha.id).then((m) => { const lista = m.map(comPadroes); setMapas(lista); seguir(lista); }).catch(() => {});
+  }, { esperar: false });
   const carregado = atual ? pesados[atual.id] : undefined;
 
   // A imagem e a névoa só vêm ao abrir o mapa (a lista é leve)
@@ -98,13 +120,15 @@ export default function Mapas({ campanha }) {
     if (nova !== 'token') setAgenteEscolhido(null);
   }
 
-  function irPara(id, comoEntra = null) {
+  // avisar: o mestre leva os jogadores junto (false quando a tela só está seguindo o mestre)
+  function irPara(id, comoEntra = null, avisar = true) {
     setSelecionado(null);
     setFerramenta('mover');
     setRascunho(null);
     setRascunhoRegiao([]);
     setTransicao(comoEntra);
     setBusca({ mapa: String(id) });
+    if (avisar && campanha.papel === 'mestre') api.focarMapa(campanha.id, id, comoEntra).catch(() => {});
   }
 
   // Voltar ao mapa "pai" de um cômodo: começa enquadrado no cômodo e afasta
@@ -188,7 +212,8 @@ export default function Mapas({ campanha }) {
     if (ferramenta === 'pino') setJanela({ modo: 'pino', pino: novoPino(x, y) });
     if (ferramenta === 'rota') setRascunho((r) => [...(r ?? []), { x, y }]);
     if (ferramenta === 'texto') setJanela({ modo: 'nota', nota: novaNota(x, y) });
-    if (ferramenta === 'comodo') setRascunhoRegiao((r) => [...r, { x, y }]);
+    // Cômodo livre: cada clique é um canto (no retângulo, o desenho é arrastando)
+    if (ferramenta === 'comodo' && formaComodo === 'livre') setRascunhoRegiao((r) => [...r, { x, y }]);
     if (ferramenta === 'token' && agenteEscolhido) {
       mudar('tokens', (ts) => trocarNaLista(ts, 'fichaId', { fichaId: agenteEscolhido, x, y }));
       setAgenteEscolhido(null);
@@ -449,10 +474,19 @@ export default function Mapas({ campanha }) {
   const ferramentas = mestre && (
     ferramenta === 'comodo' ? (
       <>
+        {/* Forma do cômodo novo: retângulo (arrastando) ou livre (ponto a ponto) */}
+        {!rascunhoRegiao.length && (
+          <div className={styles.formaComodo} role="radiogroup" aria-label="Forma do cômodo">
+            <button type="button" role="radio" aria-checked={formaComodo === 'retangulo'} onClick={() => setFormaComodo('retangulo')}>▭ Retângulo</button>
+            <button type="button" role="radio" aria-checked={formaComodo === 'livre'} onClick={() => setFormaComodo('livre')}>✎ Livre</button>
+          </div>
+        )}
         <span className={styles.aviso}>
           {rascunhoRegiao.length
             ? `Clique nos cantos do cômodo; clique no 1º ponto para fechar (${rascunhoRegiao.length})`
-            : 'Arraste um retângulo ou clique ponto a ponto. Clique num cômodo para editar.'}
+            : formaComodo === 'retangulo'
+              ? 'Arraste no mapa de um canto ao outro do cômodo. Clique num cômodo para editar.'
+              : 'Clique nos cantos, um por um; clique no 1º ponto para fechar. Clique num cômodo para editar.'}
         </span>
         {rascunhoRegiao.length > 0 && (
           <>
@@ -506,6 +540,14 @@ export default function Mapas({ campanha }) {
   const botaoRegua = (temEscala || mestre) && (
     <button type="button" aria-pressed={ferramenta === 'regua'} onClick={() => trocarFerramenta('regua')} title="Clique ponto a ponto; duplo clique recomeça">
       Régua
+    </button>
+  );
+
+  // Dentro de um cômodo: volta para o mapa de fora (na barra do mapa, aparece também na tela cheia)
+  const mapaDeFora = caminho.length > 1 ? caminho[caminho.length - 2] : null;
+  const botaoSair = mapaDeFora && (
+    <button type="button" onClick={() => voltarPara(mapaDeFora)} title={`Voltar para ${mapaDeFora.nome}`}>
+      ← Sair do cômodo
     </button>
   );
 
@@ -618,10 +660,11 @@ export default function Mapas({ campanha }) {
               notas={notas}
               escala={atual.dados.escala}
               onMedirEscala={(px) => setJanela({ modo: 'escala', px })}
-              barra={botaoRegua}
+              barra={<>{botaoSair}{botaoRegua}</>}
               rascunhoRota={rascunho}
               regioes={atual.dados.regioes}
               rascunhoRegiao={ferramenta === 'comodo' ? rascunhoRegiao : null}
+              formaComodo={formaComodo}
               onDesenharRegiao={(pontos) => setJanela({ modo: 'regiao', regiao: novaRegiao(pontos) })}
               onFecharRegiao={() => setJanela({ modo: 'regiao', regiao: novaRegiao(rascunhoRegiao) })}
               onEntrarRegiao={entrarRegiao}
