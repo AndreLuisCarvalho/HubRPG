@@ -37,6 +37,17 @@ export function fichaBasica(ficha) {
   };
 }
 
+// Na arena, a ficha de quem não é dele: só o que as regras da luta usam (recursos, defesa, atributos).
+// Sai o resto: história, anotações, inventário, rituais, ataques, perícias, dados.
+const FORA_DA_LUTA = [
+  'descricao', 'notas', 'inventario', 'rituais', 'ataques', 'kits', 'dado',
+  'pericias', 'periciasOutros', 'proficiencias', 'proficienciasExtras',
+];
+export function fichaDaLuta(ficha) {
+  const dados = Object.fromEntries(Object.entries(ficha.dados ?? {}).filter(([c]) => !FORA_DA_LUTA.includes(c)));
+  return { ...ficha, dados, daLuta: true };
+}
+
 // Na luta o jogador mexe nos recursos de quem está no combate (dano nas ameaças, cura nos aliados)
 const DADOS_DE_COMBATE = ['atuais', 'temporarios', 'contagens', 'pv', 'npc'];
 export const soDadosDeCombate = (corpo) => {

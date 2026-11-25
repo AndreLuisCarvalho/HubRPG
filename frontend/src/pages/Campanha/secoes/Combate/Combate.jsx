@@ -31,7 +31,7 @@ export default function Combate({ campanha }) {
     const vivo = { ok: true };
     Promise.all([
       api.listarCombates(campanha.id),
-      api.listarFichas(campanha.id),
+      api.listarFichasDaLuta(campanha.id),
       api.listarSessoes(campanha.id).catch(() => []),
     ])
       .then(([c, f, s]) => {
@@ -56,7 +56,7 @@ export default function Combate({ campanha }) {
     fila.current = fila.current.then(async () => {
       const [c, f, s] = await Promise.all([
         tudo || tabelas.has('combates') ? api.listarCombates(campanha.id) : null,
-        tudo || tabelas.has('fichas') ? api.listarFichas(campanha.id) : null,
+        tudo || tabelas.has('fichas') || tabelas.has('combates') ? api.listarFichasDaLuta(campanha.id) : null,
         tudo || tabelas.has('sessoes') ? api.listarSessoes(campanha.id).catch(() => null) : null,
       ]);
       // O mestre começou um combate agora: os jogadores que estão na lista entram nele
