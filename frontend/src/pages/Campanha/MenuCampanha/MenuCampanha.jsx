@@ -14,8 +14,8 @@ const GRUPOS = [
     titulo: 'Fichas',
     itens: [
       { caminho: 'jogadores', rotulo: 'Jogadores', icone: '♟' },
-      { caminho: 'npcs', rotulo: 'NPCs', icone: '☉' },
-      { caminho: 'monstros', rotulo: 'Monstros', icone: '☠' },
+      { caminho: 'npcs', rotulo: 'NPCs', icone: '☉', soMestre: true },
+      { caminho: 'monstros', rotulo: 'Monstros', icone: '☠', soMestre: true },
     ],
   },
   {
@@ -33,6 +33,7 @@ const GRUPOS = [
 
 export default function MenuCampanha({ campanha }) {
   const base = `/campanha/${campanha.id}`;
+  const mestre = campanha.papel === 'mestre';
   // No celular a lista vira uma gaveta; no PC ela fica sempre à mostra
   const [aberto, setAberto] = useState(false);
 
@@ -63,7 +64,7 @@ export default function MenuCampanha({ campanha }) {
           <div key={i} className={styles.grupo}>
             {grupo.titulo && <span className={styles.rotuloGrupo}>{grupo.titulo}</span>}
 
-            {grupo.itens.map((item) => (
+            {grupo.itens.filter((item) => mestre || !item.soMestre).map((item) => (
               <NavLink
                 key={item.caminho}
                 to={item.caminho ? `${base}/${item.caminho}` : base}

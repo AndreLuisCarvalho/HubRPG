@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { senhaConfere } from './regras';
 import styles from './Terminal.module.scss';
 
 const DESCRIPTOGRAFAR_MS = 1500;
@@ -8,8 +7,9 @@ const calmo = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matc
 /**
  * Terminal do arquivo central: os jogadores digitam a senha do puzzle.
  * Errar mostra ACESSO NEGADO (pode tentar de novo); acertar descriptografa e chama onDestrancar.
+ * A senha é conferida no servidor: onTentar(senha) devolve o arquivo destrancado, ou null se errou.
  */
-export default function Terminal({ arquivo, onDestrancar }) {
+export default function Terminal({ arquivo, onTentar, onDestrancar }) {
   const { dados } = arquivo;
   const linhas = [
     'ORDEM // ARQUIVO CENTRAL',
@@ -35,12 +35,14 @@ export default function Terminal({ arquivo, onDestrancar }) {
     return () => clearTimeout(t);
   }, [mostradas, linhas.length]);
 
-  function enviar(e) {
+  async function enviar(e) {
     e.preventDefault();
-    if (!senha.trim() || status === 'concedido') return;
-    if (senhaConfere(senha, dados.senha)) {
+    if (!senha.trim() || status === 'concedido' || status === 'conferindo') return;
+    setStatus('conferindo');
+    const aberto = await onTentar(senha);
+    if (aberto) {
       setStatus('concedido');
-      setTimeout(onDestrancar, calmo() ? 300 : DESCRIPTOGRAFAR_MS);
+      setTimeout(() => onDestrancar(aberto), calmo() ? 300 : DESCRIPTOGRAFAR_MS);
     } else {
       setTentativas((t) => [...t, senha]);
       setStatus('negado');
@@ -87,6 +89,7 @@ export default function Terminal({ arquivo, onDestrancar }) {
       <p className={styles.rodape} aria-live="polite">
         {status === 'negado' && 'Senha incorreta. Tente de novo.'}
         {status === 'esperando' && pronto && 'Digite a senha e aperte Enter.'}
+        {status === 'conferindo' && 'Conferindo…'}
         {status === 'concedido' && 'Abrindo o arquivo…'}
       </p>
     </div>

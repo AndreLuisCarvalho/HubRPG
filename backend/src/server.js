@@ -43,35 +43,55 @@ app.use('/api', criarRotasDeItens({
     const { ultimo } = await db.get('SELECT MAX(numero) AS ultimo FROM sessoes WHERE campanha_id = ?', campanhaId);
     return { ...dados, numero: (ultimo ?? 0) + 1 };
   },
+  // Jogadores leem as sessões, sem as anotações do mestre
+  jogador: { ler: async (sessoes) => sessoes.map(({ notas_mestre: _notas, ...s }) => s) },
 }));
- 
+
 app.use('/api', criarRotasDeItens({
   tabela: 'personagens',
   campos: { nome: '', tipo: 'npc', descricao: '', imagem: '' },
   obrigatorio: 'nome',
   ordem: 'tipo, nome',
 }));
- 
+
 app.use('/api', criarRotasDeItens({
   tabela: 'notas',
   campos: { titulo: '', conteudo: '' },
   ordem: 'criado_em DESC',
 }));
- 
+
 // Itens da campanha: o front manda "dados" já em texto JSON (imagem, dano, dono…)
+// Jogadores veem só os liberados pelo mestre e os que estão com o próprio agente
 app.use('/api', criarRotasDeItens({
   tabela: 'itens',
   campos: { nome: '', dados: '{}' },
   obrigatorio: 'nome',
   ordem: 'id DESC',
+  jogador: {
+    ler: async (itens, req) => {
+      const meus = new Set((await db.all(
+        'SELECT id FROM fichas WHERE campanha_id = ? AND dono_id = ?', req.campanhaId, req.usuario.id,
+      )).map((f) => f.id));
+      return itens.flatMap((i) => {
+        try {
+          const { notaMestre: _nota, ...d } = JSON.parse(i.dados || '{}');
+          return d.liberado || meus.has(Number(d.dono?.fichaId)) ? [{ ...i, dados: JSON.stringify(d) }] : [];
+        } catch {
+          return [];
+        }
+      });
+    },
+  },
 }));
 
 // Combates: "dados" também vem em texto JSON (participantes, rodada, vez); sessao_id liga à sessão do dia
+// Jogadores veem e agem na luta (salvam o combate), mas não criam nem apagam
 app.use('/api', criarRotasDeItens({
   tabela: 'combates',
   campos: { nome: '', sessao_id: null, dados: '{}' },
   obrigatorio: 'nome',
   ordem: 'id DESC',
+  jogador: { ler: true, editar: true },
 }));
 
 // Erros inesperados viram uma resposta JSON (em vez de derrubar a função na Vercel)

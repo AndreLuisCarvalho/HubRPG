@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../../../services/api';
+import { useConta } from '../../../../conta/conta';
 import { obterSistema } from '../../../../sistemas';
 import CardFicha from './CardFicha/CardFicha';
 import NovaFicha from './NovaFicha/NovaFicha';
@@ -17,6 +18,7 @@ export default function ListaFichas({ campanha, tipo, titulo }) {
   const [erro, setErro] = useState('');
   const [criando, setCriando] = useState(false);
   const navigate = useNavigate();
+  const { usuario } = useConta();
   const sistema = obterSistema(campanha.sistema_id);
 
   // useCallback: a função só muda se a campanha ou o tipo mudarem
@@ -61,25 +63,42 @@ export default function ListaFichas({ campanha, tipo, titulo }) {
 
   const destinos = TIPOS.filter((t) => t.tipo !== tipo);
 
+  // Jogador: cria só o próprio agente (um), vê o dele primeiro e os dos outros só no básico
+  const jogador = campanha.papel === 'jogador';
+  const meu = (f) => f.dono_id === usuario.id;
+  const temAgente = (fichas ?? []).some(meu);
+  const podeCriar = !jogador || (tipo === 'jogador' && fichas && !temAgente);
+  const rotuloNovo = jogador ? 'Criar meu agente' : 'Nova ficha';
+  const lista = jogador ? [...(fichas ?? [])].sort((a, b) => meu(b) - meu(a)) : fichas;
+
   return (
     <section className={styles.lista}>
       <header className={styles.topo}>
         <h1 className={styles.titulo}>{titulo}</h1>
         {fichas && <span className={styles.contador}>{fichas.length}</span>}
-        <button className={styles.novo} onClick={() => setCriando(true)}>+ Nova ficha</button>
+        {podeCriar && <button className={styles.novo} onClick={() => setCriando(true)}>+ {rotuloNovo}</button>}
       </header>
 
       {erro && <p className="erro">{erro}</p>}
       {!fichas && !erro && <p className={styles.aviso}>Carregando…</p>}
+      {jogador && fichas && (
+        <p className={styles.aviso}>
+          {temAgente
+            ? 'Os agentes dos outros jogadores aparecem só no básico.'
+            : 'Crie o seu agente para entrar na mesa. Você tem direito a um; para trocar, fale com o mestre.'}
+        </p>
+      )}
 
       {fichas && (
         <div className={styles.grade}>
-          {fichas.map((f) => (
+          {lista.map((f) => (
             <CardFicha
               key={f.id}
               ficha={f}
               sistema={sistema}
               destinos={destinos}
+              comMenu={!jogador}
+              selo={meu(f) ? 'Seu agente' : null}
               onAbrir={() => abrir(f)}
               onDuplicar={() => duplicar(f)}
               onMover={(novoTipo) => mover(f, novoTipo)}
@@ -87,10 +106,12 @@ export default function ListaFichas({ campanha, tipo, titulo }) {
             />
           ))}
 
-          <button className={styles.cardNovo} onClick={() => setCriando(true)}>
-            <span aria-hidden="true">+</span>
-            Nova ficha
-          </button>
+          {podeCriar && (
+            <button className={styles.cardNovo} onClick={() => setCriando(true)}>
+              <span aria-hidden="true">+</span>
+              {rotuloNovo}
+            </button>
+          )}
         </div>
       )}
 
@@ -100,6 +121,7 @@ export default function ListaFichas({ campanha, tipo, titulo }) {
           aberto
           tipo={tipo}
           sistema={sistema}
+          jogadorInicial={jogador ? usuario.nome : ''}
           onFechar={() => setCriando(false)}
           onCriar={criar}
         />

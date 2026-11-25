@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../services/api';
 import MenuCampanha from './MenuCampanha/MenuCampanha';
 import VisaoGeral from './secoes/VisaoGeral/VisaoGeral';
@@ -10,6 +10,7 @@ import DetalheFicha from './secoes/DetalheFicha/DetalheFicha';
 import { FundoOutroLado } from '../../components';
 import RolagemProvider from '../../components/Dados/RolagemProvider';
 import { obterSistema } from '../../sistemas';
+import { definirPapel } from './visao';
 
 // Leitor do livro: só baixa ao abrir a seção
 const Livro = lazy(() => import('./secoes/Livro/Livro'));
@@ -27,7 +28,11 @@ export default function Campanha() {
   const [erro, setErro] = useState('');
 
   useEffect(() => {
-    api.buscarCampanha(id).then(setCampanha).catch((e) => setErro(e.message));
+    // O papel (mestre/jogador) fica anotado antes das seções abrirem: elas leem a visão por ele
+    api.buscarCampanha(id).then((c) => {
+      definirPapel(c.id, c.papel);
+      setCampanha(c);
+    }).catch((e) => setErro(e.message));
   }, [id]);
 
     useEffect(() => {
@@ -50,6 +55,7 @@ export default function Campanha() {
   }
 
   if (!campanha) return <main className={styles.estado}><p>Carregando…</p></main>;
+  const mestre = campanha.papel === 'mestre';
 
   return (
     // A paleta do sistema (se houver) vale por cima da cor da campanha
@@ -64,8 +70,9 @@ export default function Campanha() {
             <Route index element={<VisaoGeral campanha={campanha} onAtualizar={setCampanha} />} />
             <Route path="sessoes" element={<Suspense fallback={null}><Sessoes campanha={campanha} /></Suspense>} />
             <Route path="jogadores" element={<ListaFichas key="jogador" campanha={campanha} tipo="jogador" titulo="Jogadores" />} />
-            <Route path="npcs" element={<ListaFichas key="npc" campanha={campanha} tipo="npc" titulo="NPCs" />} />
-            <Route path="monstros" element={<ListaFichas key="monstro" campanha={campanha} tipo="monstro" titulo="Monstros" />} />
+            {/* NPCs e monstros são do mestre: o jogador volta para a visão geral */}
+            <Route path="npcs" element={mestre ? <ListaFichas key="npc" campanha={campanha} tipo="npc" titulo="NPCs" /> : <Navigate to=".." replace />} />
+            <Route path="monstros" element={mestre ? <ListaFichas key="monstro" campanha={campanha} tipo="monstro" titulo="Monstros" /> : <Navigate to=".." replace />} />
             <Route path="fichas/:fichaId" element={<DetalheFicha campanha={campanha} />} />
             <Route path="livro" element={<Suspense fallback={null}><Livro campanha={campanha} /></Suspense>} />
             <Route path="dados" element={<Suspense fallback={null}><Dados campanha={campanha} /></Suspense>} />

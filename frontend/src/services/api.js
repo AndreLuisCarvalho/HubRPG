@@ -96,6 +96,11 @@ export const api = {
   atualizarArquivo: async (id, arquivo) =>
     lerItem(await requisicao(`/arquivos/${id}`, { method: 'PUT', body: escreverArquivo(arquivo) })),
   excluirArquivo: (id) => requisicao(`/arquivos/${id}`, { method: 'DELETE' }),
+  // Senha do terminal: { certo, arquivo } (o arquivo já destrancado, quando acerta)
+  destrancarArquivo: async (id, senha) => {
+    const r = await requisicao(`/arquivos/${id}/destrancar`, { method: 'POST', body: { senha } });
+    return r.certo ? { certo: true, arquivo: lerItem(r.arquivo) } : { certo: false };
+  },
 
   // Mapas: a lista vem sem a imagem; buscarMapa traz tudo. atualizarMapa devolve sem a imagem.
   listarMapas: async (campanhaId) => (await requisicao(`/campanhas/${campanhaId}/mapas`)).map(lerItem),

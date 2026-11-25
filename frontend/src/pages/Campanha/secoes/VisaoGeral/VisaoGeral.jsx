@@ -77,9 +77,11 @@ function Cabecalho({ campanha, onAtualizar }) {
         </div>
         <div className={styles.bannerCanto}>
           {campanha.status && <StatusBadge status={campanha.status} />}
-          <button type="button" className={styles.editar} onClick={() => setEditando(true)}>
-            ✎ Editar
-          </button>
+          {campanha.papel === 'mestre' && (
+            <button type="button" className={styles.editar} onClick={() => setEditando(true)}>
+              ✎ Editar
+            </button>
+          )}
         </div>
       </div>
 

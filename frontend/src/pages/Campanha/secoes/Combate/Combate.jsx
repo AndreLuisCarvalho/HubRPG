@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Modal from '../../../../components/Modal/Modal';
 import Seletor from '../../../../components/Seletor/Seletor';
 import { api } from '../../../../services/api';
+import { useConta } from '../../../../conta/conta';
 import { pedidoDeAbrir, useVisao } from '../../visao';
 import Arena from './Arena';
 import { COMBATE_NOVO } from './regrasCombate';
@@ -18,7 +19,8 @@ export default function Combate({ campanha }) {
   const [abertoId, setAbertoId] = useState(null);
   const [criando, setCriando] = useState(false);
   const [erro, setErro] = useState('');
-  const [visao, trocarVisao] = useVisao(campanha.id);
+  const [visao, trocarVisao, podeTrocarVisao] = useVisao(campanha.id);
+  const { usuario } = useConta();
   const fila = useRef(Promise.resolve());
   const ehOrdem = campanha.sistema_id === 'ordem-paranormal';
 
@@ -79,7 +81,8 @@ export default function Combate({ campanha }) {
     }
   }
 
-  const chaveVisao = (
+  // O jogador não tem a chave: fica sempre na visão dos jogadores
+  const chaveVisao = podeTrocarVisao && (
     <div className={styles.visao} role="radiogroup" aria-label="Visão">
       <button type="button" role="radio" aria-checked={visao === 'mestre'} onClick={() => trocarVisao('mestre')}>Mestre</button>
       <button type="button" role="radio" aria-checked={visao !== 'mestre'} onClick={() => trocarVisao('jogadores')}>Jogadores</button>
@@ -104,6 +107,8 @@ export default function Combate({ campanha }) {
         sessao={sessoes.find((s) => s.id === aberto.sessao_id)}
         mestre={visao === 'mestre'}
         chaveVisao={chaveVisao}
+        // Jogador da campanha: age só com o agente dele
+        meuUsuarioId={podeTrocarVisao ? null : usuario.id}
         erro={erro}
         onSalvar={(mudancas) => salvarCombate(aberto.id, mudancas)}
         onMudarFicha={mudarFicha}

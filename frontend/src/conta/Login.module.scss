@@ -40,7 +40,15 @@
   color: var(--texto-suave);
 }
 
-.google { min-height: 44px; }
+// O botão do Google vem num iframe: com o site em color-scheme escuro, o navegador pinta o fundo
+// do iframe de branco (o retângulo em volta do botão). Em "light" o fundo fica transparente.
+.google {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+
+  iframe { color-scheme: light; }
+}
 
 .aviso {
   margin: 0;
