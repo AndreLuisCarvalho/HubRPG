@@ -33,7 +33,7 @@ export default function Mapas({ campanha }) {
   const [pesados, setPesados] = useState({});
   const [catalogo, setCatalogo] = useState({ sessoes: [], arquivos: [], itens: [], fichas: [] });
   const [erro, setErro] = useState('');
-  const [visao, trocarVisao] = useVisao(campanha.id);
+  const [visao, trocarVisao, podeTrocarVisao] = useVisao(campanha.id);
   const [ferramenta, setFerramenta] = useState('mover');
   const [pincel, setPincel] = useState(PINCEIS[1].raio);
   const [agenteEscolhido, setAgenteEscolhido] = useState(null);   // ficha a pôr no mapa
@@ -530,7 +530,7 @@ export default function Mapas({ campanha }) {
       <header className={styles.topo}>
         <h1>Mapas</h1>
         <div className={styles.acoesTopo}>
-          <div className={styles.visao} role="radiogroup" aria-label="Visão">
+          {podeTrocarVisao && <div className={styles.visao} role="radiogroup" aria-label="Visão">
             <button type="button" role="radio" aria-checked={mestre} onClick={() => trocarVisao('mestre')}>Mestre</button>
             <button
               type="button"
@@ -540,7 +540,7 @@ export default function Mapas({ campanha }) {
             >
               Jogadores
             </button>
-          </div>
+          </div>}
           {mestre && (
             <button type="button" className={styles.novo} onClick={() => setJanela({ modo: 'mapa', mapa: MAPA_NOVO })}>+ Novo mapa</button>
           )}

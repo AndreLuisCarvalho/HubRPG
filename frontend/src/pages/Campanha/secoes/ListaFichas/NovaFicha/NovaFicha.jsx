@@ -13,13 +13,14 @@ const MODELOS_NPC = [
   { id: 'agente', nome: 'Agente', descricao: 'Ficha completa, com classe, NEX, atributos e rituais.' },
 ];
 
-export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo }) {
+// jogadorInicial: o jogador criando o próprio agente já vem com o nome da conta
+export default function NovaFicha({ aberto, onFechar, onCriar, sistema, tipo, jogadorInicial = '' }) {
   const classes = sistema?.classes ?? [];
   const origens = sistema?.origens ?? [];
   const textos = TEXTOS[tipo] ?? TEXTOS.jogador;
 
   const [nome, setNome] = useState('');
-  const [jogador, setJogador] = useState('');
+  const [jogador, setJogador] = useState(jogadorInicial);
   const [origem, setOrigem] = useState('');
   const [classe, setClasse] = useState(classes[0]?.id ?? '');
   const [trilha, setTrilha] = useState('');

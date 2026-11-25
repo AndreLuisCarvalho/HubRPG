@@ -184,6 +184,8 @@ async function iniciar() {
   // Código para entrar na campanha como jogador ("K7Q-2MX")
   await adicionarColuna('campanhas', 'codigo', 'TEXT');
   await db.run('CREATE UNIQUE INDEX IF NOT EXISTS campanhas_codigo ON campanhas (codigo)');
+  // Conta do jogador que usa o agente (null = do mestre)
+  await adicionarColuna('fichas', 'dono_id', 'INTEGER');
  
   // Dados iniciais, só se o banco estiver vazio
   const { total } = await db.get('SELECT COUNT(*) AS total FROM campanhas');

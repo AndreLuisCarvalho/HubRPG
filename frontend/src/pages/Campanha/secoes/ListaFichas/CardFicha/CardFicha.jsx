@@ -2,14 +2,21 @@ import { useEffect, useRef, useState } from 'react';
 import { OrbeMini } from '../../../../../components';
 import styles from './CardFicha.module.scss';
 
-export default function CardFicha({ ficha, sistema, destinos, onAbrir, onDuplicar, onMover, onExcluir }) {
+/**
+ * Cartão de uma ficha. comMenu = false: sem o menu ⋯ (jogador). ficha.basica: agente de outro jogador
+ * visto por um jogador — só nome, foto e resumo, sem abrir.
+ */
+export default function CardFicha({ ficha, sistema, destinos, onAbrir, onDuplicar, onMover, onExcluir, comMenu = true, selo }) {
   const [menuAberto, setMenuAberto] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const menuRef = useRef(null);
 
-  const estado = sistema?.estado?.(ficha.dados);
-  const recursos = sistema?.recursos(ficha.dados) ?? [];
-  const destaques = sistema?.destaques?.(ficha.dados) ?? [];
+  const basica = Boolean(ficha.basica);
+  const estado = basica ? null : sistema?.estado?.(ficha.dados);
+  const recursos = basica ? [] : sistema?.recursos(ficha.dados) ?? [];
+  const destaques = basica ? [] : sistema?.destaques?.(ficha.dados) ?? [];
+  // Agente de outro jogador: só o cartão, sem abrir
+  const abrivel = !basica;
 
   // Fecha o menu ao clicar fora dele
   useEffect(() => {
@@ -35,17 +42,19 @@ export default function CardFicha({ ficha, sistema, destinos, onAbrir, onDuplica
     styles.card,
     estado && styles[estado.id],
     menuAberto && styles.comMenu,
+    basica && styles.basica,
   ].filter(Boolean).join(' ');
 
   return (
     <article
       className={classes}
-      onClick={onAbrir}
-      onKeyDown={(e) => e.key === 'Enter' && e.target === e.currentTarget && onAbrir()}
-      role="link"
-      tabIndex={0}
-      aria-label={`Abrir ficha de ${ficha.nome}`}
+      onClick={abrivel ? onAbrir : undefined}
+      onKeyDown={(e) => abrivel && e.key === 'Enter' && e.target === e.currentTarget && onAbrir()}
+      role={abrivel ? 'link' : undefined}
+      tabIndex={abrivel ? 0 : undefined}
+      aria-label={abrivel ? `Abrir ficha de ${ficha.nome}` : undefined}
     >
+      {selo && <span className={styles.selo}>{selo}</span>}
       {estado && <span className={`${styles.estado} ${styles[estado.id]}`}>{estado.rotulo}</span>}
 
       <header className={styles.cabecalho}>
@@ -60,7 +69,7 @@ export default function CardFicha({ ficha, sistema, destinos, onAbrir, onDuplica
         </div>
 
         {/* stopPropagation: clicar no menu não pode abrir a ficha */}
-        <div className={styles.menuArea} ref={menuRef} onClick={(e) => e.stopPropagation()}>
+        {comMenu && !basica && <div className={styles.menuArea} ref={menuRef} onClick={(e) => e.stopPropagation()}>
           <button
             className={styles.mais}
             onClick={() => setMenuAberto((a) => !a)}
@@ -90,7 +99,7 @@ export default function CardFicha({ ficha, sistema, destinos, onAbrir, onDuplica
               )}
             </div>
           )}
-        </div>
+        </div>}
       </header>
 
       {recursos.length > 0 && (

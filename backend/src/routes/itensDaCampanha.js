@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db.js';
+import { ehMestre } from '../permissoes.js';
  
 /**
  * Cria as rotas de um tipo de item que pertence a uma campanha.
@@ -8,27 +9,42 @@ import { db } from '../db.js';
  * obrigatorio: campo que não pode ficar vazio (opcional)
  * ordem:       ordenação da listagem
  * preparar:    ajuste dos dados antes de criar (opcional, pode ser async)
+ * jogador:     o que o JOGADOR pode (o mestre pode tudo):
+ *   ler:    false (nada) | true (tudo) | async (itens, req) => itens que ele vê (filtra/limpa)
+ *   editar: true = pode editar (PUT) os itens que vê (ex.: combate, para agir na luta)
+ *   Criar e excluir são sempre do mestre.
  */
-export function criarRotasDeItens({ tabela, campos, obrigatorio, ordem = 'id', preparar }) {
+export function criarRotasDeItens({ tabela, campos, obrigatorio, ordem = 'id', preparar, jogador = {} }) {
   const router = Router();
   const nomesCampos = Object.keys(campos);
- 
+
   const buscarItem = (id) => db.get(`SELECT * FROM ${tabela} WHERE id = ?`, Number(id));
   const campanhaExiste = (id) => db.get('SELECT id FROM campanhas WHERE id = ?', Number(id));
- 
+  const proibido = (res) => res.status(403).json({ erro: 'Só o mestre pode fazer isso' });
+
+  // O que o jogador enxerga de uma lista de itens
+  async function filtrar(itens, req) {
+    if (ehMestre(req)) return itens;
+    if (!jogador.ler) return null;
+    return jogador.ler === true ? itens : jogador.ler(itens, req);
+  }
+
   // Listar itens de uma campanha
   router.get(`/campanhas/:campanhaId/${tabela}`, async (req, res) => {
     const campanhaId = Number(req.params.campanhaId);
     if (!(await campanhaExiste(campanhaId))) return res.status(404).json({ erro: 'Campanha não encontrada' });
- 
-    res.json(await db.all(`SELECT * FROM ${tabela} WHERE campanha_id = ? ORDER BY ${ordem}`, campanhaId));
+
+    const itens = await filtrar(await db.all(`SELECT * FROM ${tabela} WHERE campanha_id = ? ORDER BY ${ordem}`, campanhaId), req);
+    if (!itens) return proibido(res);
+    res.json(itens);
   });
- 
+
   // Criar item numa campanha
   router.post(`/campanhas/:campanhaId/${tabela}`, async (req, res) => {
+    if (!ehMestre(req)) return proibido(res);
     const campanhaId = Number(req.params.campanhaId);
     if (!(await campanhaExiste(campanhaId))) return res.status(404).json({ erro: 'Campanha não encontrada' });
- 
+
     let dados = req.body ?? {};
     if (obrigatorio && !dados[obrigatorio]) {
       return res.status(400).json({ erro: `O campo "${obrigatorio}" é obrigatório` });
@@ -50,7 +66,8 @@ export function criarRotasDeItens({ tabela, campos, obrigatorio, ordem = 'id', p
   router.put(`/${tabela}/:id`, async (req, res) => {
     const atual = await buscarItem(req.params.id);
     if (!atual) return res.status(404).json({ erro: 'Item não encontrado' });
- 
+    if (!ehMestre(req) && !(jogador.editar && (await filtrar([atual], req))?.length)) return proibido(res);
+
     const item = { ...atual, ...(req.body ?? {}) };
     const atribuicoes = nomesCampos.map((campo) => `${campo} = ?`).join(', ');
  
@@ -64,6 +81,7 @@ export function criarRotasDeItens({ tabela, campos, obrigatorio, ordem = 'id', p
  
   // Excluir item
   router.delete(`/${tabela}/:id`, async (req, res) => {
+    if (!ehMestre(req)) return proibido(res);
     const resultado = await db.run(`DELETE FROM ${tabela} WHERE id = ?`, Number(req.params.id));
     if (resultado.changes === 0) return res.status(404).json({ erro: 'Item não encontrado' });
     res.status(204).end();

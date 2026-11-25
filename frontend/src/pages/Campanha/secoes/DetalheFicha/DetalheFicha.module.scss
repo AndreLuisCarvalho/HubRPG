@@ -16,3 +16,21 @@
 }
 
 .aviso { color: var(--texto-suave); }
+// Mestre: qual jogador usa o agente
+.dono {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+
+  select {
+    padding: 5px 8px;
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+  }
+}

@@ -29,6 +29,8 @@ export default function Itens({ campanha }) {
   // { modo: 'ver' | 'editar' | 'novo' | 'livro', item }
   const [janela, setJanela] = useState(null);
   const temLivro = campanha.sistema_id === 'ordem-paranormal';
+  // Jogador: só vê (o servidor já manda só os liberados e os que estão com o agente dele)
+  const mestre = campanha.papel === 'mestre';
 
   useEffect(() => {
     const efeito = { ativo: true };
@@ -117,16 +119,17 @@ export default function Itens({ campanha }) {
         <h1>Itens</h1>
         {itens && <span className={styles.contagem}>{itens.length}</span>}
         <div className={styles.acoesTopo}>
-          {temLivro && (
+          {mestre && temLivro && (
             <button type="button" className={styles.secundario} onClick={() => setJanela({ modo: 'livro' })}>+ Do livro</button>
           )}
-          <button type="button" className={styles.novo} onClick={() => setJanela({ modo: 'novo', item: ITEM_NOVO })}>+ Novo item</button>
+          {mestre && <button type="button" className={styles.novo} onClick={() => setJanela({ modo: 'novo', item: ITEM_NOVO })}>+ Novo item</button>}
         </div>
       </header>
 
       <p className={styles.dica}>
-        As cartas dos itens que o grupo ganha. Abra uma carta para <b>entregar</b> a um agente: ela vai para o
-        inventário dele (e para os ataques, se causar dano).
+        {mestre
+          ? <>As cartas dos itens que o grupo ganha. Abra uma carta para <b>entregar</b> a um agente (ela vai para o inventário dele) ou <b>liberar</b> para os jogadores verem.</>
+          : 'Os itens que o mestre mostrou ao grupo e os que estão com o seu agente.'}
       </p>
 
       {erro && <p className="erro">{erro}</p>}
@@ -177,6 +180,15 @@ export default function Itens({ campanha }) {
             item={janela.item}
             sessoes={sessoes}
             agentes={agentes}
+            mestre={mestre}
+            onLiberar={async () => {
+              try {
+                const salvo = await salvar({ ...janela.item, dados: { ...janela.item.dados, liberado: !janela.item.dados.liberado } });
+                setJanela({ modo: 'ver', item: salvo });
+              } catch (e) {
+                setErro(e.message);
+              }
+            }}
             onEntregar={(fichaId) => entregar(janela.item, fichaId)}
             onRecolher={() => recolher(janela.item)}
             onEditar={() => setJanela({ modo: 'editar', item: janela.item })}
@@ -200,7 +212,7 @@ export default function Itens({ campanha }) {
   );
 }
 
-function DetalheItem({ item, sessoes, agentes, onEntregar, onRecolher, onEditar, onExcluir }) {
+function DetalheItem({ item, sessoes, agentes, mestre, onLiberar, onEntregar, onRecolher, onEditar, onExcluir }) {
   const { rolar } = useRolagem();
   const [verNota, setVerNota] = useState(false);
   const [entregando, setEntregando] = useState(false);
@@ -235,7 +247,14 @@ function DetalheItem({ item, sessoes, agentes, onEntregar, onRecolher, onEditar,
           </div>
         </dl>
 
-        <div className={styles.campo}>
+        {mestre && (
+          <label className={styles.liberar}>
+            <input type="checkbox" checked={Boolean(dados.liberado)} onChange={onLiberar} />
+            Liberado para os jogadores verem
+          </label>
+        )}
+
+        {mestre && <div className={styles.campo}>
           <span>{dono ? 'Passar para' : 'Entregar a'}</span>
           {opcoesAgente.length ? (
             <Seletor
@@ -249,7 +268,7 @@ function DetalheItem({ item, sessoes, agentes, onEntregar, onRecolher, onEditar,
           ) : (
             <small className={styles.ajuda}>{agentes.length ? 'Só há um agente, e ele já está com o item.' : 'Crie a ficha de um jogador para entregar.'}</small>
           )}
-        </div>
+        </div>}
 
         <div className={styles.botoes}>
           {temDano(item) && (
@@ -261,12 +280,12 @@ function DetalheItem({ item, sessoes, agentes, onEntregar, onRecolher, onEditar,
               Rolar dano
             </button>
           )}
-          {dono && <button type="button" className={styles.secundario} onClick={onRecolher}>Recolher ao cofre</button>}
-          <button type="button" className={styles.secundario} onClick={onEditar}>Editar</button>
-          <button type="button" className={styles.perigo} onClick={onExcluir}>Apagar</button>
+          {mestre && dono && <button type="button" className={styles.secundario} onClick={onRecolher}>Recolher ao cofre</button>}
+          {mestre && <button type="button" className={styles.secundario} onClick={onEditar}>Editar</button>}
+          {mestre && <button type="button" className={styles.perigo} onClick={onExcluir}>Apagar</button>}
         </div>
 
-        {dados.notaMestre && (
+        {mestre && dados.notaMestre && (
           <div className={styles.nota}>
             <button type="button" className={styles.secundario} onClick={() => setVerNota((v) => !v)} aria-expanded={verNota}>
               {verNota ? 'Esconder nota do mestre' : 'Nota do mestre'}
@@ -275,7 +294,7 @@ function DetalheItem({ item, sessoes, agentes, onEntregar, onRecolher, onEditar,
           </div>
         )}
 
-        {dono && (
+        {mestre && dono && (
           <small className={styles.ajuda}>
             Editar a carta não muda a cópia que já está na ficha. Para atualizar, recolha e entregue de novo.
           </small>

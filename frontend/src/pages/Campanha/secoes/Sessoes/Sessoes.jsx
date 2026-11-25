@@ -75,7 +75,7 @@ export default function Sessoes({ campanha }) {
       <header className={styles.topo}>
         <h1>Sessões</h1>
         {sessoes && <span className={styles.contagem}>{sessoes.length}</span>}
-        {editando !== 'nova' && (
+        {editando !== 'nova' && campanha.papel === 'mestre' && (
           <button type="button" className={styles.nova} onClick={() => setEditando('nova')}>+ Nova sessão</button>
         )}
       </header>
@@ -116,6 +116,7 @@ export default function Sessoes({ campanha }) {
                 marcada={futuras.includes(s)}
                 combates={combates.filter((c) => c.sessao_id === s.id)}
                 onLerCombate={setLendo}
+                podeEditar={campanha.papel === 'mestre'}
                 onEditar={() => setEditando(s.id)}
                 onExcluir={() => excluir(s)}
               />
@@ -139,7 +140,7 @@ export default function Sessoes({ campanha }) {
   );
 }
 
-function CartaoSessao({ sessao, marcada, combates, onLerCombate, onEditar, onExcluir }) {
+function CartaoSessao({ sessao, marcada, combates, onLerCombate, podeEditar, onEditar, onExcluir }) {
   const [verNotas, setVerNotas] = useState(false);
 
   return (
@@ -191,8 +192,8 @@ function CartaoSessao({ sessao, marcada, combates, onLerCombate, onEditar, onExc
             {verNotas ? 'Esconder notas do mestre' : 'Notas do mestre'}
           </button>
         )}
-        <button type="button" onClick={onEditar}>Editar</button>
-        <button type="button" className={styles.perigo} onClick={onExcluir}>Apagar</button>
+        {podeEditar && <button type="button" onClick={onEditar}>Editar</button>}
+        {podeEditar && <button type="button" className={styles.perigo} onClick={onExcluir}>Apagar</button>}
       </div>
     </article>
   );

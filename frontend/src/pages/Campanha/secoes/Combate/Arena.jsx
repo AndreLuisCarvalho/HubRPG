@@ -33,7 +33,7 @@ const LIMITE_LOG = 150;
  * estado, ocultos não aparecem; agem com os próprios agentes.
  */
 export default function Arena({
-  combate, fichas, sessao, mestre, chaveVisao, erro, onSalvar, onMudarFicha, onVoltar, onExcluir,
+  combate, fichas, sessao, mestre, chaveVisao, erro, onSalvar, onMudarFicha, onVoltar, onExcluir, meuUsuarioId = null,
 }) {
   const [adicionando, setAdicionando] = useState(false);
   const [atorId, setAtorId] = useState(null);       // quem está na barra de turno (null = o da vez)
@@ -378,7 +378,9 @@ export default function Arena({
 
   /* ---------- Quem age, ações e mira ---------- */
   // O mestre controla só as ameaças (e monitora os agentes); os jogadores, só os agentes à vista
-  const podeAgirCom = (p) => andamento && (mestre ? p.lado === 'ameacas' : p.lado === 'agentes' && !p.oculto);
+  // (meuUsuarioId: conta do jogador da campanha, que só age com o agente dele; null = a tela da mesa, qualquer agente)
+  const podeAgirCom = (p) => andamento && (mestre ? p.lado === 'ameacas' : p.lado === 'agentes' && !p.oculto
+    && (meuUsuarioId == null || fichas[p.fichaId]?.dono_id === meuUsuarioId));
   // Quem está na barra de turno: o da vez, ou outro que o mestre (ou o jogador) escolheu
   const ator = vistos.find((p) => p.id === atorId && (mestre || !p.oculto)) ?? daVez ?? null;
   const agindo = Boolean(ator && podeAgirCom(ator));

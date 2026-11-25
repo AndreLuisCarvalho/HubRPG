@@ -21,7 +21,7 @@ export default function Arquivos({ campanha }) {
   const [arquivos, setArquivos] = useState(null);
   const [sessoes, setSessoes] = useState([]);
   const [erro, setErro] = useState('');
-  const [visao, trocarVisao] = useVisao(campanha.id);
+  const [visao, trocarVisao, podeTrocarVisao] = useVisao(campanha.id);
   // { modo: 'ver' | 'terminal' | 'form', arquivo }
   const [janela, setJanela] = useState(null);
   const mestre = visao === 'mestre';
@@ -66,10 +66,21 @@ export default function Arquivos({ campanha }) {
     setJanela({ modo: trancado && !mestre ? 'terminal' : 'ver', arquivo });
   }
 
-  async function destrancar(arquivo) {
-    const salvo = await mudarDados(arquivo, { destrancado: true });
-    if (salvo) setJanela({ modo: 'ver', arquivo: salvo, revelado: true });
+  // A senha é conferida no servidor (o jogador nunca recebe a senha): devolve o arquivo aberto, ou null
+  async function tentarSenha(arquivo, senha) {
+    try {
+      setErro('');
+      const r = await api.destrancarArquivo(arquivo.id, senha);
+      if (!r.certo) return null;
+      trocarNaLista(r.arquivo);
+      return semConteudo(r.arquivo);
+    } catch (e) {
+      setErro(e.message);
+      return null;
+    }
   }
+
+  const destrancar = (aberto) => setJanela({ modo: 'ver', arquivo: aberto, revelado: true });
 
   async function editar(arquivo) {
     try {
@@ -114,10 +125,10 @@ export default function Arquivos({ campanha }) {
         {arquivos && <span className={styles.contagem}>{visiveis.length}</span>}
 
         <div className={styles.acoesTopo}>
-          <div className={styles.visao} role="radiogroup" aria-label="Visão">
+          {podeTrocarVisao && <div className={styles.visao} role="radiogroup" aria-label="Visão">
             <button type="button" role="radio" aria-checked={mestre} onClick={() => trocarVisao('mestre')}>Mestre</button>
             <button type="button" role="radio" aria-checked={!mestre} onClick={() => trocarVisao('jogadores')}>Jogadores</button>
-          </div>
+          </div>}
           {mestre && (
             <button type="button" className={styles.novo} onClick={() => setJanela({ modo: 'form', arquivo: ARQUIVO_NOVO })}>
               + Novo arquivo
@@ -165,7 +176,7 @@ export default function Arquivos({ campanha }) {
         titulo={janela?.modo === 'form' ? (atual?.id ? 'Editar arquivo' : 'Novo arquivo') : undefined}
       >
         {janela?.modo === 'terminal' && (
-          <Terminal key={atual.id} arquivo={atual} onDestrancar={() => destrancar(atual)} />
+          <Terminal key={atual.id} arquivo={atual} onTentar={(senha) => tentarSenha(atual, senha)} onDestrancar={destrancar} />
         )}
 
         {janela?.modo === 'ver' && (

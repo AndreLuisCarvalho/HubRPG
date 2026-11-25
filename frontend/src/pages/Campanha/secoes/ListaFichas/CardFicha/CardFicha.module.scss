@@ -247,3 +247,26 @@
 @keyframes alerta {
   50% { box-shadow: 0 0 24px #d42a3c; }
 }
+// Agente de outro jogador (visto por um jogador): só o básico, sem abrir
+.basica {
+  cursor: default;
+  opacity: 0.82;
+
+  &:hover { transform: none; }
+}
+
+// Selo no canto ("Seu agente")
+.selo {
+  position: absolute;
+  top: -9px;
+  left: 12px;
+  z-index: 2;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--cor);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

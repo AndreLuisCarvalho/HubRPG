@@ -10,6 +10,24 @@ const VOLTAR_PARA = {
   monstro: { caminho: 'monstros', rotulo: 'Monstros' },
 };
 
+/** Mestre: qual jogador usa este agente (o jogador passa a ver e editar a ficha) */
+function DonoDaFicha({ campanha, ficha, onMudar }) {
+  const [membros, setMembros] = useState([]);
+  useEffect(() => {
+    api.listarMembros(campanha.id).then((m) => setMembros(m.filter((x) => x.papel === 'jogador'))).catch(() => {});
+  }, [campanha.id]);
+
+  return (
+    <label className={styles.dono}>
+      <span>Jogador deste agente</span>
+      <select value={ficha.dono_id ?? ''} onChange={(e) => onMudar(e.target.value ? Number(e.target.value) : null)}>
+        <option value="">Ninguém (só o mestre)</option>
+        {membros.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
+      </select>
+    </label>
+  );
+}
+
 export default function DetalheFicha({ campanha }) {
   const { fichaId } = useParams();
   const [ficha, setFicha] = useState(null);
@@ -39,14 +57,30 @@ export default function DetalheFicha({ campanha }) {
   }
 
   const voltar = VOLTAR_PARA[ficha.tipo] ?? VOLTAR_PARA.jogador;
+  const linkVoltar = (
+    <Link to={`/campanha/${campanha.id}/${voltar.caminho}`} className={styles.voltar}>
+      ← {voltar.rotulo}
+    </Link>
+  );
+
+  // Agente de outro jogador: o servidor manda só o básico
+  if (ficha.basica) {
+    return (
+      <section className={styles.detalhe}>
+        {linkVoltar}
+        <p className={styles.aviso}>A ficha de {ficha.nome} é do jogador dele: só ele e o mestre abrem.</p>
+      </section>
+    );
+  }
 
   return (
     <section className={styles.detalhe}>
-      <Link to={`/campanha/${campanha.id}/${voltar.caminho}`} className={styles.voltar}>
-        ← {voltar.rotulo}
-      </Link>
+      {linkVoltar}
 
       {erro && <p className="erro">{erro}</p>}
+      {campanha.papel === 'mestre' && ficha.tipo === 'jogador' && (
+        <DonoDaFicha campanha={campanha} ficha={ficha} onMudar={(dono_id) => alterarFicha({ dono_id })} />
+      )}
 
       {sistema ? (
         // A ficha do sistema é carregada sob demanda (arquivo separado)
