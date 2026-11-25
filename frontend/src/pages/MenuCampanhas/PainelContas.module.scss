@@ -1,0 +1,191 @@
+$perigo: #ff6b6b;
+
+.painel {
+  display: grid;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.aviso { color: var(--texto-suave); margin-top: 8px; }
+
+/* Vagas: "3 de 10" e a barrinha */
+.vagas {
+  display: grid;
+  gap: 6px;
+
+  p { font-size: 0.9rem; color: var(--texto-suave); }
+  b { color: var(--texto); font-size: 1.1rem; }
+  span { color: $perigo; }
+}
+
+.barra {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--borda);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--cor);
+    transition: width 0.3s;
+  }
+}
+
+.lista {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conta {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+
+  @media (max-width: 520px) {
+    grid-template-columns: auto 1fr;
+
+    > .acao { grid-column: 1 / -1; justify-self: start; }
+  }
+}
+
+.bloqueada {
+  border-style: dashed;
+  background: transparent;
+
+  .avatar, .nome b { opacity: 0.55; }
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--cor) 30%, #111);
+  font-weight: 700;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.info {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.nome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.selo {
+  padding: 1px 8px;
+  border: 1px solid var(--cor);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.seloBloq { border-color: $perigo; color: $perigo; }
+
+.email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+}
+
+.datas { font-size: 0.74rem; color: var(--texto-suave); }
+
+/* Campanhas: uma etiqueta por campanha; o ✕ tira o jogador */
+.campanhas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px 3px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+
+  li:not(:has(button)) { padding-right: 10px; }
+
+  small { color: var(--texto-suave); font-size: 0.7rem; }
+
+  button {
+    padding: 0 6px;
+    border: none;
+    background: none;
+    color: var(--texto-suave);
+    font: inherit;
+    cursor: pointer;
+
+    &:hover:not(:disabled) { color: $perigo; }
+  }
+}
+
+.mestre { border-color: color-mix(in srgb, var(--cor) 60%, transparent) !important; }
+
+.acao,
+.confirmar button {
+  padding: 6px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { border-color: var(--texto-suave); }
+  &:disabled { opacity: 0.45; cursor: default; }
+}
+
+.confirmar {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, #{$perigo} 50%, transparent);
+  border-radius: 4px;
+  font-size: 0.85rem;
+
+  div { display: flex; flex-wrap: wrap; gap: 8px; }
+}
+
+.perigo {
+  border-color: $perigo !important;
+  color: $perigo !important;
+}
+
+.teste {
+  summary {
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+    color: var(--texto-suave);
+    cursor: pointer;
+  }
+}

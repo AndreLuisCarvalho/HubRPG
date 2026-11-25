@@ -186,6 +186,9 @@ async function iniciar() {
   await db.run('CREATE UNIQUE INDEX IF NOT EXISTS campanhas_codigo ON campanhas (codigo)');
   // Conta do jogador que usa o agente (null = do mestre)
   await adicionarColuna('fichas', 'dono_id', 'INTEGER');
+  // Tela de Contas: conta bloqueada pelo dono do site (não entra e não ocupa vaga) e último acesso
+  await adicionarColuna('usuarios', 'bloqueado', 'INTEGER NOT NULL DEFAULT 0');
+  await adicionarColuna('usuarios', 'ultimo_acesso', 'TEXT');
  
   // Dados iniciais, só se o banco estiver vazio
   const { total } = await db.get('SELECT COUNT(*) AS total FROM campanhas');

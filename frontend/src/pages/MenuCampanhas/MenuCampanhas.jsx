@@ -5,6 +5,7 @@ import { CardCampanha, InfoCampanha, PalcoMapa } from '../../components';
 import Modal from '../../components/Modal/Modal';
 import { useConta } from '../../conta/conta';
 import { FormEntrar, FormNovaCampanha } from './FormsCampanha';
+import PainelContas from './PainelContas';
 import styles from './MenuCampanhas.module.scss';
 
 const DURACAO_MERGULHO = 800; // ms, igual ao SCSS
@@ -79,6 +80,7 @@ export default function MenuCampanhas() {
             <b>{usuario.nome}</b>
             {usuario.teste ? <small>conta de teste</small> : usuario.email && <small>{usuario.email}</small>}
           </span>
+          {usuario.dono && <button type="button" onClick={() => setJanela('contas')}>Contas</button>}
           <button type="button" onClick={sair}>Sair</button>
         </div>
 
@@ -129,6 +131,11 @@ export default function MenuCampanhas() {
       <Modal aberto={janela === 'entrar'} onFechar={() => setJanela(null)} titulo="Entrar numa campanha" sobretitulo="Como jogador" largura="400px">
         {janela === 'entrar' && <FormEntrar onEntrou={abrirNova} />}
       </Modal>
+      {usuario.dono && (
+        <Modal aberto={janela === 'contas'} onFechar={() => setJanela(null)} titulo="Contas do site" sobretitulo="Só você vê" largura="680px">
+          {janela === 'contas' && <PainelContas meuId={usuario.id} />}
+        </Modal>
+      )}
     </main>
   );
 }
