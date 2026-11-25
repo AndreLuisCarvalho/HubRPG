@@ -1,0 +1,87 @@
+@use '../styles/mixins' as *;
+
+.pagina {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 16px;
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--cor) 22%, transparent), transparent 60%),
+    var(--fundo);
+}
+
+.cartao {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  width: min(420px, 100%);
+  padding: 32px 26px;
+  border: 1px solid var(--borda);
+  border-top: 3px solid var(--cor);
+  border-radius: 6px;
+  background: var(--superficie);
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+
+  h1 {
+    margin: 0;
+    @include fonte-titulo;
+    font-size: 2.6rem;
+    letter-spacing: 0.04em;
+  }
+}
+
+.rotulo { @include sobretitulo; margin: 0; }
+
+.texto {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--texto-suave);
+}
+
+.google { min-height: 44px; }
+
+.aviso {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px dashed var(--borda);
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.teste {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding-top: 14px;
+  border-top: 1px solid var(--borda);
+
+  span { @include rotulo-campo; }
+
+  div { display: flex; gap: 6px; }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    font: inherit;
+  }
+
+  button {
+    padding: 8px 14px;
+    border: 1px solid var(--cor);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--cor) 25%, transparent);
+    color: var(--texto);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:disabled { opacity: 0.5; cursor: default; }
+  }
+}

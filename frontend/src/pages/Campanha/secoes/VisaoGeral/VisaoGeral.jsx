@@ -46,6 +46,7 @@ export default function VisaoGeral({ campanha, onAtualizar }) {
         <Sessoes campanha={campanha} sessoes={sessoes} />
         {/* Coluna da direita: o mapa onde o grupo está (se houver) e o grupo */}
         <div className={styles.coluna}>
+          {campanha.papel === 'mestre' && <Mesa campanha={campanha} onAtualizar={onAtualizar} />}
           <MapaAtual campanha={campanha} agentes={agentes} />
           <Grupo agentes={agentes} />
         </div>
@@ -266,6 +267,79 @@ function Grupo({ agentes }) {
                 <b>{a.nome}</b>
                 <small>{a.dados?.jogador || 'Sem jogador'}</small>
               </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Bloco>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+/* Mesa (só o mestre): o código para os jogadores e quem já entrou  */
+/* ---------------------------------------------------------------- */
+function Mesa({ campanha, onAtualizar }) {
+  const [membros, setMembros] = useState(null);
+  const [copiado, setCopiado] = useState(false);
+  const [erro, setErro] = useState('');
+
+  useEffect(() => {
+    const efeito = { ativo: true };
+    api.listarMembros(campanha.id).then((m) => efeito.ativo && setMembros(m)).catch((e) => efeito.ativo && setErro(e.message));
+    return () => { efeito.ativo = false; };
+  }, [campanha.id]);
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(campanha.codigo);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 1500);
+    } catch {
+      setErro('Não deu para copiar: selecione o código e copie à mão.');
+    }
+  }
+
+  async function gerarOutro() {
+    if (!window.confirm('Gerar outro código? O atual para de funcionar (quem já entrou continua na campanha).')) return;
+    try {
+      onAtualizar(await api.novoCodigo(campanha.id));
+    } catch (e) {
+      setErro(e.message);
+    }
+  }
+
+  async function tirar(m) {
+    if (!window.confirm(`Tirar ${m.nome} da campanha? Ele pode voltar com o código.`)) return;
+    try {
+      await api.tirarMembro(campanha.id, m.id);
+      setMembros((lista) => lista.filter((x) => x.id !== m.id));
+    } catch (e) {
+      setErro(e.message);
+    }
+  }
+
+  const jogadores = (membros ?? []).filter((m) => m.papel === 'jogador');
+  return (
+    <Bloco titulo="Mesa" contagem={jogadores.length}>
+      <div className={styles.codigoMesa}>
+        <span>Código para os jogadores</span>
+        <b>{campanha.codigo}</b>
+        <div>
+          <button type="button" onClick={copiar}>{copiado ? 'Copiado!' : 'Copiar'}</button>
+          <button type="button" onClick={gerarOutro}>Gerar outro</button>
+        </div>
+      </div>
+      {erro && <p className="erro">{erro}</p>}
+      {membros && !jogadores.length && <p className={styles.vazio}>Nenhum jogador entrou ainda. Passe o código para o grupo.</p>}
+      {jogadores.length > 0 && (
+        <ul className={styles.membros}>
+          {jogadores.map((m) => (
+            <li key={m.id}>
+              <span className={styles.membroFoto}>
+                {m.foto ? <img src={m.foto} alt="" referrerPolicy="no-referrer" /> : m.nome.charAt(0)}
+              </span>
+              <b>{m.nome}</b>
+              <button type="button" onClick={() => tirar(m)} aria-label={`Tirar ${m.nome} da campanha`} title="Tirar da campanha">✕</button>
             </li>
           ))}
         </ul>

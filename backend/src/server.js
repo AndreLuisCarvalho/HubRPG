@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { bancoPronto, db } from './db.js';
+import { exigirCampanha, exigirLogin, identificar, rotasDeLogin } from './auth.js';
 import campanhasRouter from './routes/campanhas.js';
 import { criarRotasDeItens } from './routes/itensDaCampanha.js';
 import fichasRouter from './routes/fichas.js';
@@ -15,20 +16,18 @@ app.use(cors({ origin: process.env.ORIGEM_SITE ?? true }));
 // A Vercel aceita até 4,5 MB por requisição.
 app.use(express.json({ limit: '4mb' }));
  
-// Chave de acesso: enquanto não há login, só quem tem a chave mexe nos dados.
-// Se CHAVE_ACESSO não estiver definida (no seu PC), a API fica aberta.
-app.use('/api', (req, res, next) => {
-  const chave = process.env.CHAVE_ACESSO;
-  if (!chave || req.get('x-chave-acesso') === chave) return next();
-  res.status(401).json({ erro: 'Chave de acesso inválida' });
-});
- 
 // Espera o banco ficar pronto (tabelas e migrações) antes de qualquer rota
 app.use(async (req, res, next) => {
   await bancoPronto;
   next();
 });
- 
+
+// Login: quem é (token no cabeçalho), as rotas de entrar, e daqui para baixo só com conta
+// e só nas campanhas de que a conta participa (req.papel = 'mestre' | 'jogador')
+app.use('/api', identificar);
+app.use('/api', rotasDeLogin);
+app.use('/api', exigirLogin, exigirCampanha);
+
 app.use('/api/campanhas', campanhasRouter);
 app.use('/api', fichasRouter);
 app.use('/api', arquivosRouter);

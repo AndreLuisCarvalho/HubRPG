@@ -3,53 +3,42 @@
 // - Na Vercel vem da variável VITE_API_URL (ex.: https://hubrpg-api.vercel.app)
 const BASE = import.meta.env.VITE_API_URL ?? '';
  
-/* ---------- Chave de acesso (até existir login) ---------- */
-const CHAVE_ACESSO = 'hubrpg:chave-acesso';
- 
-function lerChave() {
+/* ---------- Login: o token da conta fica no navegador ---------- */
+const CHAVE_TOKEN = 'hubrpg:token';
+export const EVENTO_SAIU = 'hubrpg:saiu';   // o servidor recusou o token: a tela volta para o login
+
+export function lerToken() {
   try {
-    return localStorage.getItem(CHAVE_ACESSO) ?? '';
+    return localStorage.getItem(CHAVE_TOKEN) ?? '';
   } catch {
     return '';
   }
 }
- 
-function salvarChave(chave) {
+
+export function guardarToken(token) {
   try {
-    localStorage.setItem(CHAVE_ACESSO, chave);
+    if (token) localStorage.setItem(CHAVE_TOKEN, token);
+    else localStorage.removeItem(CHAVE_TOKEN);
   } catch {
-    // sem armazenamento (aba anônima): vai pedir de novo na próxima vez
+    // sem armazenamento (aba anônima): vale só enquanto a página estiver aberta
   }
 }
- 
-// Várias requisições podem receber 401 ao mesmo tempo: todas esperam a MESMA pergunta
-let pedindoChave = null;
-function pedirChave() {
-  pedindoChave ??= Promise.resolve().then(() => {
-    const chave = window.prompt('Chave de acesso do HubRPG:')?.trim();
-    if (chave) salvarChave(chave);
-    pedindoChave = null;
-    return Boolean(chave);
-  });
-  return pedindoChave;
-}
- 
+
 /* ---------- Requisição ---------- */
-async function requisicao(caminho, opcoes = {}, jaPediuChave = false) {
-  const chaveUsada = lerChave();
+async function requisicao(caminho, opcoes = {}) {
+  const token = lerToken();
   const resposta = await fetch(`${BASE}/api${caminho}`, {
     ...opcoes,
-    headers: { 'Content-Type': 'application/json', 'x-chave-acesso': chaveUsada },
+    headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
     body: opcoes.body ? JSON.stringify(opcoes.body) : undefined,
   });
- 
-  if (resposta.status === 401 && !jaPediuChave) {
-    // Outra requisição já trocou a chave enquanto esta estava a caminho: só tenta de novo
-    if (lerChave() !== chaveUsada) return requisicao(caminho, opcoes, true);
-    // Sem chave (ou chave errada): pergunta e tenta de novo
-    if (await pedirChave()) return requisicao(caminho, opcoes, true);
+
+  // Login vencido ou inválido: esquece o token e avisa a tela
+  if (resposta.status === 401 && token && !caminho.startsWith('/auth/')) {
+    guardarToken('');
+    window.dispatchEvent(new Event(EVENTO_SAIU));
   }
- 
+
   if (!resposta.ok) {
     const erro = await resposta.json().catch(() => ({}));
     throw new Error(erro.erro ?? `Erro ${resposta.status}`);
@@ -58,10 +47,21 @@ async function requisicao(caminho, opcoes = {}, jaPediuChave = false) {
 }
  
 export const api = {
-  // Campanhas
+  // Conta
+  configDoLogin: () => requisicao('/auth/config'),
+  entrarComGoogle: (credencial) => requisicao('/auth/google', { method: 'POST', body: { credencial } }),
+  entrarParaTeste: (nome) => requisicao('/auth/teste', { method: 'POST', body: { nome } }),
+  eu: () => requisicao('/auth/eu'),
+
+  // Campanhas (cada uma vem com "papel": 'mestre' | 'jogador'; o "codigo" só para o mestre)
   listarCampanhas: () => requisicao('/campanhas'),
   buscarCampanha: (id) => requisicao(`/campanhas/${id}`),
+  criarCampanha: (dados) => requisicao('/campanhas', { method: 'POST', body: dados }),
+  entrarNaCampanha: (codigo) => requisicao('/campanhas/entrar', { method: 'POST', body: { codigo } }),
   atualizarCampanha: (id, dados) => requisicao(`/campanhas/${id}`, { method: 'PUT', body: dados }),
+  novoCodigo: (id) => requisicao(`/campanhas/${id}/codigo`, { method: 'POST' }),
+  listarMembros: (id) => requisicao(`/campanhas/${id}/membros`),
+  tirarMembro: (id, usuarioId) => requisicao(`/campanhas/${id}/membros/${usuarioId}`, { method: 'DELETE' }),
  
   // Fichas
   listarFichas: (campanhaId, tipo) =>

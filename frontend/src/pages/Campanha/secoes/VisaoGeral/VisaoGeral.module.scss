@@ -412,3 +412,74 @@
 
   small { font-size: 0.8rem; color: var(--texto-suave); }
 }
+
+/* ---------- Mesa (mestre): código e jogadores ---------- */
+.codigoMesa {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 12px;
+  border: 1px dashed var(--borda);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+
+  > span { @include rotulo-campo; }
+
+  b {
+    @include fonte-titulo;
+    font-size: 2rem;
+    letter-spacing: 0.18em;
+    user-select: all;
+  }
+
+  div { display: flex; gap: 6px; }
+
+  button {
+    padding: 4px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    background: none;
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+
+    &:hover { border-color: var(--texto-suave); }
+  }
+}
+
+.vazio { margin: 0; font-size: 0.85rem; color: var(--texto-suave); }
+
+.membros {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li { display: flex; align-items: center; gap: 8px; }
+  b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
+
+  button {
+    border: 0;
+    background: none;
+    color: var(--texto-suave);
+    cursor: pointer;
+
+    &:hover { color: #e2675d; }
+  }
+}
+
+.membroFoto {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--cor) 30%, #111);
+  font-size: 0.8rem;
+  font-weight: 700;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
