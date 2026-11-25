@@ -1,0 +1,162 @@
+@use '../../../../styles/mixins' as *;
+
+$ouro: #d9a54a;
+
+/* Leque de cartas: sobrepostas, levemente giradas; a do mouse e a em jogo sobem */
+.mao {
+  --lar: clamp(66px, min(9.5dvh, 8vw), 96px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 0;
+  padding: 24px 18px 2px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+
+  @include celular {
+    --lar: 64px;
+    justify-content: flex-start;
+    padding: 12px 6px 2px;
+  }
+}
+
+.carta {
+  --tom: #b3261c;
+  position: relative;
+  flex: 0 0 auto;
+  width: var(--lar);
+  aspect-ratio: 5 / 7;
+  margin-left: calc(var(--lar) * -0.18);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #f2eee6;
+  cursor: pointer;
+  transform: rotate(calc(var(--i) * 3deg)) translateY(calc(var(--i) * var(--i) * 1.6px));
+  transform-origin: 50% 120%;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), z-index 0s;
+
+  &:first-child { margin-left: 0; }
+
+  &[data-tom='ataque'] { --tom: #c8423a; }
+  &[data-tom='teste'] { --tom: #{$ouro}; }
+  &[data-tom='item'] { --tom: #3f9d63; }
+  &[data-tom='livre'] { --tom: #8b8f99; }
+  &[data-tom='condicao'] { --tom: #e09a2b; }
+
+  &:hover, &:focus-visible {
+    z-index: 3;
+    transform: translateY(-12px) scale(1.06);
+    outline: none;
+  }
+
+  &[aria-pressed='true'] {
+    z-index: 4;
+    transform: translateY(-18px) scale(1.1);
+
+    .face {
+      border-color: $ouro;
+      box-shadow: 0 0 0 2px $ouro, 0 0 24px color-mix(in srgb, $ouro 70%, transparent), 0 10px 20px rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  @include celular {
+    margin-left: 4px;
+    transform: none;
+  }
+}
+
+.face {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  justify-items: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  padding: 5px 4px;
+  border: 2px solid color-mix(in srgb, var(--tom) 85%, #000);
+  border-radius: 7px;
+  background:
+    radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--tom) 40%, transparent), transparent 60%),
+    linear-gradient(170deg, #1d1e23, #0b0c0f);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07), 0 8px 16px rgba(0, 0, 0, 0.6);
+  text-align: center;
+  overflow: hidden;
+
+  small {
+    @include fonte-ficha;
+    font-size: 0.52rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--tom) 70%, #fff);
+  }
+
+  b {
+    max-width: 100%;
+    overflow: hidden;
+    @include fonte-ficha;
+    font-size: clamp(0.58rem, calc(var(--lar) * 0.115), 0.76rem);
+    font-weight: 700;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  em {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.52rem;
+    font-style: normal;
+    color: rgba(255, 255, 255, 0.6);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.icone {
+  align-self: center;
+  font-size: calc(var(--lar) * 0.34);
+  line-height: 1;
+  color: var(--tom);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--tom) 60%, transparent);
+}
+
+// Só para ver (mestre na vez de um agente): apagadas, sem subir; o mouse ainda mostra o detalhe
+.mao[data-so-ver] .carta {
+  cursor: default;
+  filter: grayscale(0.6) brightness(0.65);
+
+  &:hover, &:focus-visible { transform: translateY(-6px); filter: grayscale(0.3) brightness(0.85); }
+}
+
+// Verso (mão da ameaça para os jogadores)
+.mao[data-virada] .carta { cursor: default; }
+.mao[data-virada] .carta:hover { transform: rotate(calc(var(--i) * 3deg)); }
+
+.verso {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border: 2px solid #4a1612;
+  border-radius: 7px;
+  background:
+    repeating-linear-gradient(45deg, rgba(200, 66, 58, 0.16) 0 6px, transparent 6px 12px),
+    linear-gradient(170deg, #2a0d0b, #0d0404);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+
+  i {
+    width: 38%;
+    aspect-ratio: 1;
+    border: 2px solid rgba(200, 66, 58, 0.7);
+    transform: rotate(45deg);
+    box-shadow: 0 0 14px rgba(200, 66, 58, 0.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carta { transition: none; }
+}

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import styles from './Arena.module.scss';
 
 const ROTULO_CARIMBO = {
@@ -5,15 +6,23 @@ const ROTULO_CARIMBO = {
 };
 
 /**
- * Registro da missão (coluna da direita): o histórico da luta, do mais novo para o mais antigo,
- * com cor por tipo (dano de PV, SAN, PE, cura, turnos, rodadas) e os carimbos dos testes.
+ * Registro da missão, numa gaveta que abre pela direita (botão "Registro" no topo): o histórico da
+ * luta, do mais novo para o mais antigo, com cor por tipo e os carimbos dos testes.
  */
-export default function LogCombate({ log, aberto, onAlternar }) {
+export default function LogCombate({ log, aberto, onFechar }) {
+  useEffect(() => {
+    if (!aberto) return undefined;
+    const tecla = (e) => e.key === 'Escape' && onFechar();
+    window.addEventListener('keydown', tecla);
+    return () => window.removeEventListener('keydown', tecla);
+  }, [aberto, onFechar]);
+
   return (
-    <aside className={styles.log} data-aberto={aberto || undefined} aria-label="Registro da missão">
-      <button type="button" className={styles.logTitulo} onClick={onAlternar} aria-expanded={aberto}>
-        Registro da missão <small>{log.filter((e) => e.tipo !== 'rodada' && e.tipo !== 'turno').length}</small>
-      </button>
+    <aside className={styles.log} data-aberto={aberto || undefined} aria-label="Registro da missão" aria-hidden={!aberto}>
+      <header className={styles.logTitulo}>
+        Registro da missão
+        <button type="button" onClick={onFechar} aria-label="Fechar registro" tabIndex={aberto ? 0 : -1}>✕</button>
+      </header>
       <ol className={styles.logLista}>
         {log.length === 0 && <li className={styles.logVazio}>Nada registrado ainda.</li>}
         {log.map((e) => (

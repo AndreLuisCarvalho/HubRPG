@@ -20,6 +20,37 @@ export const COMBATE_NOVO = { estado: 'preparando', rodada: 0, vez: null, partic
 
 export const novoId = () => Math.random().toString(36).slice(2, 10);
 
+/* ---------- Vitória ---------- */
+// O carimbo que bate na tela quando a última ameaça cai (sorteado a cada vitória)
+export const PALAVRAS_DE_VITORIA = [
+  'Vitória',
+  'Missão cumprida',
+  'Ameaça contida',
+  'Ameaça neutralizada',
+  'Caso encerrado',
+  'Ordem restaurada',
+  'Fenômeno contido',
+  'Sobrevivemos',
+  'Fim da linha',
+  'Área segura',
+  'Arquivo fechado',
+  'O Outro Lado recua',
+  'A Ordem prevalece',
+  'Selado',
+  'Contenção completa',
+];
+
+export const sortearVitoria = () => PALAVRAS_DE_VITORIA[Math.floor(Math.random() * PALAVRAS_DE_VITORIA.length)];
+
+/** Todas as ameaças (inclusive as ocultas) com PV zerado — precisa haver ao menos uma */
+export function ameacasDerrotadas(vistos) {
+  const ameacas = vistos.filter((p) => p.lado === 'ameacas');
+  return ameacas.length > 0 && ameacas.every((p) => {
+    const pv = p.ver.recursos.find((r) => r.id === 'pv');
+    return (pv?.maximo ?? 0) > 0 && pv.atual === 0;
+  });
+}
+
 /* ---------- Participantes ---------- */
 
 export function daFicha(ficha, lado) {
@@ -103,9 +134,24 @@ function formulaDeIniciativa(dados) {
 
 /** Rola a iniciativa de uma fórmula do livro ("2d20+5": fica com o maior e soma) */
 export function rolarIniciativa(formula) {
-  const lida = lerFormula(formula) ?? lerFormula('1d20');
-  return rolarTeste(lida).total;
+  return rolarIniciativaCompleta(formula).iniciativa;
 }
+
+/**
+ * A rolagem inteira, para mostrar e desempatar:
+ * { iniciativa, iniRolagem: { formula, natural, bonus, sorte } } — empate: maior bônus, depois a sorte
+ */
+export function rolarIniciativaCompleta(formula) {
+  const usada = lerFormula(formula) ? formula : '1d20';
+  const teste = rolarTeste(lerFormula(usada));
+  return {
+    iniciativa: teste.total,
+    iniRolagem: { formula: usada, natural: teste.natural, bonus: teste.total - teste.natural, sorte: Math.random() },
+  };
+}
+
+/** Dá iniciativa a quem ainda não tem (quem entra na luta rola na hora) */
+export const comIniciativa = (p, fichas) => (p.iniciativa != null ? p : { ...p, ...rolarIniciativaCompleta(verParticipante(p, fichas).formula) });
 
 /* ---------- Recursos ---------- */
 
@@ -143,8 +189,12 @@ export function estadoAproximado(pv) {
 /* ---------- Turnos ---------- */
 
 // Maior iniciativa primeiro; quem não rolou vai para o fim (o sort é estável: empate mantém a ordem)
-export const ordenarPorIniciativa = (participantes) =>
-  [...participantes].sort((a, b) => (b.iniciativa ?? -Infinity) - (a.iniciativa ?? -Infinity));
+// Quem vai antes: maior iniciativa; empate → maior bônus; de novo → sorteio (guardado na rolagem)
+const antesNaOrdem = (a, b) => ((b.iniciativa ?? -Infinity) - (a.iniciativa ?? -Infinity))
+  || ((b.iniRolagem?.bonus ?? 0) - (a.iniRolagem?.bonus ?? 0))
+  || ((b.iniRolagem?.sorte ?? 0) - (a.iniRolagem?.sorte ?? 0));
+
+export const ordenarPorIniciativa = (participantes) => [...participantes].sort(antesNaOrdem);
 
 export function comecar(dados) {
   const participantes = ordenarPorIniciativa(dados.participantes);
@@ -173,7 +223,7 @@ export function passarVez(dados, fichas, passo = 1) {
 export function inserirNaOrdem(participantes, novos) {
   const lista = [...participantes];
   for (const novo of novos) {
-    const pos = novo.iniciativa == null ? -1 : lista.findIndex((p) => (p.iniciativa ?? -Infinity) < novo.iniciativa);
+    const pos = novo.iniciativa == null ? -1 : lista.findIndex((p) => antesNaOrdem(novo, p) < 0);
     if (pos < 0) lista.push(novo);
     else lista.splice(pos, 0, novo);
   }

@@ -1,36 +1,43 @@
+import Contador from './Contador';
+import MaoDeCartas from './MaoDeCartas';
 import { estadoAproximado, marcaDe } from './regrasCombate';
 import styles from './Arena.module.scss';
 
 const TIPOS = { jogador: 'Agente', npc: 'NPC', monstro: 'Ameaça' };
 const ECONOMIA = [
-  { id: 'padrao', rotulo: 'Ação padrão' },
+  { id: 'padrao', rotulo: 'Padrão' },
   { id: 'movimento', rotulo: 'Movimento' },
 ];
 
 /**
- * Barra de controle do turno (embaixo): quem está agindo à esquerda, economia de ação e botões de
- * ação no meio, Finalizar turno à direita. Na preparação, os controles da iniciativa.
+ * A base da tela, como o lado de quem duela: à esquerda quem age (retrato e contadores de PV/SAN/PE),
+ * no meio a mão de cartas de ação, à direita a economia de ação e o Finalizar turno.
+ * Na preparação, os controles da iniciativa.
  */
 export default function Hud({
-  ator, daVez, mestre, preparando, acoes, economia, aba, lembretes,
-  onAba, onEconomia, onFinalizar, onVoltarTurno, onVoltarParaVez, onAvancarContagem,
+  ator, daVez, mestre, preparando, cartas, soVer, cartaId, economia, lembretes,
+  onCarta, onEconomia, onFinalizar, onVoltarTurno, onVoltarParaVez, onAvancarContagem,
   podeRolarAmeacas, onRolarAmeacas, onOrdenar, onComecar, podeComecar,
 }) {
   if (preparando) {
     return (
       <div className={styles.hud} data-modo="preparo">
         <div className={styles.hudQuem}>
-          <b className={styles.hudTitulo}>Preparando o combate</b>
-          <small>{mestre ? 'Clique em cada retrato para digitar a iniciativa que o jogador tirou.' : 'O mestre está montando a luta…'}</small>
+          <div className={styles.hudFicha}>
+            <b className={styles.hudTitulo}>Preparando o combate</b>
+            <small>{mestre ? 'Cada um já rolou a iniciativa ao entrar. Corrija um valor embaixo da carta, se precisar.' : 'O mestre está montando a luta…'}</small>
+          </div>
         </div>
-        {mestre && (
-          <div className={styles.hudAcoes}>
-            <button type="button" onClick={onRolarAmeacas} disabled={!podeRolarAmeacas}><span aria-hidden="true">⚄</span>Rolar ameaças</button>
+        {mestre ? (
+          <div className={styles.hudPreparo}>
+            <button type="button" onClick={onRolarAmeacas} disabled={!podeRolarAmeacas}><span aria-hidden="true">⚄</span>Rolar quem falta</button>
             <button type="button" onClick={onOrdenar}><span aria-hidden="true">⇅</span>Ordenar</button>
           </div>
-        )}
+        ) : <span />}
         {mestre && (
-          <button type="button" className={styles.hudFinalizar} onClick={onComecar} disabled={!podeComecar}>Começar combate</button>
+          <div className={styles.hudFim}>
+            <button type="button" className={styles.hudFinalizar} onClick={onComecar} disabled={!podeComecar}>Começar!</button>
+          </div>
         )}
       </div>
     );
@@ -40,7 +47,7 @@ export default function Hud({
 
   const { ver } = ator;
   const ameaca = ator.lado === 'ameacas';
-  // Jogadores na vez de uma ameaça (ou de alguém oculto): só nome e estado
+  // Jogadores na vez de uma ameaça (ou de alguém oculto): só nome, estado e a mão virada
   const segredo = !mestre && (ameaca || ator.oculto);
   const estado = estadoAproximado(ver.recursos.find((r) => r.id === 'pv'));
   const marca = marcaDe(ator);
@@ -48,10 +55,10 @@ export default function Hud({
 
   return (
     <div className={styles.hud} data-lado={ator.lado}>
-      {/* Esquerda: quem age */}
+      {/* Esquerda: quem age, com os contadores */}
       <div className={styles.hudQuem}>
         <span className={styles.hudRetrato} data-lado={ator.lado} data-estado={estado.id}>
-          {ver.imagem && !ameaca ? <img src={ver.imagem} alt="" /> : ver.nome.charAt(0)}
+          {ver.imagem && !segredo ? <img src={ver.imagem} alt="" /> : ver.nome.charAt(0)}
         </span>
         <div className={styles.hudFicha}>
           <b className={styles.hudTitulo}>
@@ -69,7 +76,7 @@ export default function Hud({
                 <span key={r.id} style={{ '--cor-barra': r.cor }}>
                   <em>{r.sigla}</em>
                   <i><b style={{ width: `${r.maximo ? Math.min(100, (r.atual / r.maximo) * 100) : 0}%` }} /></i>
-                  <strong>{r.atual}<small>/{r.maximo}</small></strong>
+                  <strong><Contador valor={r.atual} /><small>/{r.maximo}</small></strong>
                 </span>
               ))}
             </div>
@@ -77,12 +84,24 @@ export default function Hud({
           {foraDaVez && (
             <button type="button" className={styles.hudLink} onClick={onVoltarParaVez}>Fora da vez · voltar para {daVez.ver.nome}</button>
           )}
+          {mestre && lembretes.map(({ rid, c }) => (
+            <div key={rid} className={styles.hudLembrete}>
+              <span><b>{c.rotulo}</b> {c.valor}/{c.limite}</span>
+              <button type="button" onClick={() => onAvancarContagem(rid)}>Avançar</button>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Centro: economia e ações */}
-      {!segredo && (
-        <div className={styles.hudCentro}>
+      {/* Meio: a mão de cartas (mestre na vez de um agente: só para ver) */}
+      <div className={styles.hudMao}>
+        {soVer && <p className={styles.hudAviso}>Vez do jogador: aguardando a ação na tela dos Jogadores</p>}
+        <MaoDeCartas cartas={cartas} selecionada={cartaId} virada={segredo} soVer={soVer} onJogar={onCarta} />
+      </div>
+
+      {/* Direita: economia de ação e fim do turno */}
+      <div className={styles.hudFim}>
+        {!segredo && (
           <div className={styles.hudEconomia} aria-label="Economia de ação">
             {ECONOMIA.map((e) => (
               <button
@@ -97,26 +116,8 @@ export default function Hud({
               </button>
             ))}
           </div>
-          <div className={styles.hudAcoes}>
-            {acoes.map((a) => (
-              <button key={a.id} type="button" aria-pressed={aba === a.id} onClick={() => onAba(aba === a.id ? null : a.id)}>
-                <span aria-hidden="true">{a.icone}</span>
-                {a.rotulo}
-              </button>
-            ))}
-          </div>
-          {mestre && lembretes.map(({ rid, c }) => (
-            <div key={rid} className={styles.hudLembrete}>
-              <span><b>{c.rotulo}</b> {c.valor}/{c.limite} · na {c.limite}ª fica {c.final.toLowerCase()}</span>
-              <button type="button" onClick={() => onAvancarContagem(rid)}>Avançar</button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Direita: fim do turno */}
-      <div className={styles.hudFim}>
-        <button type="button" className={styles.hudFinalizar} onClick={onFinalizar}>Finalizar turno ▸</button>
+        )}
+        <button type="button" className={styles.hudFinalizar} onClick={onFinalizar}>Finalizar turno</button>
         {mestre && <button type="button" className={styles.hudLink} onClick={onVoltarTurno}>◂ voltar um turno</button>}
       </div>
     </div>

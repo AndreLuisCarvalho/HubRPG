@@ -1,0 +1,98 @@
+@use '../../../../styles/mixins' as *;
+
+$agentes: #4f8fd6;
+$ameacas: #c8423a;
+$ouro: #d9a54a;
+
+.rolagem {
+  position: absolute;
+  inset: 0;
+  z-index: 14;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 18px;
+  padding: 16px;
+  background: radial-gradient(ellipse at center, rgba(20, 6, 5, 0.9), rgba(5, 5, 6, 0.96));
+  animation: entrar 0.35s ease-out;
+  transition: opacity 0.4s;
+
+  &[data-saindo] { opacity: 0; }
+
+  h2 {
+    margin: 0;
+    @include fonte-titulo;
+    font-size: clamp(1.6rem, 5vw, 2.8rem);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: $ouro;
+    text-shadow: 0 0 20px color-mix(in srgb, $ouro 50%, transparent);
+  }
+}
+
+@keyframes entrar { from { opacity: 0; } }
+
+.palco { display: flex; justify-content: center; max-width: 100%; }
+
+// Sem WebGL: os dados em CSS
+.palcoCss {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 26px 30px;
+  max-width: min(100%, 760px);
+  perspective: 1100px;
+}
+
+.vaga { display: grid; justify-items: center; gap: 14px; }
+
+// Embaixo de cada dado: posição, nome e (agentes) a iniciativa — aparece quando os dados param
+.etiqueta {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  max-width: calc(var(--tam) * 1.45);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.3s, transform 0.3s;
+
+  &[data-parou] { opacity: 1; transform: none; }
+
+  em {
+    padding: 0 8px;
+    border-radius: 999px;
+    background: $ouro;
+    color: #1b1408;
+    @include fonte-ficha;
+    font-size: 0.7rem;
+    font-style: normal;
+    font-weight: 800;
+  }
+
+  b {
+    max-width: 100%;
+    overflow: hidden;
+    @include fonte-ficha;
+    font-size: 0.78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #f2eee6;
+  }
+
+  strong {
+    padding: 0 8px;
+    border: 1px solid $agentes;
+    border-radius: 3px;
+    background: color-mix(in srgb, $agentes 25%, #111);
+    @include fonte-titulo;
+    font-size: 1.15rem;
+    color: #fff;
+  }
+
+  &[data-lado='ameacas'] b { color: #ffb3aa; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rolagem { animation: none; }
+  .etiqueta { transition: none; }
+}

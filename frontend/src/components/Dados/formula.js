@@ -53,7 +53,7 @@ function sortear(lados) {
 // Como cada dado entra na mesa: quantas voltas dá e de onde vem
 const aoAcaso = (min, max) => min + Math.random() * (max - min);
 const sinal = () => (Math.random() < 0.5 ? -1 : 1);
-function comLancamento(dados) {
+export function comLancamento(dados) {
   return dados.map((dado, i) => ({
     ...dado,
     rx: sinal() * aoAcaso(540, 900),

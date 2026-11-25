@@ -75,6 +75,16 @@
   transform: rotate(-8deg);
   animation: carimbar 0.35s 0.3s cubic-bezier(0.2, 1.4, 0.5, 1) backwards;
 
+  // Vitória: o carimbo em verde, com a palavra sorteada
+  &[data-vitoria] {
+    max-width: 60%;
+    border-color: #2f7d4c;
+    outline-color: #2f7d4c;
+    color: #2f7d4c;
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+
   @include celular { position: static; justify-self: start; margin-top: 8px; }
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Modal from '../../../../components/Modal/Modal';
 import { definirContagem } from '../../../../sistemas/ordemParanormal/regras';
 import AdicionarParticipantes from './AdicionarParticipantes';
@@ -7,15 +7,17 @@ import Hud from './Hud';
 import Inspecao from './Inspecao';
 import LogCombate from './LogCombate';
 import PainelAcao from './PainelAcao';
+import OrdemLateral from './OrdemLateral';
 import Palco from './Palco';
 import RelatorioCombate from './RelatorioCombate';
+import RolagemIniciativa from './RolagemIniciativa';
 import Timeline from './Timeline';
 import { montarRelatorio, relatorioPara } from './relatorio';
-import { MIRA_DA_ACAO, acoesDisponiveis, carregarLivros } from './acoesCombate';
+import { carregarLivros, cartasDaMao, miraDaCarta } from './acoesCombate';
 import { condicaoPorId, venceu } from './condicoes';
 import {
-  comecar, estadoAproximado, inserirNaOrdem, mover, mudarPvDaCopia, mudarRecursoDaFicha, novoId,
-  ordenarPorIniciativa, passarVez, remover, rolarIniciativa, verParticipante,
+  ameacasDerrotadas, comecar, estadoAproximado, sortearVitoria, inserirNaOrdem, mover, mudarPvDaCopia, mudarRecursoDaFicha, novoId,
+  ordenarPorIniciativa, passarVez, remover, rolarIniciativaCompleta, comIniciativa, verParticipante,
 } from './regrasCombate';
 import styles from './Combate.module.scss';
 import estilo from './Arena.module.scss';
@@ -23,9 +25,10 @@ import estilo from './Arena.module.scss';
 const LIMITE_LOG = 150;
 
 /**
- * A arena, numa tela só, em 4 zonas: timeline de iniciativa (topo), palco (centro), barra do turno
- * (embaixo) e registro da missão (direita). Fluxo: escolher a ação na barra → clicar no alvo no
- * palco → ver o resultado no registro e no banner.
+ * A arena como um campo de duelo, numa tela só: timeline de iniciativa (topo), campo com as cartas
+ * (ameaças em cima, agentes embaixo) e, na base, quem age com a mão de cartas de ação. O registro
+ * da missão abre numa gaveta. Fluxo: jogar uma carta da mão → clicar no alvo no campo → ver o
+ * golpe, o banner e o registro.
  * mestre: vê os números de tudo e tem os controles. Jogadores (tela cheia): ameaças só pela cor do
  * estado, ocultos não aparecem; agem com os próprios agentes.
  */
@@ -35,8 +38,10 @@ export default function Arena({
   const [adicionando, setAdicionando] = useState(false);
   const [atorId, setAtorId] = useState(null);       // quem está na barra de turno (null = o da vez)
   const [inspecionado, setInspecionado] = useState(null);   // ficha rápida aberta no palco
-  const [logAberto, setLogAberto] = useState(false);        // celular: o registro abre por cima
-  const [aba, setAba] = useState(null);             // ação aberta na bandeja (atacar, ritual…)
+  const [logAberto, setLogAberto] = useState(false);        // gaveta do registro
+  const [carta, setCarta] = useState(null);         // carta da mão em jogo ({ id, aba, escolha… })
+  const [anuncio, setAnuncio] = useState(null);     // faixa de turno / abertura cruzando a tela
+  const [dadosIniciativa, setDadosIniciativa] = useState(null);   // jogadores: dados rolando na abertura
   const [alvoIds, setAlvoIds] = useState([]);       // alvos da ação (o palco também escolhe)
   const [encerrando, setEncerrando] = useState(false);
   const [verPalco, setVerPalco] = useState(false);  // combate encerrado: relatório (padrão) ou o palco
@@ -59,6 +64,52 @@ export default function Arena({
   const vistos = participantes.map((p) => ({ ...p, ver: verParticipante(p, fichas) }));
   const visiveis = mestre ? vistos : vistos.filter((p) => !p.oculto);
   const daVez = vistos.find((p) => p.id === dados.vez);
+  const aba = carta?.aba ?? null;
+
+  // Faixa de turno: cruza a tela quando a vez muda; "Combate!" quando a luta começa
+  const antes = useRef({ estado, vez: dados.vez, rodada: dados.rodada });
+  const nomeDaVez = daVez && (mestre || !daVez.oculto) ? daVez.ver.nome : null;
+  const ladoDaVez = daVez?.lado;
+  useEffect(() => {
+    const a = antes.current;
+    antes.current = { estado, vez: dados.vez, rodada: dados.rodada };
+    if (estado !== 'andamento' || (a.estado === estado && a.vez === dados.vez)) return;
+    const abertura = a.estado === 'preparando';
+    const rodadaNova = !abertura && a.rodada !== dados.rodada;
+    if (!nomeDaVez && !abertura && !rodadaNova) return;
+    const faixa = {
+      chave: novoId(),
+      titulo: abertura ? 'Combate!' : rodadaNova ? `Rodada ${dados.rodada}` : null,
+      nome: nomeDaVez,
+      lado: ladoDaVez,
+    };
+    // Abertura: a tela dos Jogadores ainda vai ver os dados de iniciativa rolando (o mestre vai direto)
+    // (chave própria: os dois ficam lado a lado na arena e não podem ter a mesma)
+    if (abertura) setDadosIniciativa({ chave: novoId(), depois: faixa });
+    if (!abertura || mestre) setAnuncio(faixa);
+  }, [estado, dados.vez, dados.rodada, nomeDaVez, ladoDaVez, mestre]);
+
+  // Os dados aparecem quando a visão está em Jogadores (na hora, ou quando o mestre trocar para ela)
+  const verDadosIniciativa = Boolean(dadosIniciativa && !mestre && andamento);
+  function fimDosDados() {
+    if (dadosIniciativa) setAnuncio({ ...dadosIniciativa.depois, chave: novoId() });
+    setDadosIniciativa(null);
+  }
+
+  // Vitória: o carimbo bate na tela de todos; depois o mestre recebe a caixa de encerrar
+  // (a vitória que já estava salva ao abrir a arena não carimba de novo)
+  const [carimboVisto, setCarimboVisto] = useState(dados.vitoria?.id ?? null);
+  const vitoriaId = dados.vitoria?.id ?? null;
+  const carimbo = andamento && vitoriaId && vitoriaId !== carimboVisto ? dados.vitoria : null;
+  const caixaAberta = useRef(dados.vitoria?.id ?? null);
+  useEffect(() => {
+    if (!mestre || !andamento || !vitoriaId || caixaAberta.current === vitoriaId) return undefined;
+    const espera = setTimeout(() => {
+      caixaAberta.current = vitoriaId;
+      setEncerrando(true);
+    }, 2600);
+    return () => clearTimeout(espera);
+  }, [vitoriaId, mestre, andamento]);
 
   /*
    * Registro: cada entrada é [texto do mestre, texto dos jogadores (null = não veem), tipo, carimbo, dados]
@@ -82,6 +133,7 @@ export default function Arena({
    */
   function aplicar({ efeitos = [], entradas = [], mudarDados = (d) => d }) {
     let lista = participantes;
+    let fichasDepois = fichas;
     const novosGolpes = {};
     const quedas = [];
 
@@ -109,7 +161,8 @@ export default function Arena({
           parcial = { ...parcial, ...mud };
         }
         onMudarFicha(p.fichaId, parcial);
-        verDepois = verParticipante(p, { ...fichas, [p.fichaId]: { ...ficha, dados: atual } });
+        fichasDepois = { ...fichasDepois, [p.fichaId]: { ...ficha, dados: atual } };
+        verDepois = verParticipante(p, fichasDepois);
       }
 
       const [rid, delta] = mudancas.find(([r]) => r === 'pv') ?? mudancas[0];
@@ -124,7 +177,21 @@ export default function Arena({
       }
     }
 
-    salvar(comLog(mudarDados({ ...dados, participantes: lista }), ...entradas, ...quedas));
+    // Vitória: a última ameaça caiu (ou, se alguém voltou a ficar de pé, o carimbo sai)
+    let novo = mudarDados({ ...dados, participantes: lista });
+    const fim = [];
+    if (andamento) {
+      const venceu = ameacasDerrotadas(novo.participantes.map((p) => ({ ...p, ver: verParticipante(p, fichasDepois) })));
+      if (venceu && !novo.vitoria) {
+        const palavra = sortearVitoria();
+        novo = { ...novo, vitoria: { id: novoId(), palavra, rodada: novo.rodada } };
+        fim.push([`${palavra}! Todas as ameaças caíram.`, `${palavra}!`, 'vitoria', 'sucesso']);
+      } else if (!venceu && novo.vitoria) {
+        const { vitoria: _vitoria, ...resto } = novo;
+        novo = resto;
+      }
+    }
+    salvar(comLog(novo, ...entradas, ...quedas, ...fim));
     if (Object.keys(novosGolpes).length) setGolpes((g) => ({ ...g, ...novosGolpes }));
     if (quedas.length) setQueda((q) => q + 1);
   }
@@ -224,7 +291,7 @@ export default function Arena({
     setEncerrando(false);
     setInspecionado(null);
     setAtorId(null);
-    setAba(null);
+    setCarta(null);
     setVerPalco(false);
   }
 
@@ -248,27 +315,45 @@ export default function Arena({
   }
 
   /* ---------- Participantes ---------- */
-  function adicionar(novos) {
+  // Quem entra na luta já rola a iniciativa e cai no lugar certo da ordem
+  function adicionar(entrando) {
     setAdicionando(false);
-    if (!novos.length) return;
-    const lista = andamento ? inserirNaOrdem(participantes, novos) : [...participantes, ...novos];
+    if (!entrando.length) return;
+    const novos = entrando.map((n) => comIniciativa(n, fichas));
+    const lista = andamento ? inserirNaOrdem(participantes, novos) : ordenarPorIniciativa([...participantes, ...novos]);
     const nomes = novos.map((n) => verParticipante(n, fichas).nome).join(', ');
     const visiveisNovos = novos.filter((n) => !n.oculto).map((n) => verParticipante(n, fichas).nome).join(', ');
     // Na preparação só o mestre vê quem entrou (ele ainda pode esconder alguém antes de começar)
     const paraJogadores = andamento && visiveisNovos ? `Entrou na luta: ${visiveisNovos}.` : null;
-    salvar(comLog({ ...dados, participantes: lista }, [`Entrou na luta: ${nomes}.`, paraJogadores, 'sistema']));
+    const rolagens = novos.map((n) => {
+      const r = n.iniRolagem;
+      return `${verParticipante(n, fichas).nome} ${n.iniciativa}${r ? ` (${r.formula}, d20 ${r.natural})` : ''}`;
+    }).join(' · ');
+    salvar(comLog(
+      { ...dados, participantes: lista },
+      [`Entrou na luta: ${nomes}.`, paraJogadores, 'sistema'],
+      [`Iniciativa: ${rolagens}.`, null, 'sistema'],
+    ));
   }
 
   const trocar = (id, mudancas) =>
     salvar({ ...dados, participantes: participantes.map((p) => (p.id === id ? { ...p, ...mudancas } : p)) });
 
-  function rolarAmeacas() {
-    salvar({
-      ...dados,
-      participantes: participantes.map((p) => (p.lado === 'ameacas' && p.iniciativa == null
-        ? { ...p, iniciativa: rolarIniciativa(verParticipante(p, fichas).formula) }
-        : p)),
-    });
+  // Rola para quem ficou sem iniciativa (combates antigos) e arruma a ordem
+  function rolarQuemFalta() {
+    salvar({ ...dados, participantes: ordenarPorIniciativa(participantes.map((p) => comIniciativa(p, fichas))) });
+  }
+
+  // Valor digitado pelo mestre: substitui o rolado (o bônus continua valendo no desempate)
+  const mudarIniciativa = (p, v) => trocar(p.id, { iniciativa: v, iniRolagem: p.iniRolagem ? { ...p.iniRolagem, manual: true } : null });
+
+  function rolarDeNovo(p) {
+    const nova = rolarIniciativaCompleta(p.ver.formula);
+    const lista = participantes.map((x) => (x.id === p.id ? { ...x, ...nova } : x));
+    salvar(comLog(
+      { ...dados, participantes: preparando ? ordenarPorIniciativa(lista) : lista },
+      [`${p.ver.nome} rolou a iniciativa de novo: ${nova.iniciativa} (${nova.iniRolagem.formula}, d20 ${nova.iniRolagem.natural}).`, null, 'sistema'],
+    ));
   }
 
   function revelar(p) {
@@ -292,31 +377,37 @@ export default function Arena({
   const reordenar = (de, para) => salvar({ ...dados, participantes: mover(participantes, de, para) });
 
   /* ---------- Quem age, ações e mira ---------- */
-  const podeAgirCom = (p) => andamento && (mestre || (p.lado === 'agentes' && !p.oculto));
+  // O mestre controla só as ameaças (e monitora os agentes); os jogadores, só os agentes à vista
+  const podeAgirCom = (p) => andamento && (mestre ? p.lado === 'ameacas' : p.lado === 'agentes' && !p.oculto);
   // Quem está na barra de turno: o da vez, ou outro que o mestre (ou o jogador) escolheu
   const ator = vistos.find((p) => p.id === atorId && (mestre || !p.oculto)) ?? daVez ?? null;
-  const acoes = ator && podeAgirCom(ator) ? acoesDisponiveis(ator, fichas, livro) : [];
+  const agindo = Boolean(ator && podeAgirCom(ator));
+  // Mestre na vez de um agente: a mão aparece apagada, só para ver
+  const soVer = Boolean(andamento && mestre && ator && !agindo);
+  const cartas = agindo || soVer ? cartasDaMao(ator, fichas, livro, agindo && mestre) : [];
 
-  function escolherAba(id) {
-    setAba(id);
+  // Jogar uma carta da mão (null recolhe)
+  function jogarCarta(nova) {
+    if (nova && !agindo) return;
+    setCarta(nova);
     setInspecionado(null);
-    if (!id || !ator) return setAlvoIds([]);
-    // Alvo inicial: o primeiro inimigo de pé (atacar) ou o próprio (item/outros)
+    if (!nova || !ator) return setAlvoIds([]);
+    // Alvo inicial: o primeiro inimigo de pé (ataque) ou o próprio (item/condição)
     const lista = mestre ? vistos : visiveis;
     const inimigo = lista.find((p) => p.lado !== ator.lado && p.id !== ator.id && !estaCaido(p));
-    if (id === 'atacar') setAlvoIds(inimigo ? [inimigo.id] : []);
-    else if (id === 'outros') setAlvoIds([ator.id]);
+    if (nova.aba === 'atacar') setAlvoIds(inimigo ? [inimigo.id] : []);
+    else if (miraDaCarta(nova) === 'um') setAlvoIds([ator.id]);
     else setAlvoIds([]);
   }
 
   function agirCom(p) {
     setAtorId(p.id === daVez?.id ? null : p.id);
     setInspecionado(null);
-    setAba(null);
+    setCarta(null);
     setAlvoIds([]);
   }
 
-  const mira = aba ? MIRA_DA_ACAO[aba] : null;
+  const mira = miraDaCarta(carta);
 
   // Clique num retrato: durante uma ação escolhe o alvo; fora dela abre a ficha rápida
   function clicarNoPalco(p) {
@@ -326,7 +417,7 @@ export default function Arena({
   }
 
   function fecharAcao() {
-    setAba(null);
+    setCarta(null);
     setAlvoIds([]);
   }
 
@@ -346,6 +437,10 @@ export default function Arena({
     .filter((e) => e.mostrar)
     .reverse();
   const legenda = log.find((e) => !['rodada', 'turno', 'sistema'].includes(e.tipo));
+  // O ataque mais novo que esta tela pode ver (anima o golpe no campo)
+  const ataque = log.find((e) => e.tipo === 'ataque' && e.dados?.autor);
+  const ultimoAtaque = ataque ? { id: ataque.id, ...ataque.dados } : null;
+  const contaLog = log.filter((e) => e.tipo !== 'rodada' && e.tipo !== 'turno').length;
 
   // Lembretes da vez: morrendo / enlouquecendo
   const lembretes = andamento && ator?.ver.contagens
@@ -359,7 +454,7 @@ export default function Arena({
 
   const inspecao = vistos.find((p) => p.id === inspecionado && (mestre || !p.oculto));
   const verRelatorio = encerrado && dados.relatorio && !verPalco;
-  const rotuloAcao = acoes.find((a) => a.id === aba)?.rotulo;
+  const rotuloAcao = carta?.nome;
 
   return (
     <section className={`${estilo.arena} ${!mestre ? estilo.telaCheia : ''}`} aria-label={`Combate: ${combate.nome}`}>
@@ -386,6 +481,15 @@ export default function Arena({
         />
         <div className={estilo.topoAcoes}>
           {chaveVisao}
+          <button
+            type="button"
+            className={estilo.textual}
+            onClick={() => setLogAberto((v) => !v)}
+            aria-expanded={logAberto}
+            title="Registro da missão"
+          >
+            <span className={estilo.soLargo}>Registro</span><span aria-hidden="true" className={estilo.soCelular}>☰</span> <b className={estilo.conta}>{contaLog}</b>
+          </button>
           {mestre && !encerrado && (
             <button type="button" className={estilo.icone} onClick={() => setAdicionando(true)} title="Pôr participantes na luta" aria-label="Pôr participantes na luta">+</button>
           )}
@@ -403,7 +507,19 @@ export default function Arena({
       {erro && <p className={`erro ${estilo.erro}`}>{erro}</p>}
 
       {/* 2 · Centro: o palco (ou o relatório, depois de encerrar) */}
-      <div className={estilo.centro}>
+      <div
+        className={estilo.centro}
+        data-acao={(aba && agindo && !verRelatorio) || undefined}
+        data-ordem={(mestre && !verRelatorio) || undefined}
+      >
+        {mestre && !verRelatorio && (
+          <OrdemLateral
+            participantes={vistos}
+            vez={andamento ? dados.vez : null}
+            inspecionado={inspecionado}
+            onEscolher={(p) => setInspecionado((atual) => (atual === p.id ? null : p.id))}
+          />
+        )}
         {verRelatorio ? (
           <div className={estilo.rolagemRelatorio}>
             <RelatorioCombate relatorio={relatorioPara(dados.relatorio, mestre)} mestre={mestre} nome={combate.nome} sessao={sessao} />
@@ -419,8 +535,9 @@ export default function Arena({
             selecionado={inspecao?.id}
             golpes={golpes}
             legenda={legenda}
+            ultimoAtaque={ultimoAtaque}
             onEscolher={clicarNoPalco}
-            onIniciativa={(p, v) => trocar(p.id, { iniciativa: v })}
+            onIniciativa={mudarIniciativa}
             inspecao={inspecao && !aba && (
               <Inspecao
                 key={inspecao.id}
@@ -432,8 +549,8 @@ export default function Arena({
                 onAgir={() => agirCom(inspecao)}
                 onAjustar={(recursoId, delta) => aplicar(mudarRecursos(inspecao, { [recursoId]: delta }))}
                 onTirarCondicao={(c) => tirarCondicao(inspecao, c)}
-                onIniciativa={(v) => trocar(inspecao.id, { iniciativa: v })}
-                onRolarIniciativa={() => trocar(inspecao.id, { iniciativa: rolarIniciativa(inspecao.ver.formula) })}
+                onIniciativa={(v) => mudarIniciativa(inspecao, v)}
+                onRolarIniciativa={() => rolarDeNovo(inspecao)}
                 onMover={(passo) => {
                   const i = participantes.findIndex((x) => x.id === inspecao.id);
                   reordenar(i, i + passo);
@@ -445,17 +562,22 @@ export default function Arena({
           />
         )}
 
-        {/* Bandeja da ação: o passo a passo, por cima do palco (o alvo se escolhe clicando nele) */}
-        {aba && ator && !verRelatorio && (
-          <div className={estilo.bandeja} role="dialog" aria-label={`${rotuloAcao} com ${ator.ver.nome}`}>
+        {/* Painel da carta em jogo: o passo a passo, ao lado do campo (o alvo se escolhe clicando na carta) */}
+        {aba && agindo && !verRelatorio && (
+          <div className={estilo.bandeja} data-tom={carta.tom} role="dialog" aria-label={`${rotuloAcao} com ${ator.ver.nome}`}>
             <header>
-              <b>{rotuloAcao}</b>
-              <small>{ator.ver.nome}{mira ? ' · clique no alvo no palco' : ''}</small>
-              <button type="button" onClick={fecharAcao} aria-label="Fechar ação">✕</button>
+              <span className={estilo.bandejaIcone} aria-hidden="true">{carta.icone}</span>
+              <div>
+                <small>{carta.tipo} · {ator.ver.nome}</small>
+                <b>{rotuloAcao}</b>
+              </div>
+              <button type="button" onClick={fecharAcao} aria-label="Recolher carta">✕</button>
             </header>
+            {mira && <p className={estilo.bandejaDica}>{mira === 'varios' ? 'Clique nas cartas dos alvos no campo.' : 'Clique na carta do alvo no campo.'}</p>}
             <PainelAcao
-              key={`${ator.id}-${aba}`}
+              key={`${ator.id}-${carta.id}`}
               aba={aba}
+              escolha={carta.escolha}
               ator={ator}
               mestre={mestre}
               // Jogadores não miram em quem está oculto
@@ -482,26 +604,48 @@ export default function Arena({
           daVez={daVez}
           mestre={mestre}
           preparando={preparando}
-          acoes={acoes}
+          cartas={cartas}
+          soVer={soVer}
+          cartaId={carta?.id}
           economia={dados.economia}
-          aba={aba}
           lembretes={lembretes}
-          onAba={escolherAba}
+          onCarta={jogarCarta}
           onEconomia={alternarEconomia}
           onFinalizar={finalizarTurno}
           onVoltarTurno={() => { fecharAcao(); setAtorId(null); passar(-1); }}
           onVoltarParaVez={() => agirCom(daVez)}
           onAvancarContagem={(rid) => avancarContagem(ator, rid)}
-          podeRolarAmeacas={participantes.some((p) => p.lado === 'ameacas' && p.iniciativa == null)}
-          onRolarAmeacas={rolarAmeacas}
+          podeRolarAmeacas={participantes.some((p) => p.iniciativa == null)}
+          onRolarAmeacas={rolarQuemFalta}
           onOrdenar={() => salvar({ ...dados, participantes: ordenarPorIniciativa(participantes) })}
           onComecar={iniciar}
           podeComecar={participantes.length > 0}
         />
       )}
 
-      {/* 4 · Direita: o registro da missão */}
-      <LogCombate log={log} aberto={logAberto} onAlternar={() => setLogAberto((v) => !v)} />
+      {/* O registro da missão, numa gaveta */}
+      <LogCombate log={log} aberto={logAberto} onFechar={() => setLogAberto(false)} />
+
+      {/* Abertura (jogadores): um d20 por participante à vista, na ordem do turno */}
+      {verDadosIniciativa && (
+        <RolagemIniciativa key={dadosIniciativa.chave} participantes={visiveis} onFim={fimDosDados} />
+      )}
+
+      {/* Carimbo de vitória */}
+      {carimbo && (
+        <div key={carimbo.id} className={estilo.vitoria} onAnimationEnd={(e) => e.target === e.currentTarget && setCarimboVisto(carimbo.id)} role="status">
+          <span>{carimbo.palavra}</span>
+          <small>Todas as ameaças caíram</small>
+        </div>
+      )}
+
+      {/* Faixa de turno cruzando a tela */}
+      {anuncio && (
+        <div key={anuncio.chave} className={estilo.anuncio} data-lado={anuncio.lado} onAnimationEnd={(e) => e.target === e.currentTarget && setAnuncio(null)} aria-live="polite">
+          {anuncio.titulo && <b>{anuncio.titulo}</b>}
+          {anuncio.nome && <span>Vez de {anuncio.nome}</span>}
+        </div>
+      )}
 
       <Modal aberto={encerrando} onFechar={() => setEncerrando(false)} largura="520px" sobretitulo={combate.nome} titulo="Encerrar combate">
         {encerrando && <CaixaEncerrar vistos={vistos} onEncerrar={encerrar} onCancelar={() => setEncerrando(false)} />}
