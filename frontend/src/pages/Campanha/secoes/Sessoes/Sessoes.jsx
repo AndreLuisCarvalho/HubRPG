@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Modal from '../../../../components/Modal/Modal';
 import { api } from '../../../../services/api';
+import { useAoMudar } from '../../../../services/tempoReal';
 import { lerVisao } from '../../visao';
 import RelatorioCombate from '../Combate/RelatorioCombate';
 import { relatorioPara } from '../Combate/relatorio';
@@ -38,6 +39,17 @@ export default function Sessoes({ campanha }) {
       .catch(() => {});
     return () => { efeito.ativo = false; };
   }, [campanha.id]);
+
+  // Tempo real: sessão nova ou editada, combate encerrado (espera terminar o formulário aberto)
+  useAoMudar(campanha.id, ['sessoes', 'combates'], (eventos) => {
+    const tudo = eventos.some((e) => e.tabela === '*');
+    if (tudo || eventos.some((e) => e.tabela === 'sessoes')) api.listarSessoes(campanha.id).then(setSessoes).catch(() => {});
+    if (tudo || eventos.some((e) => e.tabela === 'combates')) {
+      api.listarCombates(campanha.id)
+        .then((c) => setCombates(c.filter((x) => x.dados.estado === 'encerrado' && x.dados.relatorio)))
+        .catch(() => {});
+    }
+  });
 
   async function salvar(sessao, rascunho) {
     const dados = {

@@ -125,7 +125,36 @@ export default function Arena({
     ].slice(-LIMITE_LOG),
   });
 
-  const salvar = (novo) => onSalvar({ dados: novo });
+  // Entradas do registro que esta tela já conhece (as que ela mesma fez ou que já estavam ao abrir)
+  const logVisto = useRef(new Set((dados.log ?? []).map((e) => e.id)));
+  const salvar = (novo) => {
+    (novo.log ?? []).forEach((e) => logVisto.current.add(e.id));
+    onSalvar({ dados: novo });
+  };
+
+  // Tempo real: o que chegou de outra tela (dano, cura, queda) anima aqui também
+  useEffect(() => {
+    const novas = (dados.log ?? []).filter((e) => !logVisto.current.has(e.id));
+    if (!novas.length) return;
+    novas.forEach((e) => logVisto.current.add(e.id));
+    const remotos = {};
+    for (const e of novas) {
+      if (!['dano', 'cura'].includes(e.tipo) || !e.dados?.alvo) continue;
+      const p = participantes.find((x) => x.id === e.dados.alvo);
+      if (!p || (!mestre && p.oculto)) continue;
+      const recurso = verParticipante(p, fichas).recursos.find((r) => r.id === e.dados.rid);
+      const delta = (e.tipo === 'dano' ? -1 : 1) * (e.dados.valor ?? 0);
+      remotos[p.id] = { chave: novoId(), delta: (remotos[p.id]?.delta ?? 0) + delta, sigla: recurso?.sigla, cor: recurso?.cor };
+    }
+    const caiu = novas.some((e) => e.tipo === 'queda');
+    if (!Object.keys(remotos).length && !caiu) return;
+    // No próximo quadro (a arena já desenhou o combate novo; daí os números saltam)
+    requestAnimationFrame(() => {
+      if (Object.keys(remotos).length) setGolpes((g) => ({ ...g, ...remotos }));
+      if (caiu) setQueda((q) => q + 1);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reage só ao registro novo
+  }, [dados.log]);
 
   /*
    * Aplica mudanças de PV/SAN/PE (efeitos: [{ id, deltas: { pv: −7, san: −2 } }]) num salvamento só,
@@ -613,7 +642,8 @@ export default function Arena({
           lembretes={lembretes}
           onCarta={jogarCarta}
           onEconomia={alternarEconomia}
-          onFinalizar={finalizarTurno}
+          // O jogador só passa a vez do próprio agente (o mestre pode passar qualquer uma)
+          onFinalizar={mestre || (daVez && podeAgirCom(daVez)) ? finalizarTurno : null}
           onVoltarTurno={() => { fecharAcao(); setAtorId(null); passar(-1); }}
           onVoltarParaVez={() => agirCom(daVez)}
           onAvancarContagem={(rid) => avancarContagem(ator, rid)}

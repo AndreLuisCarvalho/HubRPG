@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Modal from '../../../../components/Modal/Modal';
 import { api } from '../../../../services/api';
+import { useAoMudar } from '../../../../services/tempoReal';
 import { useVisao } from '../../visao';
 import CartaoPino from './CartaoPino';
 import FormMapa from './FormMapa';
@@ -63,6 +64,16 @@ export default function Mapas({ campanha }) {
       .catch((e) => efeito.ativo && setErro(e.message));
     return () => { efeito.ativo = false; };
   }, [campanha.id]);
+
+  // Tempo real: o mestre mexeu num mapa (pinos, névoa, revelou outro). Recarrega a lista e,
+  // do mapa que mudou, a imagem e a névoa de novo.
+  useAoMudar(campanha.id, ['mapas'], (eventos) => {
+    const tudo = eventos.some((e) => e.tabela === '*');
+    api.listarMapas(campanha.id).then((m) => {
+      setMapas(m.map(comPadroes));
+      setPesados((p) => (tudo ? {} : Object.fromEntries(Object.entries(p).filter(([id]) => !eventos.some((e) => e.id === Number(id))))));
+    }).catch(() => {});
+  });
 
   const visiveis = (mapas ?? []).filter((m) => mestre || !m.dados.oculto);
   const pedido = Number(busca.get('mapa'));

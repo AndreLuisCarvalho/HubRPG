@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../../../services/api';
 import { useConta } from '../../../../conta/conta';
+import { useAoMudar } from '../../../../services/tempoReal';
 import { obterSistema } from '../../../../sistemas';
 import CardFicha from './CardFicha/CardFicha';
 import NovaFicha from './NovaFicha/NovaFicha';
@@ -37,6 +38,13 @@ export default function ListaFichas({ campanha, tipo, titulo }) {
     [campanha.id],
   );
   useEffect(() => { if (tipo === 'jogador') carregarParentes(); }, [tipo, carregarParentes]);
+
+  // Tempo real: outra tela mudou uma ficha ou um parente
+  useAoMudar(campanha.id, ['fichas', 'parentes'], (eventos) => {
+    const tudo = eventos.some((e) => e.tabela === '*');
+    if (tudo || eventos.some((e) => e.tabela === 'fichas')) carregar();
+    if (tipo === 'jogador' && (tudo || eventos.some((e) => e.tabela === 'parentes'))) carregarParentes();
+  });
 
   async function salvarParente(agente, parente, { nome, dados }) {
     if (parente) await api.atualizarParente(parente.id, { nome, dados });
