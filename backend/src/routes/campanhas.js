@@ -116,7 +116,7 @@ router.delete('/:id/membros/:usuarioId', async (req, res) => {
 router.delete('/:id', exigirMestre, async (req, res) => {
   const id = Number(req.params.id);
   await db.lote([
-    ...['sessoes', 'personagens', 'notas', 'fichas', 'itens', 'arquivos', 'mapas', 'combates', 'membros']
+    ...['sessoes', 'personagens', 'notas', 'fichas', 'itens', 'arquivos', 'mapas', 'combates', 'parentes', 'membros']
       .map((tabela) => [`DELETE FROM ${tabela} WHERE campanha_id = ?`, id]),
     ['DELETE FROM campanhas WHERE id = ?', id],
   ]);

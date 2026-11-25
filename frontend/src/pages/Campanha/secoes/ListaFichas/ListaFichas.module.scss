@@ -50,6 +50,14 @@
   padding-top: 10px;   // espaço para as etiquetas de estado que saem do card
 }
 
+// Cartão do agente com a faixa de parentes embaixo
+.agente {
+  display: grid;
+  align-content: start;
+
+  > article { position: relative; z-index: 1; }
+}
+
 .cardNovo {
   min-height: 236px;
   display: grid;
