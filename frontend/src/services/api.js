@@ -132,6 +132,10 @@ export const api = {
   atualizarMapa: async (id, mapa) =>
     lerItem(await requisicao(`/mapas/${id}`, { method: 'PUT', body: escreverMapa(mapa) })),
   excluirMapa: (id) => requisicao(`/mapas/${id}`, { method: 'DELETE' }),
+  // Onde o mestre está no mapa (os jogadores seguem): { mapaId }
+  focoDoMapa: (campanhaId) => requisicao(`/campanhas/${campanhaId}/foco-mapa`),
+  focarMapa: (campanhaId, mapaId, como = null) =>
+    requisicao(`/campanhas/${campanhaId}/foco-mapa`, { method: 'PUT', body: { mapaId, como } }),
 
   // Combates: "dados" entra e sai como objeto
   listarCombates: async (campanhaId) => (await requisicao(`/campanhas/${campanhaId}/combates`)).map(lerItem),

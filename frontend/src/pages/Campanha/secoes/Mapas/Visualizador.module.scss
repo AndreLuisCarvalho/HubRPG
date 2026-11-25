@@ -375,7 +375,8 @@
 
     &:hover { border-color: rgba(227, 211, 173, 0.8); }
 
-    &[aria-pressed='true'] {
+    &[aria-pressed='true'],
+    &[aria-checked='true'] {
       border-color: var(--cor);
       background: color-mix(in srgb, var(--cor) 40%, #140f0a);
     }
@@ -520,6 +521,31 @@
 }
 
 .regiaoOculta polygon { stroke-dasharray: 2 5; }
+
+// Cômodo com cor: sempre à mostra, com um véu da cor por dentro
+.colorida {
+  polygon {
+    fill: color-mix(in srgb, var(--cor-regiao) 22%, transparent);
+    stroke: var(--cor-regiao);
+    stroke-dasharray: none;
+  }
+
+  &.clicavel:hover polygon,
+  &.acesa polygon { fill: color-mix(in srgb, var(--cor-regiao) 36%, transparent); stroke: #efe3c4; }
+}
+
+// Visão dos jogadores: parede de tijolos em volta e o nome à mostra
+.tijolos {
+  polygon {
+    stroke: var(--tijolo);
+    stroke-width: 7;
+    stroke-dasharray: none;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+  }
+
+  text { opacity: 0.9; }
+}
 
 .vertice {
   fill: #fff;

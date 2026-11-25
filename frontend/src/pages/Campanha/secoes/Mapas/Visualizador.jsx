@@ -50,7 +50,7 @@ export default function Visualizador({
   nevoa = null, pincel = 60, escala = null, onMedirEscala,
   selecionado, onSelecionar, onClicarMapa, onMover, cartao,
   ferramentas, rodape, barra, miniatura = false,
-  regioes = [], rascunhoRegiao = null, onDesenharRegiao, onFecharRegiao, onEntrarRegiao,
+  regioes = [], rascunhoRegiao = null, formaComodo = 'retangulo', onDesenharRegiao, onFecharRegiao, onEntrarRegiao,
   entrada = false, focoInicial = null,
 }) {
   const moldura = useRef(null);
@@ -212,8 +212,8 @@ export default function Visualizador({
         nevoaRef.current?.pintar(gesto.current.ultimo, gesto.current.ultimo, ferramenta, pincel / (vistaRef.current.s * tamanho.w));
         return;
       }
-      // Cômodo novo: arrastar desenha um retângulo (com o polígono começado, arrastar move o mapa)
-      if (mestre && ferramenta === 'comodo' && !desenhandoPoligono && gesto.current?.tipo !== 'pinca') {
+      // Cômodo retângulo: arrastar desenha (no livre, ou com o polígono começado, arrastar move o mapa)
+      if (mestre && ferramenta === 'comodo' && formaComodo === 'retangulo' && !desenhandoPoligono && gesto.current?.tipo !== 'pinca') {
         gesto.current = { tipo: 'retangulo', inicio: lista[0], a: noMapa(lista[0]), moveu: false };
         return;
       }
@@ -467,6 +467,18 @@ export default function Visualizador({
         {/* Cômodos: invisíveis; ao passar o mouse acendem com o contorno e o nome */}
         {tamanho && (regioes.length > 0 || rascunhoRegiao || esboco) && (
           <svg className={styles.regioes} width={caixa.w} height={caixa.h}>
+            {/* Jogadores: o contorno do cômodo é uma fileira de tijolos (na cor do cômodo) */}
+            {!mestre && (
+              <defs>
+                {regioes.map((r) => (
+                  <pattern key={r.id} id={`tijolos-${r.id}`} patternUnits="userSpaceOnUse" width="18" height="10">
+                    <rect width="18" height="10" fill={r.cor || '#8b4a32'} />
+                    <path d="M0 0.5H18M0 5.5H18M0.5 0V5M9.5 5V10" stroke="rgba(20, 12, 8, 0.75)" strokeWidth="1" />
+                    <path d="M1 1.5H8M10 6.5H17" stroke="rgba(255, 255, 255, 0.18)" strokeWidth="1" />
+                  </pattern>
+                ))}
+              </defs>
+            )}
             {regioes.map((r) => {
               const pontos = r.pontos.map((pt, i) => posicao('vertice', { id: `${r.id}:${i}`, ...pt }));
               const tela = pontos.map(telaXY);
@@ -477,9 +489,15 @@ export default function Visualizador({
                 clicaveis && styles.clicavel,
                 (acesa === r.id || escolhida) && styles.acesa,
                 r.oculta && styles.regiaoOculta,
+                r.cor && styles.colorida,
+                !mestre && styles.tijolos,
               ].filter(Boolean).join(' ');
+              const estilo = {
+                ...(r.cor && { '--cor-regiao': r.cor }),
+                ...(!mestre && { '--tijolo': `url(#tijolos-${r.id})` }),
+              };
               return (
-                <g key={r.id} className={classes}>
+                <g key={r.id} className={classes} style={estilo}>
                   <polygon points={tela.map((t) => `${t.x},${t.y}`).join(' ')}>
                     <title>{r.nome || 'Cômodo'}</title>
                   </polygon>

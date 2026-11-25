@@ -200,6 +200,8 @@ async function iniciar() {
   // Tela de Contas: conta bloqueada pelo dono do site (não entra e não ocupa vaga) e último acesso
   await adicionarColuna('usuarios', 'bloqueado', 'INTEGER NOT NULL DEFAULT 0');
   await adicionarColuna('usuarios', 'ultimo_acesso', 'TEXT');
+  // Mapa (ou cômodo) onde o mestre está: a tela dos jogadores vai junto
+  await adicionarColuna('campanhas', 'foco_mapa', 'INTEGER');
  
   // Dados iniciais, só se o banco estiver vazio
   const { total } = await db.get('SELECT COUNT(*) AS total FROM campanhas');

@@ -4,6 +4,18 @@ import styles from './Mapas.module.scss';
 
 const LIMITE_IMAGEM = 3.5 * 1024 * 1024;
 
+// '' = transparente (como era antes)
+const CORES_COMODO = [
+  { valor: '', rotulo: 'Transparente' },
+  { valor: '#8b4a32', rotulo: 'Tijolo' },
+  { valor: '#c9a227', rotulo: 'Ouro' },
+  { valor: '#3f7d4e', rotulo: 'Verde' },
+  { valor: '#2f6690', rotulo: 'Azul' },
+  { valor: '#7a3fa0', rotulo: 'Roxo' },
+  { valor: '#a12d2d', rotulo: 'Sangue' },
+  { valor: '#5c5c66', rotulo: 'Cinza' },
+];
+
 /**
  * Cômodo: nome, imagem própria (vira a planta do cômodo, um mapa "dentro" deste) e se fica oculto.
  * imagemAtual: a imagem da planta que já existe (undefined enquanto carrega, '' sem planta).
@@ -74,6 +86,31 @@ export default function FormRegiao({ inicial, imagemAtual, onSalvar, onCancelar,
         </div>
         <small className={styles.ajuda}>
           Com imagem, o cômodo vira uma planta própria: ao entrar, ela aparece com pinos, névoa e tokens só dela.
+        </small>
+      </div>
+
+      <div className={styles.campo}>
+        <span>Cor do cômodo</span>
+        <div className={styles.coresComodo} role="radiogroup" aria-label="Cor do cômodo">
+          {CORES_COMODO.map((c) => (
+            <button
+              key={c.valor || 'nenhuma'}
+              type="button"
+              role="radio"
+              aria-checked={(regiao.cor ?? '') === c.valor}
+              title={c.rotulo}
+              aria-label={c.rotulo}
+              className={c.valor ? '' : styles.semCor}
+              style={c.valor ? { '--amostra': c.valor } : undefined}
+              onClick={() => setRegiao({ ...regiao, cor: c.valor })}
+            />
+          ))}
+          <label className={styles.corLivre} title="Outra cor">
+            <input type="color" value={regiao.cor || '#8b4a32'} onChange={(e) => setRegiao({ ...regiao, cor: e.target.value })} />
+          </label>
+        </div>
+        <small className={styles.ajuda}>
+          Transparente: só aparece ao passar o mouse. Para os jogadores, o cômodo visível ganha uma borda de tijolos (na cor escolhida).
         </small>
       </div>
 

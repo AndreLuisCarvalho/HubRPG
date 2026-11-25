@@ -467,6 +467,55 @@
   input { margin-top: 2px; accent-color: var(--cor); }
 }
 
+/* Forma do cômodo novo (na barra do mapa): os dois botões colados */
+.formaComodo {
+  display: inline-flex;
+
+  button:first-child { border-radius: 3px 0 0 3px; }
+  button:last-child { border-radius: 0 3px 3px 0; margin-left: -1px; }
+}
+
+/* Cor do cômodo: amostras redondas */
+.coresComodo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+
+  > button,
+  .corLivre {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 2px solid var(--borda);
+    border-radius: 50%;
+    background: var(--amostra, transparent);
+    cursor: pointer;
+  }
+
+  > button[aria-checked='true'] { border-color: #fff; box-shadow: 0 0 0 2px var(--cor); }
+}
+
+// Transparente: um risco atravessado
+.semCor {
+  background: linear-gradient(135deg, transparent 45%, #c0392b 45% 55%, transparent 55%) !important;
+}
+
+.corLivre {
+  position: relative;
+  overflow: hidden;
+  background: conic-gradient(#e74c3c, #f1c40f, #2ecc71, #3498db, #9b59b6, #e74c3c) !important;
+
+  input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
 .ajuda {
   font-size: 0.76rem;
   line-height: 1.45;
