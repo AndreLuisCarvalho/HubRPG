@@ -164,6 +164,17 @@ async function iniciar() {
       criado_em  TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- Parentes de um agente (ficha de jogador): ficha simples; "dados" em JSON
+    -- (foto, relacao, situacao, idade, mora, aparencia, historia, notaMestre)
+    CREATE TABLE IF NOT EXISTS parentes (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      campanha_id INTEGER NOT NULL,
+      ficha_id    INTEGER NOT NULL,
+      nome        TEXT NOT NULL,
+      dados       TEXT NOT NULL DEFAULT '{}',
+      criado_em   TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- Quem participa de cada campanha: papel 'mestre' ou 'jogador'
     CREATE TABLE IF NOT EXISTS membros (
       campanha_id INTEGER NOT NULL,

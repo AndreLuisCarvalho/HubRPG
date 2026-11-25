@@ -78,6 +78,13 @@ export const api = {
   atualizarFicha: (id, alteracoes) => requisicao(`/fichas/${id}`, { method: 'PUT', body: alteracoes }),
   excluirFicha: (id) => requisicao(`/fichas/${id}`, { method: 'DELETE' }),
 
+  // Parentes dos agentes (só o dono do agente e o mestre veem): "dados" entra e sai como objeto
+  listarParentes: async (campanhaId) => (await requisicao(`/campanhas/${campanhaId}/parentes`)).map(lerItem),
+  criarParente: async (campanhaId, parente) =>
+    lerItem(await requisicao(`/campanhas/${campanhaId}/parentes`, { method: 'POST', body: parente })),
+  atualizarParente: async (id, parente) => lerItem(await requisicao(`/parentes/${id}`, { method: 'PUT', body: parente })),
+  excluirParente: (id) => requisicao(`/parentes/${id}`, { method: 'DELETE' }),
+
   // Sessões (o número é automático: a próxima da campanha)
   listarSessoes: (campanhaId) => requisicao(`/campanhas/${campanhaId}/sessoes`),
   criarSessao: (campanhaId, sessao) =>

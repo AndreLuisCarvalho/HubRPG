@@ -54,6 +54,7 @@ router.post('/contas/:id/bloquear', async (req, res) => {
     });
   }
   await db.lote([
+    ['DELETE FROM parentes WHERE ficha_id IN (SELECT id FROM fichas WHERE dono_id = ?)', conta.id],
     ['DELETE FROM fichas WHERE dono_id = ?', conta.id],
     ['DELETE FROM membros WHERE usuario_id = ?', conta.id],
     ['UPDATE usuarios SET bloqueado = 1 WHERE id = ?', conta.id],

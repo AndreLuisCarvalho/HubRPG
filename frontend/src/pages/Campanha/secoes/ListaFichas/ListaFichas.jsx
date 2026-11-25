@@ -5,6 +5,7 @@ import { useConta } from '../../../../conta/conta';
 import { obterSistema } from '../../../../sistemas';
 import CardFicha from './CardFicha/CardFicha';
 import NovaFicha from './NovaFicha/NovaFicha';
+import Parentes from './Parentes/Parentes';
 import styles from './ListaFichas.module.scss';
 
 const TIPOS = [
@@ -28,6 +29,25 @@ export default function ListaFichas({ campanha, tipo, titulo }) {
   );
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  // Parentes dos agentes (o servidor só manda os que a conta pode ver)
+  const [parentes, setParentes] = useState([]);
+  const carregarParentes = useCallback(
+    () => api.listarParentes(campanha.id).then(setParentes).catch((e) => setErro(e.message)),
+    [campanha.id],
+  );
+  useEffect(() => { if (tipo === 'jogador') carregarParentes(); }, [tipo, carregarParentes]);
+
+  async function salvarParente(agente, parente, { nome, dados }) {
+    if (parente) await api.atualizarParente(parente.id, { nome, dados });
+    else await api.criarParente(campanha.id, { ficha_id: agente.id, nome, dados });
+    await carregarParentes();
+  }
+
+  async function excluirParente(parente) {
+    await api.excluirParente(parente.id);
+    await carregarParentes();
+  }
 
   const abrir = (ficha) => navigate(`/campanha/${campanha.id}/fichas/${ficha.id}`);
 
@@ -91,20 +111,36 @@ export default function ListaFichas({ campanha, tipo, titulo }) {
 
       {fichas && (
         <div className={styles.grade}>
-          {lista.map((f) => (
-            <CardFicha
-              key={f.id}
-              ficha={f}
-              sistema={sistema}
-              destinos={destinos}
-              comMenu={!jogador}
-              selo={meu(f) ? 'Seu agente' : null}
-              onAbrir={() => abrir(f)}
-              onDuplicar={() => duplicar(f)}
-              onMover={(novoTipo) => mover(f, novoTipo)}
-              onExcluir={() => excluir(f)}
-            />
-          ))}
+          {lista.map((f) => {
+            const cartao = (
+              <CardFicha
+                key={f.id}
+                ficha={f}
+                sistema={sistema}
+                destinos={destinos}
+                comMenu={!jogador}
+                selo={meu(f) ? 'Seu agente' : null}
+                onAbrir={() => abrir(f)}
+                onDuplicar={() => duplicar(f)}
+                onMover={(novoTipo) => mover(f, novoTipo)}
+                onExcluir={() => excluir(f)}
+              />
+            );
+            // Agentes: o mestre e o dono veem os parentes embaixo do cartão
+            if (tipo !== 'jogador' || (jogador && !meu(f))) return cartao;
+            return (
+              <div key={f.id} className={styles.agente}>
+                {cartao}
+                <Parentes
+                  agente={f}
+                  parentes={parentes.filter((p) => p.ficha_id === f.id)}
+                  mestre={!jogador}
+                  onSalvar={(parente, dados) => salvarParente(f, parente, dados)}
+                  onExcluir={excluirParente}
+                />
+              </div>
+            );
+          })}
 
           {podeCriar && (
             <button className={styles.cardNovo} onClick={() => setCriando(true)}>

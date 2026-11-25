@@ -8,6 +8,7 @@ import fichasRouter from './routes/fichas.js';
 import arquivosRouter from './routes/arquivos.js';
 import mapasRouter from './routes/mapas.js';
 import contasRouter from './routes/contas.js';
+import parentesRouter from './routes/parentes.js';
 
 const app = express();
  
@@ -34,6 +35,7 @@ app.use('/api/campanhas', campanhasRouter);
 app.use('/api', fichasRouter);
 app.use('/api', arquivosRouter);
 app.use('/api', mapasRouter);
+app.use('/api', parentesRouter);
  
 app.use('/api', criarRotasDeItens({
   tabela: 'sessoes',

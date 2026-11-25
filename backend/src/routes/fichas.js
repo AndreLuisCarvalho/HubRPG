@@ -122,6 +122,7 @@ router.delete('/fichas/:id', async (req, res) => {
   if (!ehMestre(req)) return res.status(403).json({ erro: 'Só o mestre apaga fichas' });
   const resultado = await db.run('DELETE FROM fichas WHERE id = ?', Number(req.params.id));
   if (resultado.changes === 0) return res.status(404).json({ erro: 'Ficha não encontrada' });
+  await db.run('DELETE FROM parentes WHERE ficha_id = ?', Number(req.params.id));
   res.status(204).end();
 });
 

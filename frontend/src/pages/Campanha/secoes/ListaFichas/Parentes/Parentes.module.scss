@@ -1,0 +1,166 @@
+@use '../../../../../styles/mixins' as *;
+
+$perigo: #ff6b6b;
+
+/* Faixa embaixo do cartão do agente */
+.faixa {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--borda);
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+  margin: -14px 10px 0;   // encaixa por baixo do cartão
+  padding-top: 20px;
+  background: color-mix(in srgb, var(--superficie) 70%, transparent);
+}
+
+.rotulo { @include rotulo-campo; color: var(--texto-suave); }
+
+.lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.parente,
+.novo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  background: var(--fundo);
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:hover { border-color: var(--cor); }
+}
+
+.novo {
+  padding: 4px 12px;
+  border-style: dashed;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+}
+
+.foto {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--cor) 30%, #111);
+  font-size: 0.8rem;
+  font-weight: 700;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.texto {
+  display: grid;
+  min-width: 0;
+  line-height: 1.15;
+
+  b, small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  b { font-size: 0.82rem; }
+  small { font-size: 0.7rem; color: var(--texto-suave); }
+}
+
+// Situação: a foto muda de jeito
+.falecido .foto { filter: grayscale(1); opacity: 0.6; }
+.desaparecido .foto { opacity: 0.5; }
+.marcado .foto { box-shadow: 0 0 0 2px #b23cff, 0 0 8px #b23cff; }
+
+/* Janela do parente */
+.form {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+
+  label { display: grid; gap: 4px; min-width: 0; }
+  label > span { @include rotulo-campo; color: var(--texto-suave); }
+
+  input, select, textarea {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--texto);
+    font: inherit;
+  }
+
+  textarea { resize: vertical; }
+}
+
+.topo {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.retrato {
+  display: grid !important;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border: 1px dashed var(--borda);
+  border-radius: 50%;
+  overflow: hidden;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &:hover { border-color: var(--cor); }
+  img { width: 100%; height: 100%; object-fit: cover; }
+  input { display: none; }
+}
+
+.campos { display: grid; gap: 10px; min-width: 0; }
+
+.dupla {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
+}
+
+.nota textarea { border-color: color-mix(in srgb, var(--cor) 50%, transparent); }
+
+.botoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+
+  button {
+    padding: 8px 16px;
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    background: none;
+    color: var(--texto);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:disabled { opacity: 0.5; cursor: default; }
+  }
+}
+
+.salvar {
+  border-color: var(--cor) !important;
+  background: color-mix(in srgb, var(--cor) 28%, transparent) !important;
+}
+
+.perigo { border-color: $perigo !important; color: $perigo !important; }
