@@ -45,13 +45,37 @@ function lerToken(token) {
   }
 }
 
-/** Middleware: lê o token (se houver) e põe req.usuario */
+/**
+ * O dono do site: a conta Google com o e-mail DONO_EMAIL (só ela abre a tela de Contas).
+ * No PC, a conta de teste chamada "Dono" também vale, para testar a tela sem o Google.
+ */
+export function ehDono(usuario) {
+  if (!usuario) return false;
+  if (usuario.teste) return !NA_NUVEM && usuario.nome === 'Dono';
+  const dono = process.env.DONO_EMAIL?.trim().toLowerCase();
+  return Boolean(dono) && usuario.email?.toLowerCase() === dono;
+}
+
+const CAMPOS_DA_CONTA = 'id, email, nome, foto, teste, bloqueado';
+// O que o site recebe da conta (sem "bloqueado"; com "dono" para mostrar o botão Contas)
+const paraOSite = ({ bloqueado: _b, ...u }) => ({ ...u, dono: ehDono(u) });
+
+/** Middleware: lê o token (se houver) e põe req.usuario. Conta bloqueada fica sem login. */
 export async function identificar(req, res, next) {
   const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
   const dados = token ? lerToken(token) : null;
-  if (dados) req.usuario = await db.get('SELECT id, email, nome, foto, teste FROM usuarios WHERE id = ?', dados.u);
+  const conta = dados && await db.get(`SELECT ${CAMPOS_DA_CONTA} FROM usuarios WHERE id = ?`, dados.u);
+  if (conta && !conta.bloqueado) req.usuario = paraOSite(conta);
   next();
 }
+
+/** Middleware: só o dono do site */
+export function exigirDono(req, res, next) {
+  if (!req.usuario?.dono) return res.status(403).json({ erro: 'Só o dono do site abre as contas' });
+  next();
+}
+
+export const marcarAcesso = (id) => db.run('UPDATE usuarios SET ultimo_acesso = CURRENT_TIMESTAMP WHERE id = ?', id);
 
 /** Middleware: sem login, 401 */
 export function exigirLogin(req, res, next) {
@@ -72,14 +96,20 @@ export function normalizarCodigo(texto) {
  * que ainda não têm mestre (as que já existiam antes do login). Contas de teste nunca pegam essas.
  */
 export async function entrarComo({ googleSub, email, nome, foto, teste = false }) {
-  const existente = await db.get('SELECT id FROM usuarios WHERE google_sub = ?', googleSub);
+  const existente = await db.get('SELECT id, bloqueado FROM usuarios WHERE google_sub = ?', googleSub);
   if (existente) {
+    if (existente.bloqueado) {
+      const erro = new Error('Esta conta foi bloqueada. Fale com o dono do site.');
+      erro.status = 403;
+      throw erro;
+    }
     await db.run('UPDATE usuarios SET email = ?, nome = ?, foto = ? WHERE id = ?', email, nome, foto, existente.id);
     return existente.id;
   }
+  // "total" conta todas as contas Google já criadas (decide quem é a primeira); as vagas, só as não bloqueadas
   const { total } = await db.get('SELECT COUNT(*) AS total FROM usuarios WHERE teste = 0');
   // O site é só para o grupo: depois de LIMITE_CONTAS contas Google, ninguém novo entra
-  if (!teste && total >= LIMITE_CONTAS) {
+  if (!teste && await vagasUsadas() >= LIMITE_CONTAS) {
     const erro = new Error('O HubRPG está com todas as vagas ocupadas. Fale com o dono do site.');
     erro.status = 403;
     throw erro;
@@ -99,8 +129,15 @@ export async function entrarComo({ googleSub, email, nome, foto, teste = false }
   return id;
 }
 
+export const LIMITE = LIMITE_CONTAS;
+export async function vagasUsadas() {
+  const { usadas } = await db.get('SELECT COUNT(*) AS usadas FROM usuarios WHERE teste = 0 AND bloqueado = 0');
+  return usadas;
+}
+
 async function resposta(id) {
-  const usuario = await db.get('SELECT id, email, nome, foto, teste FROM usuarios WHERE id = ?', id);
+  await marcarAcesso(id);
+  const usuario = paraOSite(await db.get(`SELECT ${CAMPOS_DA_CONTA} FROM usuarios WHERE id = ?`, id));
   return { token: criarToken(id), usuario };
 }
 
@@ -140,11 +177,20 @@ rotasDeLogin.post('/auth/teste', async (req, res) => {
   if (NA_NUVEM) return res.status(404).end();
   const nome = String(req.body?.nome ?? '').trim().slice(0, 40);
   if (!nome) return res.status(400).json({ erro: 'Digite um nome' });
-  const id = await entrarComo({ googleSub: `teste:${nome.toLowerCase()}`, email: '', nome, foto: '', teste: true });
-  res.json(await resposta(id));
+  try {
+    const id = await entrarComo({ googleSub: `teste:${nome.toLowerCase()}`, email: '', nome, foto: '', teste: true });
+    res.json(await resposta(id));
+  } catch (erro) {
+    if (erro.status) return res.status(erro.status).json({ erro: erro.message });
+    throw erro;
+  }
 });
 
-rotasDeLogin.get('/auth/eu', exigirLogin, (req, res) => res.json({ usuario: req.usuario }));
+// O site chama ao abrir: conta também como acesso
+rotasDeLogin.get('/auth/eu', exigirLogin, async (req, res) => {
+  await marcarAcesso(req.usuario.id);
+  res.json({ usuario: req.usuario });
+});
 
 /* ---------- Acesso às campanhas ---------- */
 // Tabelas cujos itens são acessados direto por id (/fichas/12): de qual campanha é o item

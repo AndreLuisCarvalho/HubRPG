@@ -53,6 +53,12 @@ export const api = {
   entrarParaTeste: (nome) => requisicao('/auth/teste', { method: 'POST', body: { nome } }),
   eu: () => requisicao('/auth/eu'),
 
+  // Contas do site (só o dono): { limite, usadas, contas: [{ …, campanhas: [{ id, nome, papel }] }] }
+  listarContas: () => requisicao('/contas'),
+  bloquearConta: (id) => requisicao(`/contas/${id}/bloquear`, { method: 'POST' }),
+  desbloquearConta: (id) => requisicao(`/contas/${id}/desbloquear`, { method: 'POST' }),
+  tirarDaCampanha: (id, campanhaId) => requisicao(`/contas/${id}/campanhas/${campanhaId}`, { method: 'DELETE' }),
+
   // Campanhas (cada uma vem com "papel": 'mestre' | 'jogador'; o "codigo" só para o mestre)
   listarCampanhas: () => requisicao('/campanhas'),
   buscarCampanha: (id) => requisicao(`/campanhas/${id}`),

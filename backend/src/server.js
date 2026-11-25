@@ -7,7 +7,8 @@ import { criarRotasDeItens } from './routes/itensDaCampanha.js';
 import fichasRouter from './routes/fichas.js';
 import arquivosRouter from './routes/arquivos.js';
 import mapasRouter from './routes/mapas.js';
- 
+import contasRouter from './routes/contas.js';
+
 const app = express();
  
 // Na Vercel, ORIGEM_SITE é o endereço do site (ex.: https://hubrpg.vercel.app). No PC, libera tudo.
@@ -28,6 +29,7 @@ app.use('/api', identificar);
 app.use('/api', rotasDeLogin);
 app.use('/api', exigirLogin, exigirCampanha);
 
+app.use('/api', contasRouter);
 app.use('/api/campanhas', campanhasRouter);
 app.use('/api', fichasRouter);
 app.use('/api', arquivosRouter);
