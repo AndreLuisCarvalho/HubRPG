@@ -9,6 +9,8 @@ import LogCombate from './LogCombate';
 import PainelAcao from './PainelAcao';
 import IconeArma from './IconeArma';
 import PedidoDeReacao from './PedidoDeReacao';
+import EscolherFundoDoCombate from './EscolherFundoDoCombate';
+import { cenarioDe } from './cenarios';
 import { pedidoVivo } from './reacao';
 import OrdemLateral from './OrdemLateral';
 import Palco from './Palco';
@@ -39,6 +41,7 @@ export default function Arena({
   combate, fichas, sessao, mestre, chaveVisao, erro, onSalvar, onMudarFicha, onVoltar, onExcluir, meuUsuarioId = null,
 }) {
   const [adicionando, setAdicionando] = useState(false);
+  const [escolhendoFundo, setEscolhendoFundo] = useState(false);
   const [atorId, setAtorId] = useState(null);       // quem está na barra de turno (null = o da vez)
   const [inspecionado, setInspecionado] = useState(null);   // ficha rápida aberta no palco
   const [logAberto, setLogAberto] = useState(false);        // gaveta do registro
@@ -528,6 +531,8 @@ export default function Arena({
       aria-label={`Combate: ${combate.nome}`}
       // Celular: com uma carta em jogo o painel dela toma o lugar da barra do turno
       data-acao={(aba && agindo && !verRelatorio) || undefined}
+      // O cenário dá o tom da barra do turno
+      data-cenario={cenarioDe(dados.fundo)}
     >
       {/* 1 · Topo: timeline de iniciativa */}
       <header className={estilo.topo}>
@@ -562,6 +567,9 @@ export default function Arena({
           >
             <span className={estilo.soLargo}>Registro</span><span aria-hidden="true" className={estilo.soCelular}>☰</span> <b className={estilo.conta}>{contaLog}</b>
           </button>
+          {mestre && !encerrado && (
+            <button type="button" className={estilo.icone} onClick={() => setEscolhendoFundo(true)} title="Fundo do combate" aria-label="Fundo do combate">▨</button>
+          )}
           {mestre && !encerrado && (
             <button type="button" className={estilo.icone} onClick={() => setAdicionando(true)} title="Pôr participantes na luta" aria-label="Pôr participantes na luta">+</button>
           )}
@@ -598,6 +606,8 @@ export default function Arena({
           </div>
         ) : (
           <Palco
+            fundo={dados.fundo}
+            combateId={combate.id}
             participantes={visiveis}
             vez={andamento ? dados.vez : null}
             mestre={mestre}
@@ -744,6 +754,15 @@ export default function Arena({
       </Modal>
 
       {queda > 0 && <div key={queda} className={estilo.pulsoQueda} aria-hidden="true" />}
+
+      {escolhendoFundo && mestre && (
+        <EscolherFundoDoCombate
+          combateId={combate.id}
+          fundo={dados.fundo}
+          onEscolher={(fundo) => aplicar({ mudarDados: (d) => ({ ...d, fundo }) })}
+          onFechar={() => setEscolhendoFundo(false)}
+        />
+      )}
 
       {reagirAqui && (
         <PedidoDeReacao

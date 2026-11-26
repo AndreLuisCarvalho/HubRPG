@@ -148,6 +148,9 @@ export const api = {
   atualizarCombate: async (id, combate) =>
     lerItem(await requisicao(`/combates/${id}`, { method: 'PUT', body: escreverCombate(combate) })),
   excluirCombate: (id) => requisicao(`/combates/${id}`, { method: 'DELETE' }),
+  // Imagem/GIF de fundo do combate (à parte dos dados da luta)
+  fundoDoCombate: (id) => requisicao(`/combates/${id}/fundo`),
+  salvarFundoDoCombate: (id, imagem) => requisicao(`/combates/${id}/fundo`, { method: 'PUT', body: { imagem } }),
 };
 
 const escreverCombate = ({ nome, sessao_id, dados }) => ({

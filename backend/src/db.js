@@ -204,6 +204,11 @@ async function iniciar() {
   await adicionarColuna('campanhas', 'foco_mapa', 'INTEGER');
   // Enquadramento do banner e do fundo do menu: JSON { banner: { x, y, z }, fundo: { x, y, z } }
   await adicionarColuna('campanhas', 'enquadre', "TEXT DEFAULT ''");
+  // Imagem/GIF de fundo de um combate: fora de "dados", que vai e volta a cada ação da luta
+  await db.run(`CREATE TABLE IF NOT EXISTS fundos_combate (
+    combate_id INTEGER PRIMARY KEY,
+    imagem     TEXT NOT NULL DEFAULT ''
+  )`);
 
   // Dados iniciais, só se o banco estiver vazio
   const { total } = await db.get('SELECT COUNT(*) AS total FROM campanhas');

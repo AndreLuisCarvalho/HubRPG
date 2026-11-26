@@ -10,6 +10,7 @@ import mapasRouter from './routes/mapas.js';
 import contasRouter from './routes/contas.js';
 import { avisarMudancas, rotasTempoReal } from './tempoReal.js';
 import parentesRouter from './routes/parentes.js';
+import fundosCombateRouter from './routes/fundosCombate.js';
 
 const app = express();
  
@@ -40,7 +41,8 @@ app.use('/api', fichasRouter);
 app.use('/api', arquivosRouter);
 app.use('/api', mapasRouter);
 app.use('/api', parentesRouter);
- 
+app.use('/api', fundosCombateRouter);
+
 app.use('/api', criarRotasDeItens({
   tabela: 'sessoes',
   campos: { numero: null, titulo: '', data: '', resumo: '', notas_mestre: '' },
