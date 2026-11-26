@@ -1,0 +1,70 @@
+.imagem {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ajuste {
+  display: grid;
+  gap: 8px;
+}
+
+.caixa {
+  position: relative;
+  overflow: hidden;
+}
+
+.arrastavel {
+  cursor: grab;
+  touch-action: none;   // no celular o dedo arrasta a imagem, não a página
+
+  &:active { cursor: grabbing; }
+}
+
+.controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+
+  small { font-size: 0.75rem; color: var(--texto-suave); }
+
+  > button {
+    padding: 4px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+
+    &:hover { border-color: var(--cor, #8b5cf6); }
+  }
+}
+
+// "label" com especificidade maior que o "label { display: grid }" dos formulários
+.controles .zoom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  span {
+    font-size: 0.75rem;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--texto-suave);
+  }
+
+  input {
+    width: 150px;
+    padding: 0;
+    border: 0;
+    background: none;
+    accent-color: var(--cor, #8b5cf6);
+  }
+}

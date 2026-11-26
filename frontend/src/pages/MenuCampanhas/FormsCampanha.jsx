@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import EscolherFundo from '../../components/EscolherFundo/EscolherFundo';
 import { api } from '../../services/api';
 import styles from './MenuCampanhas.module.scss';
 
@@ -23,6 +24,8 @@ export function FormNovaCampanha({ onCriada }) {
   const [descricao, setDescricao] = useState('');
   const [tema, setTema] = useState('padrao');
   const [cor, setCor] = useState('#8b5cf6');
+  const [fundo, setFundo] = useState('');
+  const [enquadreFundo, setEnquadreFundo] = useState({ x: 50, y: 50, z: 1 });
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
 
@@ -39,6 +42,8 @@ export function FormNovaCampanha({ onCriada }) {
         descricao: descricao.trim(),
         tema,
         cor,
+        mapa: fundo,
+        enquadre: { fundo: enquadreFundo },
       });
       onCriada(campanha);
     } catch (falha) {
@@ -81,6 +86,7 @@ export function FormNovaCampanha({ onCriada }) {
           <input type="color" value={cor} onChange={(e) => setCor(e.target.value)} />
         </label>
       </div>
+      <EscolherFundo valor={fundo} cor={cor} onMudar={setFundo} enquadre={enquadreFundo} onEnquadre={setEnquadreFundo} />
       {erro && <p className="erro">{erro}</p>}
       <button type="submit" className={styles.principal} disabled={!nome.trim() || salvando}>
         {salvando ? 'Criando…' : 'Criar campanha'}

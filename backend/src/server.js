@@ -15,9 +15,9 @@ const app = express();
  
 // Na Vercel, ORIGEM_SITE é o endereço do site (ex.: https://hubrpg.vercel.app). No PC, libera tudo.
 app.use(cors({ origin: process.env.ORIGEM_SITE ?? true }));
-// 4 MB: a ficha leva a foto (~30 KB) e um arquivo pode levar um PDF pequeno (até 2 MB, ~2,7 MB em texto).
-// A Vercel aceita até 4,5 MB por requisição.
-app.use(express.json({ limit: '4mb' }));
+// A ficha leva a foto (~30 KB), um arquivo pode levar um PDF pequeno (até 2 MB, ~2,7 MB em texto)
+// e o fundo da campanha um GIF (até 3 MB, ~4,2 MB em texto). A Vercel aceita até 4,5 MB por requisição.
+app.use(express.json({ limit: '4.4mb' }));
  
 // Espera o banco ficar pronto (tabelas e migrações) antes de qualquer rota
 app.use(async (req, res, next) => {

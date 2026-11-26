@@ -202,7 +202,9 @@ async function iniciar() {
   await adicionarColuna('usuarios', 'ultimo_acesso', 'TEXT');
   // Mapa (ou cômodo) onde o mestre está: a tela dos jogadores vai junto
   await adicionarColuna('campanhas', 'foco_mapa', 'INTEGER');
- 
+  // Enquadramento do banner e do fundo do menu: JSON { banner: { x, y, z }, fundo: { x, y, z } }
+  await adicionarColuna('campanhas', 'enquadre', "TEXT DEFAULT ''");
+
   // Dados iniciais, só se o banco estiver vazio
   const { total } = await db.get('SELECT COUNT(*) AS total FROM campanhas');
   if (total === 0) {

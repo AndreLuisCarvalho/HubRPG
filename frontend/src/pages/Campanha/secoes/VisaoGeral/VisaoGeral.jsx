@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '../../../../components';
+import EscolherFundo from '../../../../components/EscolherFundo/EscolherFundo';
+import { AjusteEnquadre, ENQUADRE_PADRAO, ImagemEnquadrada } from '../../../../components/Enquadre/Enquadre';
 import { api } from '../../../../services/api';
 import { useAoMudar } from '../../../../services/tempoReal';
-import { reduzirBanner } from '../../../../services/imagem';
+import { reduzirDocumento } from '../../../../services/imagem';
 import { formatarData, organizarSessoes, quantoFalta } from '../Sessoes/agenda';
 import ResumoSessao from '../Sessoes/ResumoSessao';
 import MapaAtual from './MapaAtual';
@@ -75,10 +77,8 @@ function Cabecalho({ campanha, onAtualizar }) {
 
   return (
     <header className={styles.cabecalho}>
-      <div
-        className={styles.banner}
-        style={campanha.imagem ? { backgroundImage: `url(${campanha.imagem})` } : undefined}
-      >
+      <div className={styles.banner}>
+        {campanha.imagem && <ImagemEnquadrada src={campanha.imagem} enquadre={campanha.enquadre?.banner} />}
         <div className={styles.bannerTexto}>
           <span className={styles.sistema}>{campanha.sistema || 'Sistema livre'}</span>
           <h1 className={styles.nome}>{campanha.nome}</h1>
@@ -108,6 +108,24 @@ function EditarCampanha({ campanha, onFechar, onAtualizar }) {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
   const mudar = (campo, valor) => setRascunho((r) => ({ ...r, [campo]: valor }));
+  // Enquadramento do banner e do fundo (arrastar + zoom nas prévias)
+  const [enquadre, setEnquadre] = useState({
+    banner: { ...ENQUADRE_PADRAO, ...campanha.enquadre?.banner },
+    fundo: { ...ENQUADRE_PADRAO, ...campanha.enquadre?.fundo },
+  });
+  const enquadrar = (qual) => (novo) => setEnquadre((e) => ({ ...e, [qual]: novo }));
+
+  // Fundo no menu: vem à parte (pode ser um GIF pesado) e só vai no salvar quando mudou
+  const [fundo, setFundo] = useState(campanha.tem_fundo ? undefined : '');
+  const [fundoMudou, setFundoMudou] = useState(false);
+  useEffect(() => {
+    if (!campanha.tem_fundo) return undefined;
+    const vivo = { ok: true };
+    api.fundoDaCampanha(campanha.id)
+      .then((r) => vivo.ok && setFundo(r.fundo))
+      .catch(() => vivo.ok && setFundo(''));
+    return () => { vivo.ok = false; };
+  }, [campanha.id, campanha.tem_fundo]);
 
   async function escolherImagem(e) {
     const arquivo = e.target.files?.[0];
@@ -115,7 +133,9 @@ function EditarCampanha({ campanha, onFechar, onAtualizar }) {
     if (!arquivo) return;
     try {
       setErro('');
-      mudar('imagem', await reduzirBanner(arquivo));
+      // Sem cortar: a imagem inteira fica guardada e o enquadre escolhe a parte que aparece
+      mudar('imagem', await reduzirDocumento(arquivo, 1600, 0.82));
+      enquadrar('banner')({ ...ENQUADRE_PADRAO });
     } catch (falha) {
       setErro(falha.message);
     }
@@ -126,7 +146,12 @@ function EditarCampanha({ campanha, onFechar, onAtualizar }) {
     if (!rascunho.nome.trim()) return setErro('A campanha precisa de um nome.');
     try {
       setSalvando(true);
-      onAtualizar(await api.atualizarCampanha(campanha.id, { ...rascunho, nome: rascunho.nome.trim() }));
+      onAtualizar(await api.atualizarCampanha(campanha.id, {
+        ...rascunho,
+        nome: rascunho.nome.trim(),
+        enquadre,
+        ...(fundoMudou && { mapa: fundo }),
+      }));
       onFechar();
     } catch (falha) {
       setErro(falha.message);
@@ -136,14 +161,19 @@ function EditarCampanha({ campanha, onFechar, onAtualizar }) {
 
   return (
     <form className={styles.edicao} onSubmit={salvar}>
-      {/* Prévia do banner: clicar troca a imagem */}
-      <label
+      {/* Prévia do banner no tamanho de verdade: arrastar enquadra, o botão troca a imagem */}
+      <AjusteEnquadre
+        src={rascunho.imagem}
+        valor={enquadre.banner}
+        onMudar={enquadrar('banner')}
+        rotulo="Banner"
         className={styles.banner}
-        style={rascunho.imagem ? { backgroundImage: `url(${rascunho.imagem})` } : undefined}
       >
-        <span className={styles.trocarImagem}>{rascunho.imagem ? 'Trocar imagem' : 'Escolher imagem'}</span>
-        <input type="file" accept="image/*" onChange={escolherImagem} aria-label="Imagem do banner" />
-      </label>
+        <label className={`${styles.trocarImagem} ${rascunho.imagem ? styles.trocarNoCanto : ''}`}>
+          {rascunho.imagem ? 'Trocar imagem' : 'Escolher imagem'}
+          <input type="file" accept="image/*" onChange={escolherImagem} aria-label="Imagem do banner" />
+        </label>
+      </AjusteEnquadre>
       {rascunho.imagem && (
         <button type="button" className={styles.linkAcao} onClick={() => mudar('imagem', '')}>
           Remover imagem
@@ -181,6 +211,14 @@ function EditarCampanha({ campanha, onFechar, onAtualizar }) {
           ))}
         </div>
       </div>
+
+      <EscolherFundo
+        valor={fundo}
+        cor={campanha.cor}
+        onMudar={(novo) => { setFundo(novo); setFundoMudou(true); }}
+        enquadre={enquadre.fundo}
+        onEnquadre={enquadrar('fundo')}
+      />
 
       {erro && <p className="erro">{erro}</p>}
 

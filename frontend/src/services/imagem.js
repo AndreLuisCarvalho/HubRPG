@@ -5,12 +5,6 @@ export function reduzirImagem(arquivo, lado = 320, qualidade = 0.85) {
   return recortar(arquivo, lado, lado, qualidade);
 }
 
-// Banner da campanha: faixa larga (3:1) com 1200px de largura, ~100–200 KB.
-// Cabe folgado no limite de 1 MB da API.
-export function reduzirBanner(arquivo, largura = 1200, proporcao = 3, qualidade = 0.8) {
-  return recortar(arquivo, largura, Math.round(largura / proporcao), qualidade);
-}
-
 // Documento (pista, recorte, foto): mantém a proporção, sem cortar; o lado maior fica com até `maior` px
 export function reduzirDocumento(arquivo, maior = 1600, qualidade = 0.85) {
   return new Promise((resolver, rejeitar) => {
@@ -31,6 +25,23 @@ export function reduzirDocumento(arquivo, maior = 1600, qualidade = 0.85) {
       rejeitar(new Error('Não foi possível abrir essa imagem'));
     };
     img.src = url;
+  });
+}
+
+// Fundo da campanha no menu: GIF vai como está (para continuar animado), até 3 MB, porque a
+// requisição tem limite de ~4,5 MB e o texto em base64 fica 1/3 maior; foto vira JPEG de até 1920px.
+export const FUNDO_GIF_MAXIMO = 3 * 1024 * 1024;
+
+export function prepararFundo(arquivo) {
+  if (arquivo?.type !== 'image/gif') return reduzirDocumento(arquivo, 1920, 0.82);
+  if (arquivo.size > FUNDO_GIF_MAXIMO) {
+    return Promise.reject(new Error('GIF grande demais: o limite é 3 MB'));
+  }
+  return new Promise((resolver, rejeitar) => {
+    const leitor = new FileReader();
+    leitor.onload = () => resolver(leitor.result);
+    leitor.onerror = () => rejeitar(new Error('Não foi possível abrir esse GIF'));
+    leitor.readAsDataURL(arquivo);
   });
 }
 

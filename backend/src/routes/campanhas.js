@@ -8,11 +8,39 @@ const router = Router();
  * Campanhas da conta logada. O acesso a /campanhas/:id/… já passou pelo exigirCampanha (server.js):
  * aqui req.papel é 'mestre' ou 'jogador'. O código de entrada só vai para o mestre.
  */
+// Enquadramento: no banco em texto (JSON); na API como objeto { banner?: { x, y, z }, fundo?: { x, y, z } }
+function lerEnquadre(texto) {
+  try {
+    const e = JSON.parse(texto || '{}');
+    return e && typeof e === 'object' ? e : {};
+  } catch {
+    return {};
+  }
+}
+
+// Só guarda x, y (0–100, em %) e z (zoom, 1–4) do banner e do fundo
+function limparEnquadre(e) {
+  const limitar = (v, min, max, padrao) => (Number.isFinite(Number(v)) ? Math.min(max, Math.max(min, Number(v))) : padrao);
+  const um = (q) => q && typeof q === 'object' && {
+    x: limitar(q.x, 0, 100, 50), y: limitar(q.y, 0, 100, 50), z: limitar(q.z, 1, 4, 1),
+  };
+  const limpo = {};
+  for (const chave of ['banner', 'fundo']) if (um(e?.[chave])) limpo[chave] = um(e[chave]);
+  return JSON.stringify(limpo);
+}
+
 async function buscarCampanha(id, papel) {
   const campanha = await db.get('SELECT * FROM campanhas WHERE id = ?', Number(id));
   if (!campanha) return null;
-  const { codigo, ...resto } = campanha;
-  return { ...resto, papel, ...(papel === 'mestre' && { codigo }) };
+  // O fundo do menu (mapa) pode ser um GIF de MBs: fica só na lista do menu e em /fundo
+  const { codigo, mapa, ...resto } = campanha;
+  return {
+    ...resto,
+    enquadre: lerEnquadre(campanha.enquadre),
+    tem_fundo: Boolean(mapa),
+    papel,
+    ...(papel === 'mestre' && { codigo }),
+  };
 }
 
 // Listar as campanhas em que a conta participa, com o papel e um resumo
@@ -25,7 +53,11 @@ router.get('/', async (req, res) => {
     JOIN membros m ON m.campanha_id = c.id AND m.usuario_id = ?
     ORDER BY c.id
   `, req.usuario.id);
-  res.json(campanhas.map(({ codigo, ...c }) => ({ ...c, ...(c.papel === 'mestre' && { codigo }) })));
+  res.json(campanhas.map(({ codigo, ...c }) => ({
+    ...c,
+    enquadre: lerEnquadre(c.enquadre),
+    ...(c.papel === 'mestre' && { codigo }),
+  })));
 });
 
 // Entrar numa campanha como jogador, pelo código
@@ -48,20 +80,27 @@ router.get('/:id', async (req, res) => {
   res.json(campanha);
 });
 
+// Fundo da campanha no menu (imagem ou GIF em data URL; '' = sem fundo)
+router.get('/:id/fundo', async (req, res) => {
+  const linha = await db.get('SELECT mapa FROM campanhas WHERE id = ?', Number(req.params.id));
+  if (!linha) return res.status(404).json({ erro: 'Campanha não encontrada' });
+  res.json({ fundo: linha.mapa ?? '' });
+});
+
 // Criar: quem cria vira o mestre, e a campanha já nasce com o código
 // sistema    = nome exibido na tela ("Ordem Paranormal")
 // sistema_id = identificador usado pelo código ("ordem-paranormal")
 router.post('/', async (req, res) => {
   const {
     nome, sistema = '', sistema_id = '', descricao = '', imagem = '', mapa = '',
-    cor = '#8b5cf6', tema = 'padrao',
+    cor = '#8b5cf6', tema = 'padrao', enquadre = {},
   } = req.body ?? {};
   if (!nome?.trim()) return res.status(400).json({ erro: 'O nome é obrigatório' });
 
   const resultado = await db.run(
-    `INSERT INTO campanhas (nome, sistema, sistema_id, descricao, imagem, mapa, cor, tema, codigo)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    nome.trim(), sistema, sistema_id, descricao, imagem, mapa, cor, tema, await codigoLivre(),
+    `INSERT INTO campanhas (nome, sistema, sistema_id, descricao, imagem, mapa, cor, tema, enquadre, codigo)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    nome.trim(), sistema, sistema_id, descricao, imagem, mapa, cor, tema, limparEnquadre(enquadre), await codigoLivre(),
   );
   const id = resultado.lastInsertRowid;
   await db.run("INSERT INTO membros (campanha_id, usuario_id, papel) VALUES (?, ?, 'mestre')", id, req.usuario.id);
@@ -73,11 +112,12 @@ router.put('/:id', exigirMestre, async (req, res) => {
   if (!atual) return res.status(404).json({ erro: 'Campanha não encontrada' });
 
   const c = { ...atual, ...(req.body ?? {}) };
+  const enquadre = req.body?.enquadre !== undefined ? limparEnquadre(req.body.enquadre) : atual.enquadre;
   await db.run(
     `UPDATE campanhas
-     SET nome = ?, sistema = ?, sistema_id = ?, descricao = ?, imagem = ?, mapa = ?, cor = ?, status = ?, tema = ?
+     SET nome = ?, sistema = ?, sistema_id = ?, descricao = ?, imagem = ?, mapa = ?, cor = ?, status = ?, tema = ?, enquadre = ?
      WHERE id = ?`,
-    c.nome, c.sistema, c.sistema_id, c.descricao, c.imagem, c.mapa, c.cor, c.status, c.tema, atual.id,
+    c.nome, c.sistema, c.sistema_id, c.descricao, c.imagem, c.mapa, c.cor, c.status, c.tema, enquadre, atual.id,
   );
 
   res.json(await buscarCampanha(atual.id, 'mestre'));
