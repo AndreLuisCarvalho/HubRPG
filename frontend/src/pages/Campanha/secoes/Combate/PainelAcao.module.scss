@@ -410,6 +410,62 @@
 
   input { accent-color: var(--cor); }
 }
+/* ---------- Esperando a reação do jogador ---------- */
+.espera {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px dashed #4f8fd6;
+  border-radius: 4px;
+  background: rgba(79, 143, 214, 0.1);
+}
+
+.esperaTopo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.86rem;
+
+  strong { @include fonte-titulo; font-size: 1.5rem; line-height: 1; color: #8fbcf0; font-variant-numeric: tabular-nums; }
+}
+
+// A barra esvazia no tempo do pedido
+.esperaBarra {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: #4f8fd6;
+  transform-origin: left;
+  animation: esvaziar var(--total) linear forwards;
+}
+
+@keyframes esvaziar { to { transform: scaleX(0); } }
+
+.esperaBotoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+
+  small { flex: 1 1 100%; font-size: 0.72rem; color: var(--texto-suave); }
+
+  button {
+    padding: 5px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--texto);
+    @include fonte-ficha;
+    font-size: 0.72rem;
+    cursor: pointer;
+
+    &:hover { border-color: #4f8fd6; }
+  }
+}
+
+.esperaCancelar { margin-left: auto; color: var(--texto-suave) !important; }
+
 /* ---------- Celular: tudo mais junto, para o painel caber sem rolar ---------- */
 @include celular {
   .painel, .aba { gap: 9px; }

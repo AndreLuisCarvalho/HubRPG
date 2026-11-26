@@ -7,9 +7,9 @@ import { lerCritico, lerFormula } from '../../../../components/Dados/formula';
 import { danosDe, nomeDoTipo, partesParaRolar, tipoDaPalavra } from '../../../../sistemas/ordemParanormal/danos';
 import { ITENS } from '../../../../sistemas/ordemParanormal/itens';
 import { armaPeloNome, ehCura, itensUsaveis } from './itensEmCombate';
-import { PERICIAS } from '../../../../sistemas/ordemParanormal/modelo';
+import { GRAUS, PERICIAS } from '../../../../sistemas/ordemParanormal/modelo';
 import {
-  bonusPericia, calcularBloqueio, calcularEsquiva, custoDoRitual, dadosDoTeste, dtDeRituais, ehMonstro, ehNpcSimples,
+  bonusPericia, calcularDefesa, custoDoRitual, dadosDoTeste, dtDeRituais, ehMonstro, ehNpcSimples,
   ehTreinada, limitePePorTurno, rdDaProtecao,
 } from '../../../../sistemas/ordemParanormal/regras';
 import { formulaDoTeste, lerListaDeTestes } from '../../../../sistemas/ordemParanormal/rolagens';
@@ -127,13 +127,20 @@ export function comAjuste(formula, ajuste) {
   return `${formula}${ajuste > 0 ? '+' : '−'}${Math.abs(ajuste)}`;
 }
 
-/* ---------- Reações do alvo (só agentes treinados) ---------- */
+/*
+ * ---------- Reações do alvo (todo agente) ----------
+ * Regra da mesa: todo agente pode Esquivar e Bloquear. Sem treino em Reflexos/Fortitude, conta
+ * como treinado só aqui na reação (a ficha continua mostrando a perícia como está).
+ */
+const comoTreinado = (dados, id) => bonusPericia(dados, id) + (ehTreinada(dados, id) ? 0 : GRAUS.treinado.bonus);
+
 export function reacoesDe(base) {
   if (base.tipo !== 'agente') return { esquiva: null, bloqueio: null };
   const { dados } = base;
+  const esquiva = comoTreinado(dados, 'reflexos');
   return {
-    esquiva: ehTreinada(dados, 'reflexos') ? { bonus: bonusPericia(dados, 'reflexos'), defesa: calcularEsquiva(dados) } : null,
-    bloqueio: calcularBloqueio(dados) != null ? { rd: calcularBloqueio(dados) } : null,
+    esquiva: { bonus: esquiva, defesa: calcularDefesa(dados) + esquiva },
+    bloqueio: { rd: comoTreinado(dados, 'fortitude') },
   };
 }
 
