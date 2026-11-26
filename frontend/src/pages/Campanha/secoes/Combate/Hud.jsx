@@ -114,17 +114,19 @@ export default function Hud({
                 key={e.id}
                 type="button"
                 aria-pressed={Boolean(economia?.[e.id])}
+                aria-label={e.rotulo}
                 onClick={() => onEconomia(e.id)}
                 title={economia?.[e.id] ? 'Gasta (clique para devolver)' : 'Disponível (clique para marcar como gasta)'}
               >
                 <i aria-hidden="true" />
-                {e.rotulo}
+                <span className={styles.rotuloLongo}>{e.rotulo}</span>
+                <span className={styles.rotuloCurto} aria-hidden="true">{e.rotulo.charAt(0)}</span>
               </button>
             ))}
           </div>
         )}
         {onFinalizar && <button type="button" className={styles.hudFinalizar} onClick={onFinalizar}>Finalizar turno</button>}
-        {mestre && <button type="button" className={styles.hudLink} onClick={onVoltarTurno}>◂ voltar um turno</button>}
+        {mestre && <button type="button" className={styles.hudLink} onClick={onVoltarTurno} title="Voltar um turno" aria-label="Voltar um turno">◂ voltar um turno</button>}
       </div>
     </div>
   );

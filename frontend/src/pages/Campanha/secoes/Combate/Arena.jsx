@@ -508,7 +508,12 @@ export default function Arena({
   const rotuloAcao = carta?.nome;
 
   return (
-    <section className={`${estilo.arena} ${!mestre ? estilo.telaCheia : ''}`} aria-label={`Combate: ${combate.nome}`}>
+    <section
+      className={`${estilo.arena} ${!mestre ? estilo.telaCheia : ''}`}
+      aria-label={`Combate: ${combate.nome}`}
+      // Celular: com uma carta em jogo o painel dela toma o lugar da barra do turno
+      data-acao={(aba && agindo && !verRelatorio) || undefined}
+    >
       {/* 1 · Topo: timeline de iniciativa */}
       <header className={estilo.topo}>
         <div className={estilo.topoTitulo}>
