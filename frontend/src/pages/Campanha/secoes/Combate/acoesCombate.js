@@ -7,6 +7,7 @@ import { lerCritico, lerFormula } from '../../../../components/Dados/formula';
 import { danosDe, nomeDoTipo, partesParaRolar, tipoDaPalavra } from '../../../../sistemas/ordemParanormal/danos';
 import { ITENS } from '../../../../sistemas/ordemParanormal/itens';
 import { armaPeloNome, ehCura, itensUsaveis } from './itensEmCombate';
+import { custoDaExecucao } from './economia';
 import { GRAUS, PERICIAS } from '../../../../sistemas/ordemParanormal/modelo';
 import {
   bonusPericia, calcularDefesa, custoDoRitual, dadosDoTeste, dtDeRituais, ehMonstro, ehNpcSimples,
@@ -309,7 +310,7 @@ export function miraDaCarta(carta) {
   if (!carta) return null;
   if (carta.aba === 'atacar') return 'um';
   if (carta.aba === 'ritual') return 'varios';
-  if (carta.aba === 'outros' && carta.escolha !== 'livre') return 'um';
+  if (carta.aba === 'outros' && !['livre', 'mover'].includes(carta.escolha)) return 'um';
   return null;
 }
 
@@ -358,6 +359,7 @@ export function cartasDaMao(ator, fichas, livro, mestre) {
       icone: '✦',
       tom: 'ritual',
       elemento: r.elemento,
+      custo: custoDaExecucao(r.execucao),   // a execução do ritual: Padrão, Completa, Reação...
     };
     cartas.push({ ...carta, id: `ritual:${r.id}`, grupo: 'rituais' });
     if (ehRitualDeCura(r)) cartas.push({ ...carta, id: `cura:ritual:${r.id}`, grupo: 'curas' });
@@ -371,6 +373,7 @@ export function cartasDaMao(ator, fichas, livro, mestre) {
       });
     }
   }
+  cartas.push({ id: 'outros:mover', grupo: 'outros', aba: 'outros', escolha: 'mover', tipo: 'Movimento', nome: 'Mover', detalhe: 'andar, levantar, sacar', icone: '➜', tom: 'mover', custo: 'movimento' });
   cartas.push({ id: 'teste', grupo: 'outros', aba: 'teste', tipo: 'Teste', nome: 'Perícia', detalhe: 'rolar um teste', icone: '⚄', tom: 'teste' });
   if (base.tipo === 'agente') {
     const n = itensUsaveis(base.dados).length;
@@ -381,9 +384,15 @@ export function cartasDaMao(ator, fichas, livro, mestre) {
   }
   cartas.push({ id: 'outros:livre', grupo: 'outros', aba: 'outros', escolha: 'livre', tipo: 'Livre', nome: 'Ação livre', detalhe: 'descrever o que faz', icone: '✎', tom: 'livre' });
   if (mestre) {
-    cartas.push({ id: 'outros:condicao', grupo: 'outros', aba: 'outros', escolha: 'condicao', tipo: 'Condição', nome: 'Condição', detalhe: 'aplicar em alguém', icone: '◈', tom: 'condicao' });
+    cartas.push({ id: 'outros:condicao', grupo: 'outros', aba: 'outros', escolha: 'condicao', tipo: 'Condição', nome: 'Condição', detalhe: 'aplicar em alguém', icone: '◈', tom: 'condicao', custo: 'livre' });
   }
-  return cartas;
+  // O que cada carta gasta da economia do turno (Ação livre: quem joga escolhe o tipo na hora)
+  return cartas.map((c) => ({ ...c, custo: c.custo !== undefined ? c.custo : custoPadraoDaCarta(c) }));
+}
+
+function custoPadraoDaCarta(c) {
+  if (c.aba === 'outros' && c.escolha === 'livre') return null;
+  return 'padrao';   // atacar, perícia, usar item
 }
 
 export { nomeDoTipo };

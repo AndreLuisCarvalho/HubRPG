@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ELEMENTOS } from '../../../../sistemas/ordemParanormal/modelo';
 import { GRUPOS_DA_MAO } from './acoesCombate';
 import IconeArma from './IconeArma';
+import { ROTULO_DO_CUSTO, SIGLA_DO_CUSTO } from './economia';
 import styles from './MaoDeCartas.module.scss';
 
 /**
@@ -60,11 +61,13 @@ export default function MaoDeCartas({ cartas, selecionada, virada, soVer, onJoga
               className={styles.carta}
               data-tom={c.tom}
               aria-pressed={selecionada === c.id}
-              aria-disabled={soVer || undefined}
-              onClick={() => !soVer && onJogar(selecionada === c.id ? null : c)}
+              aria-disabled={soVer || c.semAcao || undefined}
+              data-sem-acao={c.semAcao || undefined}
+              onClick={() => !soVer && (!c.semAcao || selecionada === c.id) && onJogar(selecionada === c.id ? null : c)}
               style={cor ? { '--tom': cor } : undefined}
-              title={`${c.tipo}: ${c.nome} · ${c.detalhe}`}
+              title={`${c.tipo}: ${c.nome} · ${c.detalhe}${c.custo ? ` · ação ${ROTULO_DO_CUSTO[c.custo].toLowerCase()}` : ''}${c.semAcao ? ' (sem ação para isso neste turno)' : ''}`}
             >
+              {c.custo && <i className={styles.custo} data-custo={c.custo} aria-hidden="true">{SIGLA_DO_CUSTO[c.custo]}</i>}
               <span className={styles.face}>
                 <small>{c.tipo}</small>
                 {c.arma
