@@ -1,0 +1,80 @@
+@use '../../styles/mixins' as *;
+
+.fundo {
+  display: grid;
+  gap: 6px;
+}
+
+.titulo { @include rotulo-campo; }
+
+// Prévia no formato do palco do menu (largo, ~1,9 : 1)
+.previa {
+  width: min(100%, 560px);
+  aspect-ratio: 19 / 10;
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 35% 40%, color-mix(in srgb, var(--cor, #8b5cf6) 40%, transparent), transparent 60%),
+    #0d0d14;
+}
+
+// Sem imagem: o botão fica no meio; com imagem: vai para o canto (o resto da prévia arrasta)
+.previa .botao {   // ganha do "label" dos formulários
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  margin: auto;
+  width: fit-content;
+  height: fit-content;
+  padding: 6px 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.45);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    opacity: 0;
+  }
+
+  &:hover,
+  &:focus-within { border-color: var(--cor, #8b5cf6); color: var(--texto); }
+}
+
+.previa .noCanto {
+  inset: 8px 8px auto auto;
+  margin: 0;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+
+.rodape {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 560px);
+
+  small { font-size: 0.75rem; color: var(--texto-suave); }
+
+  button {
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--cor, #8b5cf6);
+    font: inherit;
+    font-size: 0.8rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+}

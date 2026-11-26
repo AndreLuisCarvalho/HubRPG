@@ -1,3 +1,4 @@
+import { ImagemEnquadrada } from '../Enquadre/Enquadre';
 import styles from './PalcoMapa.module.scss';
 
 export default function PalcoMapa({ campanhas, selecionada, anterior, mergulhando, children }) {
@@ -12,10 +13,9 @@ export default function PalcoMapa({ campanhas, selecionada, anterior, mergulhand
 
         return (
           <div key={c.id} className={classes} style={{ '--cor': c.cor }}>
-            <div
-              className={`${styles.imagem} ${c.mapa ? '' : styles.vazio}`}
-              style={c.mapa ? { backgroundImage: `url(${c.mapa})` } : undefined}
-            />
+            <div className={`${styles.imagem} ${c.mapa ? '' : styles.vazio}`}>
+              {c.mapa && <ImagemEnquadrada src={c.mapa} enquadre={c.enquadre?.fundo} />}
+            </div>
           </div>
         );
       })}

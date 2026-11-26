@@ -95,21 +95,14 @@
   border-radius: 4px;
   background: var(--superficie);
 
-  .banner {
-    height: 150px;
-    cursor: pointer;
-
-    input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-
-    &:hover .trocarImagem,
-    &:focus-within .trocarImagem { border-color: var(--cor); color: var(--cor); }
-  }
+  // A prévia tem a mesma altura do banner de verdade: o enquadre fica igual ao da página
+  .banner input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 }
 
 .trocarImagem {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;   // acima do escurecido do banner
   margin: auto;
   width: fit-content;
   height: fit-content;
@@ -119,6 +112,17 @@
   background: rgba(0, 0, 0, 0.55);
   @include fonte-ficha;
   font-size: 0.78rem;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-within { border-color: var(--cor); color: var(--cor); }
+}
+
+// Com imagem: o botão vai para o canto e o resto do banner arrasta
+.trocarNoCanto {
+  inset: 10px 10px auto auto;
+  margin: 0;
+  padding: 4px 10px;
 }
 
 .campo {
