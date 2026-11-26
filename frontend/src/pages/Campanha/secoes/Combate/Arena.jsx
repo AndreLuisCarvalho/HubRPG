@@ -7,6 +7,7 @@ import Hud from './Hud';
 import Inspecao from './Inspecao';
 import LogCombate from './LogCombate';
 import PainelAcao from './PainelAcao';
+import IconeArma from './IconeArma';
 import OrdemLateral from './OrdemLateral';
 import Palco from './Palco';
 import RelatorioCombate from './RelatorioCombate';
@@ -617,7 +618,9 @@ export default function Arena({
         {aba && agindo && !verRelatorio && (
           <div className={estilo.bandeja} data-tom={carta.tom} role="dialog" aria-label={`${rotuloAcao} com ${ator.ver.nome}`}>
             <header>
-              <span className={estilo.bandejaIcone} aria-hidden="true">{carta.icone}</span>
+              <span className={estilo.bandejaIcone} aria-hidden="true">
+                {carta.arma ? <IconeArma id={carta.arma} className={estilo.bandejaArma} /> : carta.icone}
+              </span>
               <div>
                 <small>{carta.tipo} · {ator.ver.nome}</small>
                 <b>{rotuloAcao}</b>
@@ -629,6 +632,7 @@ export default function Arena({
               key={`${ator.id}-${carta.id}`}
               aba={aba}
               escolha={carta.escolha}
+              itemUid={carta.item}
               ator={ator}
               mestre={mestre}
               // Jogadores não miram em quem está oculto

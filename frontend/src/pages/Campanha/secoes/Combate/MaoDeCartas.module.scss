@@ -2,12 +2,80 @@
 
 $ouro: #d9a54a;
 
+/* Abas por tipo (Armas, Ataques, Rituais, Curas, Outros) em cima da mão */
+.conjunto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+
+  // Muitas cartas: a fila rola de lado, sem invadir as colunas vizinhas
+  > .mao { align-self: stretch; }
+}
+
+.abas {
+  display: flex;
+  gap: 4px;
+  max-width: 100%;
+  padding: 0 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  button {
+    --cor: #8b8f99;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(12, 13, 16, 0.7);
+    @include fonte-ficha;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(242, 238, 230, 0.6);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+
+    &[data-grupo='armas'], &[data-grupo='ataques'] { --cor: #c8423a; }
+    &[data-grupo='rituais'] { --cor: #9b6bd6; }
+    &[data-grupo='curas'] { --cor: #3f9d63; }
+    &[data-grupo='outros'] { --cor: #{$ouro}; }
+
+    i {
+      min-width: 16px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      font-style: normal;
+      font-size: 0.6rem;
+      text-align: center;
+    }
+
+    &:hover { color: #f2eee6; border-color: color-mix(in srgb, var(--cor) 50%, transparent); }
+
+    &[aria-selected='true'] {
+      border-color: var(--cor);
+      background: color-mix(in srgb, var(--cor) 22%, #0c0d10);
+      color: #f2eee6;
+
+      i { background: var(--cor); color: #0c0d10; }
+    }
+
+    &:focus-visible { outline: 2px solid var(--cor); outline-offset: 2px; }
+  }
+}
+
 /* Mão de cartas: lado a lado, alinhadas e espaçadas; a do mouse e a em jogo sobem */
 .mao {
   --lar: clamp(72px, min(10.5dvh, 8.5vw), 104px);
   display: flex;
   align-items: flex-end;
-  justify-content: center;
+  justify-content: safe center;
   gap: clamp(8px, 1.2vw, 16px);
   min-width: 0;
   padding: 24px 18px 2px;
@@ -114,6 +182,15 @@ $ouro: #d9a54a;
   line-height: 1;
   color: var(--tom);
   text-shadow: 0 0 12px color-mix(in srgb, var(--tom) 60%, transparent);
+}
+
+// Desenho da arma (silhueta do livro)
+.desenho {
+  align-self: center;
+  width: calc(var(--lar) * 0.6);
+  height: calc(var(--lar) * 0.6);
+  color: color-mix(in srgb, var(--tom) 80%, #fff);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--tom) 55%, transparent));
 }
 
 // Só para ver (mestre na vez de um agente): apagadas, sem subir; o mouse ainda mostra o detalhe
