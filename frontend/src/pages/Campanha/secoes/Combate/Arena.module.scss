@@ -159,13 +159,31 @@ $sangue: #b3261c;
   .soLargo { display: none; }
   .soCelular { display: inline; }
 
-  .topo .timeline {
-    padding: 2px;
+  // Topo enxuto: só a rodada (sem a sessão) e a timeline só com os retratos
+  .topo { flex-wrap: wrap; padding: 4px 6px; }
+  .topoTitulo { gap: 6px; }
+  .topoTitulo small { display: none; }
+  .rodada { font-size: 1.1rem; white-space: nowrap; }
 
-    button { width: 44px; }
+  // Título e botões na mesma linha (o mestre tem mais botões: todos encolhem)
+  .topoAcoes {
+    gap: 4px;
+
+    > div[role='radiogroup'] button { padding: 4px 6px; font-size: 0.6rem; letter-spacing: 0.02em; }
+  }
+  .voltar, .icone { width: 28px; height: 28px; }
+  .textual { padding: 4px 7px; }
+
+  .topo .timeline {
+    gap: 4px;
+    padding: 4px 2px 2px;
+
+    button { width: 34px; padding: 1px; }
+    small, .timelineNome { display: none; }
+    li[aria-current='true'] button { transform: scale(1.1); }
   }
 
-  .topo .timelineRetrato { width: 30px; height: 30px; font-size: 0.85rem; }
+  .topo .timelineRetrato { width: 28px; height: 28px; font-size: 0.8rem; }
 }
 
 .conta {
@@ -286,6 +304,9 @@ $sangue: #b3261c;
 
   @include celular {
     &[data-acao], &[data-ordem][data-acao] { grid-template-columns: minmax(0, 1fr); }
+
+    // O campo sobe e encolhe para os alvos ficarem à vista acima do painel
+    &[data-acao] > div:first-child { height: 42%; }
   }
 }
 
@@ -939,6 +960,94 @@ $sangue: #b3261c;
   &:disabled { opacity: 0.5; cursor: default; }
 
   @include celular { min-height: 44px; padding: 8px 14px; font-size: 0.8rem; }
+}
+
+.rotuloCurto { display: none; }
+
+/* ---------- Celular: barra do turno enxuta, sem rolar ----------
+ *   [retrato] Nome            [P][M] [Finalizar]
+ *             PV ▬▬  SAN ▬▬  PE ▬▬
+ *   abas · mão de cartas
+ */
+@include celular {
+  // Retrato, nome e o fim do turno numa linha; as barras na de baixo, na largura toda
+  .hud:not([data-modo='preparo']) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'retrato titulo fim' 'barras barras barras' 'extra extra extra' 'mao mao mao';
+    align-items: center;
+    gap: 3px 8px;
+    padding: 5px 8px 6px;
+
+    > .hudQuem, .hudFicha { display: contents; }
+    > .hudMao { grid-area: mao; }
+    > .hudFim { grid-area: fim; }
+    .hudRetrato { grid-area: retrato; }
+    .hudTitulo { grid-area: titulo; }
+    .hudBarras { grid-area: barras; }
+    .hudFicha > .hudLink, .hudLembrete { grid-column: 1 / -1; }
+  }
+
+  .hudRetrato { width: 34px; height: 34px; font-size: 1rem; }
+  .hudTitulo { font-size: 1.02rem; }
+  .hudFicha > small { display: none; }
+
+  // PV, SAN e PE lado a lado: sigla e número em cima, barra fina embaixo
+  .hudBarras {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2px 12px;
+    margin-top: 0;
+
+    > span {
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas: 'sigla numero' 'barra barra';
+      gap: 1px 4px;
+    }
+
+    em { grid-area: sigla; font-size: 0.58rem; }
+    i { grid-area: barra; height: 4px; }
+    strong { grid-area: numero; min-width: 0; font-size: 0.72rem; }
+  }
+
+  .hudLembrete { font-size: 0.72rem; }
+
+  // Economia em bolinhas com a inicial, ao lado do Finalizar
+  .hudFim { display: flex; align-items: center; gap: 6px; }
+  .hudEconomia {
+    flex-wrap: nowrap;
+    gap: 4px;
+
+    button { justify-content: center; width: 30px; height: 30px; padding: 0; gap: 0; }
+    i { display: none; }
+  }
+  .rotuloLongo { display: none; }
+  .rotuloCurto { display: inline; font-size: 0.78rem; font-weight: 800; }
+  .hudEconomia button[aria-pressed='true'] .rotuloCurto { text-decoration: line-through; }
+
+  .hudFinalizar { min-height: 38px; padding: 6px 12px; font-size: 0.74rem; letter-spacing: 0.04em; }
+  // "◂ voltar um turno" do mestre vira só a seta, antes das bolinhas
+  .hudFim > .hudLink {
+    order: -1;
+    font-size: 0;
+    text-decoration: none;
+
+    &::before { content: '◂'; font-size: 1.1rem; }
+  }
+
+  // Carta em jogo: o painel ocupa o lugar da barra (sem a barra por baixo, nada a rolar)
+  .arena[data-acao] > .hud { display: none; }
+
+  .bandeja {
+    max-height: 72%;
+    gap: 8px;
+    padding: 8px 10px 10px;
+    border-radius: 10px 10px 4px 4px;
+
+    > header b { font-size: 1.05rem; }
+  }
+
+  .bandejaIcone { width: 30px; height: 40px; font-size: 1.05rem; }
+  .bandejaArma { width: 24px; height: 24px; }
+  .bandejaDica { font-size: 0.7rem; }
 }
 
 .hudLink {

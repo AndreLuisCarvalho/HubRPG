@@ -33,6 +33,7 @@ export default function PreviaDado({ estilo, selecionado = 20, className = '' })
     mundo.current = m;
 
     function medir() {
+      if (!tela.current) return;   // já saiu da tela (o observador ainda dispara uma vez)
       const { clientWidth: w, clientHeight: h } = tela.current;
       if (!w || !h) return;
       m.renderer.setSize(w, h, false);

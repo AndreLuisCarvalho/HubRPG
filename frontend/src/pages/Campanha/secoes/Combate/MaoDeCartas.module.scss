@@ -68,6 +68,16 @@ $ouro: #d9a54a;
 
     &:focus-visible { outline: 2px solid var(--cor); outline-offset: 2px; }
   }
+
+  // Celular: abas menores, sem a contagem
+  @include celular {
+    gap: 3px;
+    width: 100%;
+    padding: 0 2px;
+
+    button { padding: 3px 9px; font-size: 0.6rem; }
+    button i { display: none; }
+  }
 }
 
 /* Mão de cartas: lado a lado, alinhadas e espaçadas; a do mouse e a em jogo sobem */
@@ -83,9 +93,10 @@ $ouro: #d9a54a;
   scrollbar-width: thin;
 
   @include celular {
-    --lar: 64px;
-    justify-content: flex-start;
-    padding: 12px 6px 2px;
+    --lar: 60px;
+    justify-content: safe center;
+    gap: 6px;
+    padding: 10px 4px 2px;
   }
 }
 
