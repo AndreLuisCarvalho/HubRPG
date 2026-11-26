@@ -118,6 +118,15 @@ $ouro: #d9a54a;
   &[data-tom='item'] { --tom: #3f9d63; }
   &[data-tom='livre'] { --tom: #8b8f99; }
   &[data-tom='condicao'] { --tom: #e09a2b; }
+  &[data-tom='mover'] { --tom: #4f8fd6; }
+
+  // Sem ação para pagar esta carta no turno: apagada e sem subir
+  &[data-sem-acao] {
+    cursor: not-allowed;
+    filter: grayscale(0.85) brightness(0.5);
+
+    &:hover, &:focus-visible { transform: none; }
+  }
 
   &:hover, &:focus-visible {
     z-index: 3;
@@ -193,6 +202,33 @@ $ouro: #d9a54a;
   line-height: 1;
   color: var(--tom);
   text-shadow: 0 0 12px color-mix(in srgb, var(--tom) 60%, transparent);
+}
+
+// O custo da carta no canto: P (padrão), M (movimento), P+M (completa), L (livre)
+.custo {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1.5px solid $ouro;
+  border-radius: 999px;
+  background: #15120c;
+  @include fonte-ficha;
+  font-size: 0.56rem;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: #f3d79a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+
+  &[data-custo='movimento'] { border-color: #4f8fd6; color: #b9d3f2; }
+  &[data-custo='completa'] { border-color: #e2675d; color: #ffc2bb; }
+  &[data-custo='livre'] { border-color: #8b8f99; color: #d0d2d8; }
 }
 
 // Desenho da arma (silhueta do livro)

@@ -11,6 +11,7 @@ import IconeArma from './IconeArma';
 import PedidoDeReacao from './PedidoDeReacao';
 import EscolherFundoDoCombate from './EscolherFundoDoCombate';
 import { cenarioDe } from './cenarios';
+import { pagar, podePagar, semAcoes } from './economia';
 import { pedidoVivo } from './reacao';
 import OrdemLateral from './OrdemLateral';
 import Palco from './Palco';
@@ -453,12 +454,18 @@ export default function Arena({
   const atorCaido = Boolean(ator && foraDeCombate(ator));
   // Mestre na vez de um agente, ou a vez de quem caiu: a mão aparece apagada, só para ver
   const soVer = Boolean(andamento && ator && !agindo && (mestre || (atorCaido && podeControlar(ator))));
-  const cartas = agindo || soVer ? cartasDaMao(ator, fichas, livro, agindo && mestre) : [];
+  // Economia do turno: só vale para quem está na vez (o mestre agindo com outro não gasta nada)
+  const naVez = Boolean(ator && ator.id === dados.vez);
+  const economia = dados.economia ?? {};
+  const cartas = (agindo || soVer ? cartasDaMao(ator, fichas, livro, agindo && mestre) : [])
+    .map((c) => ({ ...c, semAcao: agindo && naVez && !podePagar(economia, c.custo) }));
+  const turnoEsgotado = andamento && naVez && agindo && semAcoes(economia);
 
-  // Jogar uma carta da mão (null recolhe)
+  // Jogar uma carta da mão (null recolhe). Cada jogada paga o custo uma vez só (atacar e depois
+  // rolar o dano é uma ação)
   function jogarCarta(nova) {
-    if (nova && !agindo) return;
-    setCarta(nova);
+    if (nova && (!agindo || nova.semAcao)) return;
+    setCarta(nova && { ...nova, jogada: novoId() });
     setInspecionado(null);
     if (!nova || !ator) return setAlvoIds([]);
     // Alvo inicial: o primeiro inimigo de pé (ataque) ou o próprio (item/condição)
@@ -497,8 +504,25 @@ export default function Arena({
     passar(1);
   }
 
-  // Economia de ação: só visual, guardada no combate (todos veem) e zerada a cada turno
+  // Economia de ação: guardada no combate (todos veem) e zerada a cada turno. As cartas gastam
+  // sozinhas; clicar na bolinha ainda marca/devolve à mão (corrigir engano)
   const alternarEconomia = (id) => salvar({ ...dados, economia: { ...dados.economia, [id]: !dados.economia?.[id] } });
+
+  // O "aplicar" do painel da carta: na primeira vez que a ação acontece, paga o custo dela
+  // (custo: o da carta, ou o que a ação escolheu, como na Ação livre; semGasto: ainda não aconteceu)
+  const jogadasPagas = useRef(new Set());
+  function aplicarDaCarta({ custo, semGasto = false, mudarDados = (d) => d, ...resto }) {
+    const valor = custo !== undefined ? custo : carta?.custo;
+    const paga = Boolean(!semGasto && carta && naVez && valor && valor !== 'livre' && !jogadasPagas.current.has(carta.jogada));
+    if (paga) jogadasPagas.current.add(carta.jogada);
+    aplicar({
+      ...resto,
+      mudarDados: (d) => {
+        const novo = mudarDados(d);
+        return paga ? { ...novo, economia: pagar(novo.economia, valor) } : novo;
+      },
+    });
+  }
 
   /* ---------- Desenho ---------- */
   const log = (dados.log ?? [])
@@ -674,7 +698,7 @@ export default function Arena({
               vez={dados.vez}
               alvoIds={alvoIds}
               setAlvoIds={setAlvoIds}
-              aplicar={aplicar}
+              aplicar={aplicarDaCarta}
               mudarRecursos={mudarRecursos}
               onMudarFicha={onMudarFicha}
               onFechar={fecharAcao}
@@ -695,6 +719,7 @@ export default function Arena({
           caido={atorCaido}
           cartaId={carta?.id}
           economia={dados.economia}
+          turnoEsgotado={turnoEsgotado}
           lembretes={lembretes}
           onCarta={jogarCarta}
           onEconomia={alternarEconomia}

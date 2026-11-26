@@ -15,7 +15,7 @@ const ECONOMIA = [
  * Na preparação, os controles da iniciativa.
  */
 export default function Hud({
-  ator, daVez, mestre, preparando, cartas, soVer, caido = false, cartaId, economia, lembretes,
+  ator, daVez, mestre, preparando, cartas, soVer, caido = false, cartaId, economia, lembretes, turnoEsgotado = false,
   onCarta, onEconomia, onFinalizar, onVoltarTurno, onVoltarParaVez, onAvancarContagem,
   podeRolarAmeacas, onRolarAmeacas, onOrdenar, onComecar, podeComecar,
 }) {
@@ -102,6 +102,7 @@ export default function Hud({
               : 'Vez do jogador: aguardando a ação na tela dos Jogadores'}
           </p>
         )}
+        {turnoEsgotado && <p className={styles.hudAviso} data-tom="fim">Sem ações neste turno: só o que é livre. Finalize o turno.</p>}
         <MaoDeCartas key={ator?.id ?? 'ninguem'} cartas={cartas} selecionada={cartaId} virada={segredo} soVer={soVer} onJogar={onCarta} />
       </div>
 
@@ -125,7 +126,18 @@ export default function Hud({
             ))}
           </div>
         )}
-        {onFinalizar && <button type="button" className={styles.hudFinalizar} onClick={onFinalizar}>Finalizar turno</button>}
+        {onFinalizar && (
+          <button
+            type="button"
+            className={styles.hudFinalizar}
+            onClick={onFinalizar}
+            // Sem ação sobrando: o botão pulsa chamando para passar a vez
+            data-pronto={turnoEsgotado || undefined}
+            title={turnoEsgotado ? 'Sem ações sobrando neste turno' : undefined}
+          >
+            Finalizar turno
+          </button>
+        )}
         {mestre && <button type="button" className={styles.hudLink} onClick={onVoltarTurno} title="Voltar um turno" aria-label="Voltar um turno">◂ voltar um turno</button>}
       </div>
     </div>

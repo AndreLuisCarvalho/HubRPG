@@ -14,6 +14,7 @@ import { dtDoItem, efeitoDoItem, iconeDoItem, itensUsaveis, rotuloDaDt, usosRest
 import MaoDeCartas from './MaoDeCartas';
 import { novoId } from './regrasCombate';
 import { FOLGA_DA_REACAO, SEGUNDOS_DE_REACAO, useContagem } from './reacao';
+import { custoDaExecucao } from './economia';
 import styles from './PainelAcao.module.scss';
 
 /**
@@ -46,6 +47,7 @@ function AbaOutros(props) {
         {modo === 'item' && <AbaItem {...props} />}
         {modo === 'livre' && <AbaLivre {...props} />}
         {modo === 'condicao' && <AbaCondicao {...props} />}
+        {modo === 'mover' && <AbaMover {...props} />}
       </div>
     );
   }
@@ -314,7 +316,8 @@ function AbaLivre({ ator, aplicar, onFechar }) {
     const t = texto.trim();
     if (!t) return;
     const linha = `${ator.ver.nome} (${tipo.toLowerCase()}): ${t}`;
-    aplicar({ entradas: [[linha, ator.oculto ? null : linha, 'acao']] });
+    // Gasta a ação do tipo escolhido (Livre e Reação não gastam)
+    aplicar({ entradas: [[linha, ator.oculto ? null : linha, 'acao']], custo: custoDaExecucao(tipo) });
     onFechar();
   }
 
@@ -331,6 +334,35 @@ function AbaLivre({ ator, aplicar, onFechar }) {
       </div>
       <div className={styles.rodape}>
         <button type="submit" className={styles.grande} disabled={!texto.trim()}>Registrar ação</button>
+      </div>
+    </form>
+  );
+}
+
+// Mover: gasta a ação de movimento (andar, levantar, sacar uma arma...), com uma nota opcional
+const MOVIMENTOS = ['Anda', 'Levanta', 'Saca uma arma', 'Abre uma porta', 'Se esconde'];
+
+function AbaMover({ ator, aplicar, onFechar }) {
+  const [texto, setTexto] = useState('');
+
+  function mover(o) {
+    const que = (o ?? texto).trim();
+    const linha = `${ator.ver.nome} se moveu${que ? `: ${que.charAt(0).toLowerCase()}${que.slice(1)}` : ''}.`;
+    aplicar({ entradas: [[linha, ator.oculto ? null : linha, 'acao']] });
+    onFechar();
+  }
+
+  return (
+    <form className={styles.aba} onSubmit={(e) => { e.preventDefault(); mover(); }}>
+      <div className={styles.segmentos} aria-label="Movimentos comuns">
+        {MOVIMENTOS.map((m) => <button key={m} type="button" onClick={() => mover(m)}>{m}</button>)}
+      </div>
+      <label className={styles.campo}>
+        <span>Ou descreva <small>(opcional)</small></span>
+        <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Ex.: corre até a porta dos fundos" maxLength={120} />
+      </label>
+      <div className={styles.rodape}>
+        <button type="submit" className={styles.grande}>Mover</button>
       </div>
     </form>
   );
@@ -492,6 +524,7 @@ function AbaAtaque({
     const id = novoId();
     setEsperando({ id, alvoId: alvo.id });
     aplicar({
+      semGasto: true,   // a ação só é gasta quando o ataque rolar (dá para cancelar antes)
       mudarDados: (d) => ({
         ...d,
         pedidoReacao: {
@@ -572,7 +605,7 @@ function AbaAtaque({
   // Desistir do ataque enquanto espera: o pedido some da tela do jogador
   function cancelarPedido() {
     setEsperando(null);
-    aplicar({ mudarDados: ({ pedidoReacao: _pedido, ...d }) => d });
+    aplicar({ semGasto: true, mudarDados: ({ pedidoReacao: _pedido, ...d }) => d });
   }
 
   function rolarDano() {
