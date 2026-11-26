@@ -102,7 +102,7 @@ export default function Hud({
               : 'Vez do jogador: aguardando a ação na tela dos Jogadores'}
           </p>
         )}
-        <MaoDeCartas cartas={cartas} selecionada={cartaId} virada={segredo} soVer={soVer} onJogar={onCarta} />
+        <MaoDeCartas key={ator?.id ?? 'ninguem'} cartas={cartas} selecionada={cartaId} virada={segredo} soVer={soVer} onJogar={onCarta} />
       </div>
 
       {/* Direita: economia de ação e fim do turno */}

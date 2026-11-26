@@ -77,10 +77,12 @@ const ACOES_LIVRES = ['Padrão', 'Movimento', 'Completa', 'Livre', 'Reação'];
  */
 function AbaItem({
   ator, participantes, fichas, livro, rodada, vez, base, mestre, alvoIds, setAlvoIds, aplicar, mudarRecursos, onMudarFicha, onFechar,
+  itemUid,
 }) {
   const { rolar } = useRolagem();
   const itens = base.tipo === 'agente' ? itensUsaveis(base.dados) : [];
-  const [uid, setUid] = useState(itens[0]?.uid ?? '');
+  // Carta de um item (aba Curas): ele já vem escolhido e o leque de itens não aparece
+  const [uid, setUid] = useState(itemUid ?? itens[0]?.uid ?? '');
   const [manual, setManual] = useState({ efeito: 'nenhum', recurso: 'pv', valor: '' });
   const [feito, setFeito] = useState(null);   // resumo do que aconteceu (depois de usar)
   const item = itens.find((i) => i.uid === uid) ?? itens[0];
@@ -243,9 +245,11 @@ function AbaItem({
 
   return (
     <>
-      <div className={styles.maoDeItens}>
-        <MaoDeCartas cartas={cartas} selecionada={item.uid} onJogar={(c) => c && setUid(c.id)} />
-      </div>
+      {!itemUid && (
+        <div className={styles.maoDeItens}>
+          <MaoDeCartas cartas={cartas} selecionada={item.uid} onJogar={(c) => c && setUid(c.id)} />
+        </div>
+      )}
 
       <div className={styles.detalheItem}>
         <b>{item.nome}</b>

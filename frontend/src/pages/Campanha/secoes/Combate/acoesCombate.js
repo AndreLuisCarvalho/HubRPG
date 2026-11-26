@@ -6,7 +6,7 @@
 import { lerCritico, lerFormula } from '../../../../components/Dados/formula';
 import { danosDe, nomeDoTipo, partesParaRolar, tipoDaPalavra } from '../../../../sistemas/ordemParanormal/danos';
 import { ITENS } from '../../../../sistemas/ordemParanormal/itens';
-import { itensUsaveis } from './itensEmCombate';
+import { armaPeloNome, ehCura, itensUsaveis } from './itensEmCombate';
 import { PERICIAS } from '../../../../sistemas/ordemParanormal/modelo';
 import {
   bonusPericia, calcularBloqueio, calcularEsquiva, custoDoRitual, dadosDoTeste, dtDeRituais, ehMonstro, ehNpcSimples,
@@ -76,9 +76,12 @@ export function ataquesDe(base) {
         testePadrao = '1d20';
       }
     }
+    const arma = a.arma ?? armaPeloNome(a.nome);
     return [{
       id: a.id ?? a.uid ?? `a${i}`,
       nome: a.nome || 'Ataque',
+      arma,                                    // id da arma do livro (desenho da carta)
+      ehArma: Boolean(arma || a.doInventario),  // vai para a aba Armas (senão, Ataques)
       alcance,
       formula,
       partes,
@@ -108,6 +111,8 @@ function armasDoInventario(dados, cadastrados) {
     return [{
       id: `inv:${item.uid}`,
       nome: item.nome,
+      arma: ITENS[item.id]?.arma ? item.id : armaPeloNome(item.nome),
+      doInventario: true,
       teste: '',
       danos: [{ formula: String(arma.dano).split('/')[0], tipo: DANO_DO_LIVRO[arma.tipoDano] ?? '' }],
       critico: arma.critico,
@@ -301,30 +306,43 @@ export function miraDaCarta(carta) {
   return null;
 }
 
+/** Os grupos da mão, na ordem das abas */
+export const GRUPOS_DA_MAO = [
+  { id: 'armas', rotulo: 'Armas' },
+  { id: 'ataques', rotulo: 'Ataques' },
+  { id: 'rituais', rotulo: 'Rituais' },
+  { id: 'curas', rotulo: 'Curas' },
+  { id: 'outros', rotulo: 'Outros' },
+];
+
+const ehRitualDeCura = (r) => /^\s*cura/i.test(r.dano ?? '');
+
 /**
- * A mão de quem age: uma carta por ataque e por ritual da ficha, mais Teste, Item, Ação livre e
- * (só o mestre) Condição. Cada carta abre a ação já escolhida no painel.
- * [{ id, aba, escolha, tipo, nome, detalhe, icone, tom, elemento }]
+ * A mão de quem age, separada em grupos (abas): armas (ataques com arma, com o desenho dela),
+ * ataques (os outros: garras, mordidas...), rituais, curas (itens de cura e rituais que curam) e
+ * outros (Perícia, Usar item, Ação livre e, só o mestre, Condição). Cada carta abre a ação já
+ * escolhida no painel. [{ id, grupo, aba, escolha, item?, tipo, nome, detalhe, icone, arma?, tom, elemento? }]
  */
 export function cartasDaMao(ator, fichas, livro, mestre) {
   const base = baseDe(ator, fichas, livro);
   const ataques = ataquesDe(base);
   const cartas = ataques.map((a) => ({
     id: `atacar:${a.id}`,
+    grupo: a.ehArma ? 'armas' : 'ataques',
     aba: 'atacar',
     escolha: a.id,
-    tipo: 'Ataque',
+    tipo: a.ehArma ? 'Arma' : 'Ataque',
     nome: a.nome,
     detalhe: a.partes.map((p) => `${p.formula} ${p.rotulo}`).join(' + ') || 'sem dano',
     icone: '⚔',
+    arma: a.arma,
     tom: 'ataque',
   }));
   if (!ataques.length) {
-    cartas.push({ id: 'atacar', aba: 'atacar', tipo: 'Ataque', nome: 'Atacar', detalhe: 'sem ataques na ficha', icone: '⚔', tom: 'ataque' });
+    cartas.push({ id: 'atacar', grupo: 'ataques', aba: 'atacar', tipo: 'Ataque', nome: 'Atacar', detalhe: 'sem ataques na ficha', icone: '⚔', tom: 'ataque' });
   }
   for (const r of rituaisDe(base, livro)) {
-    cartas.push({
-      id: `ritual:${r.id}`,
+    const carta = {
       aba: 'ritual',
       escolha: r.id,
       tipo: `Ritual · ${r.circulo}º`,
@@ -333,19 +351,30 @@ export function cartasDaMao(ator, fichas, livro, mestre) {
       icone: '✦',
       tom: 'ritual',
       elemento: r.elemento,
-    });
+    };
+    cartas.push({ ...carta, id: `ritual:${r.id}`, grupo: 'rituais' });
+    if (ehRitualDeCura(r)) cartas.push({ ...carta, id: `cura:ritual:${r.id}`, grupo: 'curas' });
   }
-  cartas.push({ id: 'teste', aba: 'teste', tipo: 'Teste', nome: 'Perícia', detalhe: 'rolar um teste', icone: '⚄', tom: 'teste' });
   if (base.tipo === 'agente') {
-    const n = itensUsaveis(base.dados).length;   // as armas ficam nas cartas de ataque
+    const usaveis = itensUsaveis(base.dados);   // as armas ficam nas cartas de ataque
+    for (const item of usaveis.filter(ehCura)) {
+      cartas.push({
+        id: `cura:item:${item.uid}`, grupo: 'curas', aba: 'outros', escolha: 'item', item: item.uid,
+        tipo: 'Item · cura', nome: item.nome, detalhe: 'usar em alguém', icone: '✚', tom: 'item',
+      });
+    }
+  }
+  cartas.push({ id: 'teste', grupo: 'outros', aba: 'teste', tipo: 'Teste', nome: 'Perícia', detalhe: 'rolar um teste', icone: '⚄', tom: 'teste' });
+  if (base.tipo === 'agente') {
+    const n = itensUsaveis(base.dados).length;
     cartas.push({
-      id: 'outros:item', aba: 'outros', escolha: 'item', tipo: 'Item', nome: 'Usar item',
+      id: 'outros:item', grupo: 'outros', aba: 'outros', escolha: 'item', tipo: 'Item', nome: 'Usar item',
       detalhe: n ? `${n} no inventário` : 'inventário vazio', icone: '✚', tom: 'item',
     });
   }
-  cartas.push({ id: 'outros:livre', aba: 'outros', escolha: 'livre', tipo: 'Livre', nome: 'Ação livre', detalhe: 'descrever o que faz', icone: '✎', tom: 'livre' });
+  cartas.push({ id: 'outros:livre', grupo: 'outros', aba: 'outros', escolha: 'livre', tipo: 'Livre', nome: 'Ação livre', detalhe: 'descrever o que faz', icone: '✎', tom: 'livre' });
   if (mestre) {
-    cartas.push({ id: 'outros:condicao', aba: 'outros', escolha: 'condicao', tipo: 'Condição', nome: 'Condição', detalhe: 'aplicar em alguém', icone: '◈', tom: 'condicao' });
+    cartas.push({ id: 'outros:condicao', grupo: 'outros', aba: 'outros', escolha: 'condicao', tipo: 'Condição', nome: 'Condição', detalhe: 'aplicar em alguém', icone: '◈', tom: 'condicao' });
   }
   return cartas;
 }

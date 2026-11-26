@@ -70,6 +70,24 @@ export function usosRestantes(item) {
   return item.usos ?? efeito?.usos ?? 1;
 }
 
+// Nome do livro (sem acento, minúsculo) → id, do maior para o menor ("Arco composto" antes de "Arco")
+const semAcento = (t) => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const NOMES_DE_ARMA = Object.entries(ITENS)
+  .filter(([, i]) => i.arma)
+  .map(([id, i]) => [semAcento(i.nome), id])
+  .sort((a, b) => b[0].length - a[0].length);
+
+/** id da arma do livro pelo nome de um ataque ("Faca", "Katana do avô" → katana); null se não for */
+export function armaPeloNome(nome) {
+  const t = semAcento(nome);
+  if (!t) return null;
+  const palavra = (n) => new RegExp(`(^|[^a-z])${n.replace(/-/g, '\\-')}([^a-z]|$)`);
+  return NOMES_DE_ARMA.find(([n]) => t === n || palavra(n).test(t))?.[1] ?? null;
+}
+
+/** Item cura? (vira carta própria na aba Curas) */
+export const ehCura = (item) => efeitoDoItem(item)?.efeito === 'cura';
+
 /** Ícone da carta do item, pelo tipo */
 export function iconeDoItem(item) {
   const efeito = efeitoDoItem(item);
