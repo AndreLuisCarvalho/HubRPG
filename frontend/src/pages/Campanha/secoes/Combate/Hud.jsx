@@ -15,7 +15,7 @@ const ECONOMIA = [
  * Na preparação, os controles da iniciativa.
  */
 export default function Hud({
-  ator, daVez, mestre, preparando, cartas, soVer, cartaId, economia, lembretes,
+  ator, daVez, mestre, preparando, cartas, soVer, caido = false, cartaId, economia, lembretes,
   onCarta, onEconomia, onFinalizar, onVoltarTurno, onVoltarParaVez, onAvancarContagem,
   podeRolarAmeacas, onRolarAmeacas, onOrdenar, onComecar, podeComecar,
 }) {
@@ -95,7 +95,13 @@ export default function Hud({
 
       {/* Meio: a mão de cartas (mestre na vez de um agente: só para ver) */}
       <div className={styles.hudMao}>
-        {soVer && <p className={styles.hudAviso}>Vez do jogador: aguardando a ação na tela dos Jogadores</p>}
+        {soVer && (
+          <p className={styles.hudAviso}>
+            {caido
+              ? `${segredo && ator.oculto ? 'Quem está na vez' : ver.nome} está fora de combate: não pode agir. Finalize o turno.`
+              : 'Vez do jogador: aguardando a ação na tela dos Jogadores'}
+          </p>
+        )}
         <MaoDeCartas cartas={cartas} selecionada={cartaId} virada={segredo} soVer={soVer} onJogar={onCarta} />
       </div>
 

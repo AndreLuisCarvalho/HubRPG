@@ -2,12 +2,13 @@
 
 $ouro: #d9a54a;
 
-/* Leque de cartas: sobrepostas, levemente giradas; a do mouse e a em jogo sobem */
+/* Mão de cartas: lado a lado, alinhadas e espaçadas; a do mouse e a em jogo sobem */
 .mao {
-  --lar: clamp(66px, min(9.5dvh, 8vw), 96px);
+  --lar: clamp(72px, min(10.5dvh, 8.5vw), 104px);
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  gap: clamp(8px, 1.2vw, 16px);
   min-width: 0;
   padding: 24px 18px 2px;
   overflow-x: auto;
@@ -26,17 +27,12 @@ $ouro: #d9a54a;
   flex: 0 0 auto;
   width: var(--lar);
   aspect-ratio: 5 / 7;
-  margin-left: calc(var(--lar) * -0.18);
   padding: 0;
   border: 0;
   background: none;
   color: #f2eee6;
   cursor: pointer;
-  transform: rotate(calc(var(--i) * 3deg)) translateY(calc(var(--i) * var(--i) * 1.6px));
-  transform-origin: 50% 120%;
   transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), z-index 0s;
-
-  &:first-child { margin-left: 0; }
 
   &[data-tom='ataque'] { --tom: #c8423a; }
   &[data-tom='teste'] { --tom: #{$ouro}; }
@@ -60,10 +56,6 @@ $ouro: #d9a54a;
     }
   }
 
-  @include celular {
-    margin-left: 4px;
-    transform: none;
-  }
 }
 
 .face {
@@ -134,7 +126,7 @@ $ouro: #d9a54a;
 
 // Verso (mão da ameaça para os jogadores)
 .mao[data-virada] .carta { cursor: default; }
-.mao[data-virada] .carta:hover { transform: rotate(calc(var(--i) * 3deg)); }
+.mao[data-virada] .carta:hover { transform: none; }
 
 .verso {
   display: grid;

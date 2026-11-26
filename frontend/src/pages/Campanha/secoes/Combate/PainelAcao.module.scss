@@ -410,3 +410,29 @@
 
   input { accent-color: var(--cor); }
 }
+/* ---------- Usar item: o inventário em leque de cartas ---------- */
+.maoDeItens {
+  margin: -6px -8px 0;
+  overflow: hidden;
+
+  // As cartas do painel são um pouco menores que as da mão
+  > div { --lar: 70px; padding-top: 22px; justify-content: flex-start; }
+}
+
+.detalheItem {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-left: 3px solid #3f9d63;
+  background: rgba(63, 157, 99, 0.08);
+
+  b { font-size: 0.95rem; }
+}
+
+.listaItem {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0 0 0 16px;
+  font-size: 0.85rem;
+}

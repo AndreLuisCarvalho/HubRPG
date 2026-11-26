@@ -123,6 +123,10 @@ $manchas: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' widt
   &[data-vez] { z-index: 2; transform: translateY(-8px) scale(1.1); }
   &[data-lado='ameacas'][data-vez] { transform: translateY(8px) scale(1.1); }
   &[data-oculto] { opacity: 0.55; }
+
+  // A carta com o mouse (e a dica dela) fica por cima de tudo no campo: a outra fileira,
+  // a faixa "Escolha o alvo" e a legenda. Vem depois do [data-vez] para valer também na carta da vez.
+  &:hover, &:focus-within { z-index: 7; }
 }
 
 .movel { position: relative; display: grid; justify-items: center; gap: 4px; }
