@@ -8,6 +8,10 @@ import Inspecao from './Inspecao';
 import LogCombate from './LogCombate';
 import PainelAcao from './PainelAcao';
 import IconeArma from './IconeArma';
+import PedidoDeReacao from './PedidoDeReacao';
+import EscolherFundoDoCombate from './EscolherFundoDoCombate';
+import { cenarioDe } from './cenarios';
+import { pedidoVivo } from './reacao';
 import OrdemLateral from './OrdemLateral';
 import Palco from './Palco';
 import RelatorioCombate from './RelatorioCombate';
@@ -37,6 +41,7 @@ export default function Arena({
   combate, fichas, sessao, mestre, chaveVisao, erro, onSalvar, onMudarFicha, onVoltar, onExcluir, meuUsuarioId = null,
 }) {
   const [adicionando, setAdicionando] = useState(false);
+  const [escolhendoFundo, setEscolhendoFundo] = useState(false);
   const [atorId, setAtorId] = useState(null);       // quem está na barra de turno (null = o da vez)
   const [inspecionado, setInspecionado] = useState(null);   // ficha rápida aberta no palco
   const [logAberto, setLogAberto] = useState(false);        // gaveta do registro
@@ -427,6 +432,19 @@ export default function Arena({
   // (meuUsuarioId: conta do jogador da campanha, que só age com o agente dele; null = a tela da mesa, qualquer agente)
   const podeControlar = (p) => andamento && (mestre ? p.lado === 'ameacas' : p.lado === 'agentes' && !p.oculto
     && (meuUsuarioId == null || fichas[p.fichaId]?.dono_id === meuUsuarioId));
+  // Reação na hora: uma ameaça atacou um agente desta tela (a do jogador dono, ou a da mesa)
+  const pedido = dados.pedidoReacao;
+  const alvoDoPedido = pedido && vistos.find((p) => p.id === pedido.alvo);
+  const autorDoPedido = pedido && vistos.find((p) => p.id === pedido.autor);
+  const reagirAqui = Boolean(!mestre && pedidoVivo(pedido) && alvoDoPedido && podeControlar(alvoDoPedido));
+  function responderReacao(tipo) {
+    aplicar({
+      mudarDados: (d) => (d.pedidoReacao?.id === pedido.id && !d.pedidoReacao.escolha
+        ? { ...d, pedidoReacao: { ...d.pedidoReacao, escolha: tipo } }
+        : d),
+    });
+  }
+
   // Só quem está de pé age: ameaça derrotada (PV 0) e agente caído (PV 0 ou SAN 0) só passam a vez
   const podeAgirCom = (p) => podeControlar(p) && !foraDeCombate(p);
   // Quem está na barra de turno: o da vez, ou outro que o mestre (ou o jogador) escolheu
@@ -513,6 +531,8 @@ export default function Arena({
       aria-label={`Combate: ${combate.nome}`}
       // Celular: com uma carta em jogo o painel dela toma o lugar da barra do turno
       data-acao={(aba && agindo && !verRelatorio) || undefined}
+      // O cenário dá o tom da barra do turno
+      data-cenario={cenarioDe(dados.fundo)}
     >
       {/* 1 · Topo: timeline de iniciativa */}
       <header className={estilo.topo}>
@@ -547,6 +567,9 @@ export default function Arena({
           >
             <span className={estilo.soLargo}>Registro</span><span aria-hidden="true" className={estilo.soCelular}>☰</span> <b className={estilo.conta}>{contaLog}</b>
           </button>
+          {mestre && !encerrado && (
+            <button type="button" className={estilo.icone} onClick={() => setEscolhendoFundo(true)} title="Fundo do combate" aria-label="Fundo do combate">▨</button>
+          )}
           {mestre && !encerrado && (
             <button type="button" className={estilo.icone} onClick={() => setAdicionando(true)} title="Pôr participantes na luta" aria-label="Pôr participantes na luta">+</button>
           )}
@@ -583,6 +606,8 @@ export default function Arena({
           </div>
         ) : (
           <Palco
+            fundo={dados.fundo}
+            combateId={combate.id}
             participantes={visiveis}
             vez={andamento ? dados.vez : null}
             mestre={mestre}
@@ -638,6 +663,7 @@ export default function Arena({
               aba={aba}
               escolha={carta.escolha}
               itemUid={carta.item}
+              pedidoReacao={dados.pedidoReacao}
               ator={ator}
               mestre={mestre}
               // Jogadores não miram em quem está oculto
@@ -728,6 +754,25 @@ export default function Arena({
       </Modal>
 
       {queda > 0 && <div key={queda} className={estilo.pulsoQueda} aria-hidden="true" />}
+
+      {escolhendoFundo && mestre && (
+        <EscolherFundoDoCombate
+          combateId={combate.id}
+          fundo={dados.fundo}
+          onEscolher={(fundo) => aplicar({ mudarDados: (d) => ({ ...d, fundo }) })}
+          onFechar={() => setEscolhendoFundo(false)}
+        />
+      )}
+
+      {reagirAqui && (
+        <PedidoDeReacao
+          key={pedido.id}
+          pedido={pedido}
+          atacante={autorDoPedido && !autorDoPedido.oculto ? autorDoPedido.ver.nome : 'Algo'}
+          alvo={alvoDoPedido.ver.nome}
+          onResponder={responderReacao}
+        />
+      )}
 
       <Modal aberto={adicionando} onFechar={() => setAdicionando(false)} largura="720px" titulo="Participantes" classeCaixa={styles.caixa}>
         {adicionando && (

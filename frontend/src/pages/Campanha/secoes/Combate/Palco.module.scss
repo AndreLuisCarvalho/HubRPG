@@ -4,8 +4,6 @@ $agentes: #4f8fd6;
 $ameacas: #c8423a;
 $ouro: #d9a54a;
 // Ruído (feTurbulence) para o fundo manchado
-$ruido: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-$manchas: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='500'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 1.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
 
 /* =========================================================
  * Campo de duelo: ameaças em cima, divisa no meio, agentes embaixo
@@ -30,25 +28,7 @@ $manchas: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' widt
   }
 }
 
-// Fundo: escuro, com sangue nas bordas e granulado
-.fundo {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    $ruido,
-    $manchas center / cover,
-    radial-gradient(ellipse at 50% 0%, rgba(200, 66, 58, 0.45), transparent 55%),
-    radial-gradient(ellipse at 50% 100%, rgba(79, 143, 214, 0.28), transparent 55%),
-    radial-gradient(ellipse at 50% 50%, #3a0c09 0%, #1c0706 55%, #0c0303 100%);
-  background-blend-mode: overlay, multiply, normal, normal, normal;
-  animation: respirar 9s ease-in-out infinite alternate;
-}
-
-@keyframes respirar {
-  from { filter: brightness(0.92) saturate(0.95); }
-  to { filter: brightness(1.06) saturate(1.1); }
-}
+// O fundo (cenário ou imagem) é o FundoDoCombate, atrás de tudo
 
 .fileira {
   display: flex;
@@ -465,6 +445,6 @@ $manchas: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' widt
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fundo, .face, .golpe, .banner, .dicaMira, .barra b { animation: none !important; }
+  .face, .golpe, .banner, .dicaMira, .barra b { animation: none !important; }
   .carta { transition: none; }
 }

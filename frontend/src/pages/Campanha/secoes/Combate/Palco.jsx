@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ELEMENTOS } from '../../../../sistemas/ordemParanormal/modelo';
 import Contador from './Contador';
+import FundoDoCombate from './FundoDoCombate';
 import { condicaoPorId } from './condicoes';
 import { estadoAproximado, marcaDe } from './regrasCombate';
 import styles from './Palco.module.scss';
@@ -14,7 +15,7 @@ const semMovimento = () => window.matchMedia?.('(prefers-reduced-motion: reduce)
  */
 export default function Palco({
   participantes, vez, mestre, preparando, mirando, alvos, selecionado, golpes, legenda, ultimoAtaque, inspecao,
-  onEscolher, onIniciativa,
+  onEscolher, onIniciativa, fundo = null, combateId,
 }) {
   const cartas = useRef(new Map());
   const visto = useRef(ultimoAtaque?.id);
@@ -71,7 +72,7 @@ export default function Palco({
 
   return (
     <div className={styles.palco} data-mirando={mirando || undefined}>
-      <div className={styles.fundo} aria-hidden="true" />
+      <FundoDoCombate fundo={fundo} combateId={combateId} />
       {legenda && !mirando && <p key={legenda.id} className={styles.banner} data-tom={legenda.carimbo ?? undefined}>{legenda.mostrar}</p>}
       {mirando && <p className={styles.dicaMira}>Escolha o alvo</p>}
 

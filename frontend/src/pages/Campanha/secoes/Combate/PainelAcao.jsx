@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Seletor from '../../../../components/Seletor/Seletor';
 import { useRolagem } from '../../../../components/Dados/rolagem';
 import { lerFormula, rolarDanos, rolarTeste } from '../../../../components/Dados/formula';
@@ -13,6 +13,7 @@ import { CONDICOES, DURACOES, condicaoPorId } from './condicoes';
 import { dtDoItem, efeitoDoItem, iconeDoItem, itensUsaveis, rotuloDaDt, usosRestantes } from './itensEmCombate';
 import MaoDeCartas from './MaoDeCartas';
 import { novoId } from './regrasCombate';
+import { FOLGA_DA_REACAO, SEGUNDOS_DE_REACAO, useContagem } from './reacao';
 import styles from './PainelAcao.module.scss';
 
 /**
@@ -414,9 +415,31 @@ const detalheDoDano = (calculo) => calculo.linhas
   .concat(calculo.bloqueado ? [`bloqueio −${calculo.bloqueado}`] : [])
   .join(' + ');
 
+// Quem atacou espera a reação do jogador: contagem e, para o mestre, responder no lugar dele
+function EsperaDaReacao({ chave, nome, esquiva, bloqueio, onResponder, onCancelar }) {
+  const faltam = useContagem(chave);
+  return (
+    <div className={styles.espera} role="status" aria-live="polite">
+      <div className={styles.esperaTopo}>
+        <span>Aguardando a reação de <b>{nome}</b>…</span>
+        <strong>{faltam}s</strong>
+      </div>
+      <i className={styles.esperaBarra} style={{ '--total': `${SEGUNDOS_DE_REACAO}s` }} key={chave} />
+      <div className={styles.esperaBotoes}>
+        <small>Responder por {nome}:</small>
+        {esquiva != null && <button type="button" onClick={() => onResponder('esquiva')}>Esquiva +{esquiva}</button>}
+        {bloqueio != null && <button type="button" onClick={() => onResponder('bloqueio')}>Bloqueio RD {bloqueio}</button>}
+        <button type="button" onClick={() => onResponder('nenhuma')}>Toma</button>
+        <button type="button" className={styles.esperaCancelar} onClick={onCancelar}>Cancelar ataque</button>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Atacar ---------- */
 function AbaAtaque({
   ator, participantes, fichas, livro, rodada, base, mestre, alvoIds, setAlvoIds, aplicar, mudarRecursos, onFechar, escolha,
+  pedidoReacao,
 }) {
   const { rolar } = useRolagem();
   const ataques = ataquesDe(base);
@@ -427,6 +450,8 @@ function AbaAtaque({
   const [ajuste, setAjuste] = useState('');
   const [rolado, setRolado] = useState(null);
   const [dano, setDano] = useState(null);
+  // Pedido de reação mandado ao jogador do alvo: { id, alvoId } enquanto espera a resposta
+  const [esperando, setEsperando] = useState(null);
 
   const ataque = ataques.find((a) => a.id === ataqueId) ?? ataques[0];
   const alvoId = alvoIds[0];
@@ -440,16 +465,67 @@ function AbaAtaque({
   const jaReagiu = alvo?.reacao === rodada;
   const escondido = secreto(alvo, mestre);
 
-  if (!ataques.length) {
-    return (
-      <p className={styles.vazio}>
-        {ator.ver.nome} não tem ataques na ficha. Use o dano à mão na carta, ou cadastre os ataques na ficha.
-      </p>
-    );
+  // Reações que valem contra este ataque (Bloqueio só corpo a corpo)
+  const podeEsquivar = Boolean(reacoes.esquiva) && !jaReagiu;
+  const podeBloquear = Boolean(reacoes.bloqueio) && !jaReagiu && ataque?.corpo !== false;
+  // Ameaça atacando agente que pode reagir: quem decide é o jogador (na tela dele, com tempo)
+  const perguntaAoJogador = ator.lado !== 'agentes' && alvo?.lado === 'agentes' && (podeEsquivar || podeBloquear);
+
+  // A resposta chegou (ou o mestre respondeu por ele, ou o tempo acabou): rola o ataque com ela
+  const respondida = esperando && pedidoReacao?.id === esperando.id ? pedidoReacao.escolha : null;
+  useEffect(() => {
+    if (respondida) rolarAtaque(respondida, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reage só à resposta
+  }, [respondida]);
+
+  useEffect(() => {
+    if (!esperando) return undefined;
+    // Folga além do tempo do jogador (a contagem dele começa quando o pedido chega na tela dele):
+    // a resposta do último instante ainda chega antes daqui
+    const fim = setTimeout(() => rolarAtaque('nenhuma', true, true), (SEGUNDOS_DE_REACAO + FOLGA_DA_REACAO) * 1000);
+    return () => clearTimeout(fim);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- um prazo por pedido
+  }, [esperando?.id]);
+
+  function pedirReacao() {
+    if (!ataque || !alvo) return;
+    const id = novoId();
+    setEsperando({ id, alvoId: alvo.id });
+    aplicar({
+      mudarDados: (d) => ({
+        ...d,
+        pedidoReacao: {
+          id,
+          criado: Date.now(),
+          autor: ator.id,
+          alvo: alvo.id,
+          ataque: ataque.nome,
+          arma: ataque.arma ?? null,
+          esquiva: podeEsquivar ? reacoes.esquiva.bonus : null,
+          bloqueio: podeBloquear ? reacoes.bloqueio.rd : null,
+          escolha: null,
+        },
+      }),
+    });
   }
 
-  function rolarAtaque() {
+  // O mestre responde no lugar do jogador (ou desiste de esperar)
+  function responderPeloJogador(tipo) {
+    rolarAtaque(tipo, true);
+  }
+
+  /*
+   * tipo: a reação escolhida (senão, a marcada no painel); doPedido: fecha o pedido aberto;
+   * semResposta: o tempo acabou e o jogador não respondeu
+   */
+  function rolarAtaque(tipo = reacao, doPedido = false, semResposta = false) {
     if (!ataque || !alvo) return;
+    if (doPedido) {
+      if (!esperando) return;
+      setEsperando(null);
+      setReacao(tipo);
+    }
+    const reacao = tipo;
     const formula = comAjuste(ataque.formula, Number(ajuste) || 0);
     const teste = rolarTeste(lerFormula(formula));
     const esquiva = reacao === 'esquiva' && reacoes.esquiva ? reacoes.esquiva.bonus : 0;
@@ -472,7 +548,8 @@ function AbaAtaque({
       estilo: ator.ver.estilo,
     });
 
-    const reagiu = reacao !== 'nenhuma' ? ` (${reacao})` : '';
+    let reagiu = reacao !== 'nenhuma' ? ` (${reacao})` : '';
+    if (doPedido && reacao === 'nenhuma') reagiu = semResposta ? ' (não reagiu a tempo)' : ' (tomou o golpe)';
     // A rolagem no registro: "21 (1d20+5, d20 16)"; os jogadores veem a dos agentes, nunca a Defesa das ameaças
     const rolagem = `${teste.total} (${formula}, d20 ${teste.natural})`;
     const texto = `${ator.ver.nome} atacou ${alvo.ver.nome} com ${ataque.nome}: ${rolagem} contra Defesa ${defesa}${reagiu}.`;
@@ -483,10 +560,19 @@ function AbaAtaque({
       entradas: [[texto, jogadores, 'ataque', critico ? 'critico' : acertou ? 'acerto' : 'falha', {
         autor: ator.id, alvo: alvo.id, resultado: critico ? 'critico' : acertou ? 'acerto' : 'falha',
       }]],
-      mudarDados: (d) => (reacao === 'nenhuma' ? d : {
-        ...d, participantes: d.participantes.map((p) => (p.id === alvo.id ? { ...p, reacao: rodada } : p)),
-      }),
+      mudarDados: (d) => {
+        const { pedidoReacao: _pedido, ...semPedido } = d;   // o pedido (se houve) se fecha aqui
+        return reacao === 'nenhuma' ? semPedido : {
+          ...semPedido, participantes: d.participantes.map((p) => (p.id === alvo.id ? { ...p, reacao: rodada } : p)),
+        };
+      },
     });
+  }
+
+  // Desistir do ataque enquanto espera: o pedido some da tela do jogador
+  function cancelarPedido() {
+    setEsperando(null);
+    aplicar({ mudarDados: ({ pedidoReacao: _pedido, ...d }) => d });
   }
 
   function rolarDano() {
@@ -519,6 +605,14 @@ function AbaAtaque({
     const deltas = { pv: -(Number(dano.pv) || 0), san: -(Number(dano.san) || 0) };
     aplicar(mudarRecursos(alvo, deltas, detalheDoDano(dano.calculo), ator.id));
     onFechar();
+  }
+
+  if (!ataques.length) {
+    return (
+      <p className={styles.vazio}>
+        {ator.ver.nome} não tem ataques na ficha. Use o dano à mão na carta, ou cadastre os ataques na ficha.
+      </p>
+    );
   }
 
   return (
@@ -569,7 +663,7 @@ function AbaAtaque({
         )}
       </div>
 
-      {(reacoes.esquiva || reacoes.bloqueio) && !resultado && (
+      {(reacoes.esquiva || reacoes.bloqueio) && !resultado && !perguntaAoJogador && (
         <div className={styles.campo}>
           <span>Reação de {alvo.ver.nome}{jaReagiu ? ' (já reagiu nesta rodada)' : ''}</span>
           <div className={styles.segmentos} role="radiogroup" aria-label="Reação">
@@ -588,13 +682,32 @@ function AbaAtaque({
         </div>
       )}
 
-      {!resultado && (
+      {!resultado && esperando && (
+        <EsperaDaReacao
+          chave={esperando.id}
+          nome={alvo?.ver.nome ?? 'o alvo'}
+          esquiva={podeEsquivar ? reacoes.esquiva.bonus : null}
+          bloqueio={podeBloquear ? reacoes.bloqueio.rd : null}
+          onResponder={responderPeloJogador}
+          onCancelar={cancelarPedido}
+        />
+      )}
+
+      {!resultado && !esperando && (
         <div className={styles.rodape}>
           {mestre && <Numero rotulo="Ajuste no teste" valor={ajuste} onMudar={setAjuste} />}
-          <button type="button" className={styles.grande} onClick={rolarAtaque} disabled={!ataque || !alvo}>
+          <button
+            type="button"
+            className={styles.grande}
+            onClick={() => (perguntaAoJogador ? pedirReacao() : rolarAtaque())}
+            disabled={!ataque || !alvo}
+          >
             {alvo ? `Atacar ${alvo.ver.nome}` : 'Escolha o alvo'}
           </button>
         </div>
+      )}
+      {!resultado && !esperando && perguntaAoJogador && (
+        <small className={styles.ajuda}>{alvo.ver.nome} vai escolher se esquiva, bloqueia ou toma o golpe ({SEGUNDOS_DE_REACAO} s).</small>
       )}
 
       {resultado && (

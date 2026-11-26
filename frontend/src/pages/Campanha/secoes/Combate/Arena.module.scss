@@ -761,6 +761,63 @@ $sangue: #b3261c;
   min-width: 0;
 }
 
+/*
+ * A barra do turno (e o topo) no tom do cenário do combate. A borda de cima continua dizendo de que
+ * lado é a vez (azul agentes, vermelho ameaças); o fundo ganha a cor e a textura do lugar.
+ */
+.arena[data-cenario='galpao'] {
+  > .hud, > .topo {
+    border-color: #3a3125;
+    background:
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.22) 0 2px, transparent 2px 46px),
+      radial-gradient(ellipse at 15% 100%, rgba(150, 80, 30, 0.22), transparent 55%),
+      linear-gradient(180deg, rgba(255, 210, 130, 0.07), transparent 60%),
+      #1b1814;
+  }
+}
+
+.arena[data-cenario='floresta'] {
+  > .hud, > .topo {
+    border-color: #1f3229;
+    background:
+      radial-gradient(ellipse at 80% 0%, rgba(170, 195, 190, 0.1), transparent 55%),
+      radial-gradient(ellipse at 10% 100%, rgba(40, 90, 60, 0.25), transparent 60%),
+      #0d1613;
+  }
+}
+
+.arena[data-cenario='ritual'] {
+  > .hud, > .topo {
+    border-color: #35214a;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(162, 75, 255, 0.16), transparent 60%),
+      radial-gradient(ellipse at 50% 120%, rgba(255, 150, 60, 0.08), transparent 60%),
+      #120a18;
+  }
+}
+
+.arena[data-cenario='chuva'] {
+  > .hud, > .topo {
+    border-color: #1f2a38;
+    background:
+      repeating-linear-gradient(100deg, transparent 0 18px, rgba(180, 200, 230, 0.04) 18px 19px, transparent 19px 34px),
+      radial-gradient(ellipse at 12% 0%, rgba(255, 196, 110, 0.1), transparent 50%),
+      #0e141c;
+  }
+}
+
+.arena[data-cenario='imagem'] {
+  > .hud, > .topo {
+    background: rgba(16, 17, 20, 0.88);
+    backdrop-filter: blur(6px);
+  }
+}
+
+// A borda de cima da barra continua com a cor de quem está na vez
+.arena[data-cenario] > .hud { border-top-color: $agentes; }
+.arena[data-cenario] > .hud[data-lado='ameacas'] { border-top-color: $ameacas; }
+.arena[data-cenario] > .hud[data-modo='preparo'] { border-top-color: $ouro; }
+
 .hudAviso {
   justify-self: center;
   margin: 0;

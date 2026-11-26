@@ -1,0 +1,356 @@
+/* =========================================================
+ * Fundos do campo de duelo. Tudo fica atrás das cartas e escuro o bastante para elas lerem bem.
+ * Cada cenário são camadas absolutas (CSS/SVG), com movimento lento.
+ * ========================================================= */
+$ruido: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+$manchas: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='500'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 1.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+
+.fundo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: #0b0b0d;
+
+  > i, > span, > svg { position: absolute; display: block; pointer-events: none; }
+
+  // Imagem enviada: um pouco escurecida, para as cartas aparecerem
+  > img { filter: brightness(0.72); }
+}
+
+// Escurece as bordas (comum a todos)
+.vinheta {
+  inset: 0;
+  z-index: 5;
+  background:
+    $ruido,
+    radial-gradient(ellipse at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.7) 100%);
+  background-blend-mode: overlay, normal;
+  opacity: 0.9;
+}
+
+/* ---------- Padrão: sangue ---------- */
+.sangue {
+  inset: 0;
+  background:
+    $manchas center / cover,
+    radial-gradient(ellipse at 50% 0%, rgba(200, 66, 58, 0.45), transparent 55%),
+    radial-gradient(ellipse at 50% 100%, rgba(79, 143, 214, 0.28), transparent 55%),
+    radial-gradient(ellipse at 50% 50%, #3a0c09 0%, #1c0706 55%, #0c0303 100%);
+  background-blend-mode: multiply, normal, normal, normal;
+  animation: respirar 9s ease-in-out infinite alternate;
+}
+
+@keyframes respirar {
+  from { filter: brightness(0.92) saturate(0.95); }
+  to { filter: brightness(1.06) saturate(1.1); }
+}
+
+/* ---------- Galpão abandonado ---------- */
+.galpaoParede {
+  inset: 0;
+  background:
+    // Tábuas de metal na parede
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.35) 0 2px, transparent 2px 64px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 30px, transparent 30px 64px),
+    // Ferrugem
+    radial-gradient(ellipse at 20% 70%, rgba(140, 70, 30, 0.28), transparent 45%),
+    radial-gradient(ellipse at 85% 30%, rgba(120, 60, 25, 0.22), transparent 40%),
+    linear-gradient(180deg, #1b1916 0%, #23201b 55%, #14120f 100%);
+}
+
+.galpaoTeto {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 34%;
+  fill: none;
+  stroke: #0a0908;
+  stroke-width: 7;
+  opacity: 0.95;
+}
+
+.galpaoChao {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 26%;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(240, 200, 120, 0.12), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 18px),
+    linear-gradient(180deg, #1a1712, #0d0c0a);
+  border-top: 1px solid rgba(0, 0, 0, 0.6);
+}
+
+// Lâmpada pendurada balançando, com o cone de luz
+.lampada {
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 22%;
+  background: #050505;
+  transform-origin: top center;
+  animation: balancar 5.5s ease-in-out infinite alternate;
+
+  &::after {   // a cúpula
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: -11px;
+    width: 24px;
+    height: 12px;
+    border-radius: 12px 12px 3px 3px;
+    background: #2b2a26;
+    box-shadow: 0 6px 10px rgba(255, 214, 140, 0.8);
+  }
+
+  i {   // o cone de luz
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 520px;
+    height: 520px;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse at 50% 0%, rgba(255, 210, 130, 0.22), rgba(255, 210, 130, 0.06) 40%, transparent 65%);
+    clip-path: polygon(48% 0, 52% 0, 100% 100%, 0 100%);
+    animation: piscarLampada 7s steps(1) infinite;
+  }
+}
+
+@keyframes balancar {
+  from { transform: rotate(-6deg); }
+  to { transform: rotate(6deg); }
+}
+
+@keyframes piscarLampada {
+  0%, 46%, 50%, 100% { opacity: 1; }
+  47%, 49% { opacity: 0.35; }
+}
+
+// Poeira subindo devagar
+.poeira {
+  inset: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20% 30%, rgba(255, 230, 190, 0.5), transparent),
+    radial-gradient(1px 1px at 60% 55%, rgba(255, 230, 190, 0.45), transparent),
+    radial-gradient(1.5px 1.5px at 75% 20%, rgba(255, 230, 190, 0.4), transparent),
+    radial-gradient(1px 1px at 40% 75%, rgba(255, 230, 190, 0.35), transparent),
+    radial-gradient(1px 1px at 88% 65%, rgba(255, 230, 190, 0.4), transparent);
+  background-size: 300px 300px;
+  animation: poeira 26s linear infinite;
+  opacity: 0.8;
+}
+
+@keyframes poeira { to { background-position: 40px -300px; } }
+
+/* ---------- Floresta à noite ---------- */
+.fundo[data-cena='floresta'] {
+  background: linear-gradient(180deg, #08111a 0%, #0c1a1e 45%, #0a1410 100%);
+}
+
+.lua {
+  top: 9%;
+  right: 14%;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #f1ead3, #c9c0a2);
+  box-shadow: 0 0 40px 12px rgba(210, 220, 200, 0.22), 0 0 140px 50px rgba(150, 180, 190, 0.12);
+  opacity: 0.85;
+}
+
+.arvoresFundo {
+  right: 0;
+  bottom: 18%;
+  left: 0;
+  width: 100%;
+  height: 45%;
+  fill: #0a1613;
+  opacity: 0.9;
+}
+
+.arvoresFrente {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: #030605;
+  stroke: #030605;
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+
+.neblina {
+  right: -50%;
+  bottom: 0;
+  left: -50%;
+  height: 40%;
+  background:
+    radial-gradient(ellipse 30% 60% at 20% 70%, rgba(170, 195, 190, 0.18), transparent 70%),
+    radial-gradient(ellipse 25% 50% at 55% 80%, rgba(170, 195, 190, 0.16), transparent 70%),
+    radial-gradient(ellipse 30% 55% at 85% 75%, rgba(170, 195, 190, 0.15), transparent 70%);
+  filter: blur(6px);
+  animation: neblina 38s linear infinite alternate;
+}
+
+.neblina2 { bottom: 8%; opacity: 0.7; animation-duration: 52s; animation-direction: alternate-reverse; }
+
+@keyframes neblina {
+  from { transform: translateX(-8%); }
+  to { transform: translateX(8%); }
+}
+
+/* ---------- Círculo ritual ---------- */
+.fundo[data-cena='ritual'] {
+  background: radial-gradient(ellipse at 50% 70%, #1a0b22 0%, #0d0611 50%, #050306 100%);
+}
+
+.ritualBrilho {
+  right: 0;
+  bottom: -10%;
+  left: 0;
+  height: 70%;
+  background: radial-gradient(ellipse 45% 40% at 50% 60%, rgba(162, 75, 255, 0.32), transparent 70%);
+  animation: pulsoRitual 4s ease-in-out infinite alternate;
+}
+
+// O círculo deitado no chão (perspectiva), girando bem devagar
+.circulo {
+  bottom: 4%;
+  left: 50%;
+  width: min(90%, 620px);
+  aspect-ratio: 1;
+  translate: -50% 0;
+  transform: perspective(600px) rotateX(68deg);
+  transform-origin: 50% 100%;
+  fill: none;
+  stroke: #c58bff;
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 6px rgba(197, 139, 255, 0.9));
+  opacity: 0.7;
+  animation: pulsoRitual 4s ease-in-out infinite alternate;
+}
+
+@keyframes pulsoRitual {
+  from { opacity: 0.45; }
+  to { opacity: 0.85; }
+}
+
+.vela {
+  bottom: 14%;
+  width: 8px;
+  height: 26px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #e8dcc0, #9c8f74);
+
+  i {   // a chama
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    width: 8px;
+    height: 14px;
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    background: radial-gradient(ellipse at 50% 75%, #fff4c8, #ffb347 55%, rgba(255, 120, 40, 0) 75%);
+    box-shadow: 0 0 18px 6px rgba(255, 170, 70, 0.35);
+    transform: translateX(-50%);
+    transform-origin: 50% 100%;
+    animation: chama 0.9s ease-in-out infinite alternate;
+    animation-delay: var(--atraso);
+  }
+}
+
+@keyframes chama {
+  from { transform: translateX(-50%) scale(1, 1) rotate(-3deg); }
+  to { transform: translateX(-50%) scale(0.85, 1.15) rotate(4deg); }
+}
+
+/* ---------- Rua sob chuva ---------- */
+.ceuChuva {
+  inset: 0;
+  background: linear-gradient(180deg, #0a1018 0%, #111a26 55%, #0b0f15 100%);
+}
+
+.predios {
+  right: 0;
+  bottom: 22%;
+  left: 0;
+  width: 100%;
+  height: 48%;
+  fill: #06090d;
+}
+
+// Algumas janelas acesas
+.janelas {
+  right: 0;
+  bottom: 30%;
+  left: 0;
+  height: 30%;
+  background-image:
+    radial-gradient(3px 4px at 12% 40%, rgba(255, 210, 120, 0.7), transparent),
+    radial-gradient(3px 4px at 27% 60%, rgba(255, 210, 120, 0.5), transparent),
+    radial-gradient(3px 4px at 48% 25%, rgba(180, 210, 255, 0.5), transparent),
+    radial-gradient(3px 4px at 63% 55%, rgba(255, 210, 120, 0.6), transparent),
+    radial-gradient(3px 4px at 84% 45%, rgba(255, 210, 120, 0.45), transparent);
+}
+
+.poste {
+  bottom: 18%;
+  left: 12%;
+  width: 6px;
+  height: 64%;
+  background: #05070a;
+
+  &::before {   // o braço e a luminária
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 46px;
+    height: 6px;
+    background: #05070a;
+    box-shadow: 40px 4px 0 0 #1d1d1a;
+  }
+
+  i {   // o cone de luz amarela
+    position: absolute;
+    top: 10px;
+    left: 44px;
+    width: 340px;
+    height: 120%;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse at 50% 0%, rgba(255, 196, 110, 0.28), rgba(255, 196, 110, 0.06) 45%, transparent 70%);
+    clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+  }
+}
+
+// Asfalto molhado: reflexo do poste e das janelas
+.asfalto {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 22%;
+  background:
+    radial-gradient(ellipse 12% 80% at 17% 0%, rgba(255, 196, 110, 0.25), transparent 70%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 9px),
+    linear-gradient(180deg, #10161e, #06080b);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.chuva {
+  inset: -20% 0 0;
+  background-image: repeating-linear-gradient(
+    100deg,
+    transparent 0 14px,
+    rgba(180, 200, 230, 0.22) 14px 15px,
+    transparent 15px 40px
+  );
+  background-size: 120px 120px;
+  animation: chover 0.5s linear infinite;
+}
+
+.chuva2 { opacity: 0.6; background-size: 80px 80px; animation-duration: 0.7s; }
+
+@keyframes chover { to { background-position: -20px 120px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sangue, .lampada, .lampada i, .poeira, .neblina, .ritualBrilho, .circulo, .vela i, .chuva { animation: none; }
+}
