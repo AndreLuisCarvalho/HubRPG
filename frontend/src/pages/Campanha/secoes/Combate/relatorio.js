@@ -48,6 +48,8 @@ export function montarRelatorio(dados, vistos) {
 
   return {
     vitoria: dados.vitoria?.palavra ?? null,
+    derrota: dados.derrota?.palavra ?? null,
+    caidos: dados.derrota?.caidos ?? [],
     rodadas: dados.rodada || 0,
     inicio: dados.inicio ?? null,
     fim: Date.now(),
@@ -74,6 +76,13 @@ export function relatorioPara(relatorio, mestre) {
     participantes: relatorio.participantes.filter((p) => !p.oculto),
     momentos: relatorio.momentos.filter((m) => m.textoJogadores).map((m) => ({ ...m, texto: m.textoJogadores })),
   };
+}
+
+/** Derrota: "tombou pelas mãos de Capanga" / "enlouqueceu diante de algo que ninguém viu" */
+export function textoDaQueda(c, mestre) {
+  if (!c.por) return c.como === 'enlouqueceu' ? 'perdeu a sanidade' : 'tombou';
+  const verbo = c.como === 'enlouqueceu' ? 'enlouqueceu diante de' : 'tombou pelas mãos de';
+  return `${verbo} ${c.porOculto && !mestre ? 'algo que ninguém viu' : c.por}`;
 }
 
 /** Destaques: quem mais causou dano, quem mais sofreu e quem mais acertou crítico (só agentes) */

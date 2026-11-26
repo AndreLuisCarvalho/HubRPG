@@ -1,4 +1,4 @@
-import { destaquesDo, duracao } from './relatorio';
+import { destaquesDo, duracao, textoDaQueda } from './relatorio';
 import styles from './Relatorio.module.scss';
 
 /**
@@ -32,8 +32,26 @@ export default function RelatorioCombate({ relatorio, mestre, nome, sessao, comp
             tempo,
           ].filter(Boolean).join(' · ')}
         </p>
-        <span className={styles.carimbo} data-vitoria={relatorio.vitoria ? true : undefined} aria-hidden="true">{relatorio.vitoria ?? 'Encerrado'}</span>
+        <span
+          className={styles.carimbo}
+          data-vitoria={relatorio.vitoria ? true : undefined}
+          data-derrota={relatorio.derrota ? true : undefined}
+          aria-hidden="true"
+        >
+          {relatorio.vitoria ?? relatorio.derrota ?? 'Encerrado'}
+        </span>
       </header>
+
+      {relatorio.derrota && relatorio.caidos?.length > 0 && (
+        <section>
+          <h3>Agentes perdidos</h3>
+          <ul className={styles.perdidos}>
+            {relatorio.caidos.map((c) => (
+              <li key={c.id}><b>{c.nome}</b> {textoDaQueda(c, mestre)}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className={styles.saldo}>
         <div><b>{relatorio.rodadas}</b><span>Rodadas</span></div>

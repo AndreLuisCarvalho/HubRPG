@@ -5,6 +5,8 @@
  */
 import { lerCritico, lerFormula } from '../../../../components/Dados/formula';
 import { danosDe, nomeDoTipo, partesParaRolar, tipoDaPalavra } from '../../../../sistemas/ordemParanormal/danos';
+import { ITENS } from '../../../../sistemas/ordemParanormal/itens';
+import { itensUsaveis } from './itensEmCombate';
 import { PERICIAS } from '../../../../sistemas/ordemParanormal/modelo';
 import {
   bonusPericia, calcularBloqueio, calcularEsquiva, custoDoRitual, dadosDoTeste, dtDeRituais, ehMonstro, ehNpcSimples,
@@ -54,7 +56,9 @@ const corpoACorpo = (alcance) => {
 export function ataquesDe(base) {
   const { tipo, dados } = base;
   if (!dados) return [];
-  const lista = tipo === 'npc' ? dados.npc?.ataques ?? [] : dados.ataques ?? [];
+  const cadastrados = tipo === 'npc' ? dados.npc?.ataques ?? [] : dados.ataques ?? [];
+  // Agente: as armas do inventário também atacam (as que já não têm um ataque com o mesmo nome)
+  const lista = tipo === 'agente' ? [...cadastrados, ...armasDoInventario(dados, cadastrados)] : cadastrados;
   return lista.flatMap((a, i) => {
     const partes = partesParaRolar(danosDe(a, dados.elemento));
     if (!a.nome && !partes.length && !a.teste) return [];
@@ -81,6 +85,33 @@ export function ataquesDe(base) {
       critico: lerCritico(a.critico ?? a.especial),
       corpo,
       testePadrao,
+    }];
+  });
+}
+
+// Letra do tipo de dano do livro → tipo do dano
+const DANO_DO_LIVRO = { C: 'corte', I: 'impacto', P: 'perfuracao', B: 'balistico', F: 'fogo' };
+
+/**
+ * Armas do inventário no formato de ataque da ficha. Vale a arma do livro (item.arma) e a do
+ * catálogo da campanha que não deixou ataque na ficha. "1d8/1d10" (uma ou duas mãos): a primeira.
+ * Arma corpo a corpo que pode ser arremessada (Faca, Lança) ataca com Luta.
+ */
+function armasDoInventario(dados, cadastrados) {
+  const nomes = new Set(cadastrados.map((a) => (a.nome ?? '').trim().toLowerCase()));
+  return (dados.inventario ?? []).flatMap((item) => {
+    const arma = item.arma ?? ITENS[item.id]?.arma;
+    if (!arma || nomes.has((item.nome ?? '').trim().toLowerCase())) return [];
+    const arremesso = arma.alcance && /arremess/i.test(item.descricao ?? ITENS[item.id]?.descricao ?? '');
+    let alcance = arma.alcance ?? 'Corpo a corpo';
+    if (arremesso) alcance = `Corpo a corpo · arremesso ${arma.alcance.toLowerCase()}`;
+    return [{
+      id: `inv:${item.uid}`,
+      nome: item.nome,
+      teste: '',
+      danos: [{ formula: String(arma.dano).split('/')[0], tipo: DANO_DO_LIVRO[arma.tipoDano] ?? '' }],
+      critico: arma.critico,
+      alcance,
     }];
   });
 }
@@ -306,7 +337,7 @@ export function cartasDaMao(ator, fichas, livro, mestre) {
   }
   cartas.push({ id: 'teste', aba: 'teste', tipo: 'Teste', nome: 'Perícia', detalhe: 'rolar um teste', icone: '⚄', tom: 'teste' });
   if (base.tipo === 'agente') {
-    const n = base.dados?.inventario?.length ?? 0;
+    const n = itensUsaveis(base.dados).length;   // as armas ficam nas cartas de ataque
     cartas.push({
       id: 'outros:item', aba: 'outros', escolha: 'item', tipo: 'Item', nome: 'Usar item',
       detalhe: n ? `${n} no inventário` : 'inventário vazio', icone: '✚', tom: 'item',

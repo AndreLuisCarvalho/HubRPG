@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Seletor from '../../../../components/Seletor/Seletor';
 import { useRolagem } from '../../../../components/Dados/rolagem';
 import { lerFormula, rolarDanos, rolarTeste } from '../../../../components/Dados/formula';
-import { lerDanos, partesParaRolar } from '../../../../sistemas/ordemParanormal/danos';
+import { lerDanos, nomeDoTipo, partesParaRolar } from '../../../../sistemas/ordemParanormal/danos';
 import { ELEMENTOS } from '../../../../sistemas/ordemParanormal/modelo';
 import { custoParanormal } from '../../../../sistemas/ordemParanormal/regras';
 import {
@@ -10,6 +10,8 @@ import {
   periciasDe, reacoesDe, rituaisDe,
 } from './acoesCombate';
 import { CONDICOES, DURACOES, condicaoPorId } from './condicoes';
+import { dtDoItem, efeitoDoItem, iconeDoItem, itensUsaveis, rotuloDaDt, usosRestantes } from './itensEmCombate';
+import MaoDeCartas from './MaoDeCartas';
 import { novoId } from './regrasCombate';
 import styles from './PainelAcao.module.scss';
 
@@ -67,77 +69,231 @@ function AbaOutros(props) {
 
 const ACOES_LIVRES = ['Padrão', 'Movimento', 'Completa', 'Livre', 'Reação'];
 
-// Usar um item do inventário: registra; se curar ou ferir, aplica no alvo; pode gastar o item
-function AbaItem({ ator, participantes, base, mestre, alvoIds, setAlvoIds, aplicar, mudarRecursos, onMudarFicha, onFechar }) {
-  const itens = base.tipo === 'agente' ? base.dados?.inventario ?? [] : [];
+/*
+ * Usar um item do inventário (as armas atacam pela carta Atacar). Os itens aparecem em leque de cartas;
+ * os que têm efeito no livro (itensEmCombate) rolam sozinhos: cura, dano com o teste de resistência
+ * de cada alvo contra a DT do item, condição em quem falhar, e o uso é descontado. Os outros ficam
+ * registrados, com dano ou cura à mão se precisar.
+ */
+function AbaItem({
+  ator, participantes, fichas, livro, rodada, vez, base, mestre, alvoIds, setAlvoIds, aplicar, mudarRecursos, onMudarFicha, onFechar,
+}) {
+  const { rolar } = useRolagem();
+  const itens = base.tipo === 'agente' ? itensUsaveis(base.dados) : [];
   const [uid, setUid] = useState(itens[0]?.uid ?? '');
-  const [efeito, setEfeito] = useState('nenhum');   // nenhum | cura | dano
-  const [recurso, setRecurso] = useState('pv');
-  const [valor, setValor] = useState('');
-  const [gastar, setGastar] = useState(false);
+  const [manual, setManual] = useState({ efeito: 'nenhum', recurso: 'pv', valor: '' });
+  const [feito, setFeito] = useState(null);   // resumo do que aconteceu (depois de usar)
   const item = itens.find((i) => i.uid === uid) ?? itens[0];
-  const alvo = participantes.find((p) => p.id === (alvoIds[0] ?? ator.id));
+  const efeito = efeitoDoItem(item);
+  const area = efeito?.alvos === 'varios';
+  // Sem alvo escolhido: o próprio (cicatrizante) ou nenhum (granada)
+  // (na área, quem usa fica de fora: a carta já começa marcando o próprio agente)
+  const alvos = participantes.filter((p) => alvoIds.includes(p.id) && !(area && p.id === ator.id));
+  const alvosOuEu = alvos.length ? alvos : (area ? [] : [ator]);
+  const dt = efeito?.resiste ? dtDoItem(base.dados, efeito.resiste.dt) : null;
+  const usos = item ? usosRestantes(item) : 0;
 
-  if (!itens.length) return <p className={styles.vazio}>{ator.ver.nome} não tem itens no inventário.</p>;
+  if (!itens.length && !feito) {
+    return <p className={styles.vazio}>{ator.ver.nome} não tem itens para usar (as armas ficam na carta Atacar).</p>;
+  }
 
-  function usar() {
-    const n = Math.abs(Number(valor) || 0);
+  const escolherAlvo = (id) => (area
+    ? setAlvoIds(alvoIds.includes(id) ? alvoIds.filter((x) => x !== id) : [...alvoIds, id])
+    : setAlvoIds([id]));
+
+  // Desconta um uso: no último, o item sai do inventário
+  function gastarUso() {
+    if (!ator.fichaId || usos === Infinity) return;
+    const inventario = base.dados.inventario ?? [];
+    onMudarFicha(ator.fichaId, {
+      inventario: usos <= 1
+        ? inventario.filter((i) => i.uid !== item.uid)
+        : inventario.map((i) => (i.uid === item.uid ? { ...i, usos: usos - 1 } : i)),
+    });
+  }
+
+  function usarComEfeito() {
+    const emQuem = alvosOuEu.filter((p) => p.id !== ator.id).map((p) => (p.oculto && !mestre ? 'alguém' : p.ver.nome));
+    const abertura = `${ator.ver.nome} usou ${item.nome}${emQuem.length ? ` em ${emQuem.join(', ')}` : ''}.`;
+    const entradas = [[abertura, ator.oculto ? null : abertura, 'acao']];
+    const efeitos = [];
+    const condicoes = {};   // id do alvo → condição nova
+    const linhas = [];
+
+    // A rolagem do item (uma só para todos os alvos, como numa explosão)
+    const partes = efeito.rolar ? [{ formula: efeito.rolar, rotulo: efeito.tipoDano ? nomeDoTipo(efeito.tipoDano) : 'cura' }] : [];
+    const rolagem = partes.length ? rolarDanos(partes, 1) : null;
+    if (rolagem) {
+      rolar({
+        titulo: item.nome,
+        subtitulo: efeito.efeito === 'cura' ? 'Cura' : 'Dano',
+        partes,
+        tipo: 'dano',
+        resultado: rolagem,
+        estilo: ator.ver.estilo,
+      });
+    }
+
+    for (const alvo of alvosOuEu) {
+      const nome = alvo.ver.nome;
+      // Teste de resistência do alvo contra a DT do item
+      let passou = false;
+      if (efeito.resiste) {
+        const formula = formulaDeResistencia(baseDe(alvo, fichas, livro), efeito.resiste.pericia);
+        const teste = rolarTeste(lerFormula(formula));
+        passou = teste.total >= dt;
+        const pericia = efeito.resiste.pericia.charAt(0).toUpperCase() + efeito.resiste.pericia.slice(1);
+        const texto = `${nome} rolou ${pericia}: ${teste.total} contra DT ${dt} — ${passou ? 'passou' : 'falhou'}.`;
+        entradas.push([texto, alvo.oculto ? null : `${nome} ${passou ? 'resistiu' : 'não resistiu'} (${pericia}).`, 'acao', passou ? 'sucesso' : 'fracasso']);
+      }
+      const anulou = passou && efeito.resiste?.efeito === 'anula';
+
+      if (rolagem && !anulou) {
+        if (efeito.efeito === 'cura') {
+          const r = mudarRecursos(alvo, { pv: rolagem.total }, item.nome, ator.id);
+          efeitos.push(...r.efeitos);
+          entradas.push(...r.entradas);
+          linhas.push(`${nome}: +${rolagem.total} PV`);
+        } else {
+          const calculo = calcularDano(rolagem.partes, defesasContraDano(baseDe(alvo, fichas, livro)), {
+            metade: passou && efeito.resiste?.efeito === 'metade',
+            temSan: temSan(alvo),
+          });
+          const r = mudarRecursos(alvo, { pv: -calculo.pv, san: -calculo.san }, detalheDoDano(calculo), ator.id);
+          efeitos.push(...r.efeitos);
+          entradas.push(...r.entradas);
+          linhas.push(`${nome}: ${calculo.pv} PV${calculo.san ? ` e ${calculo.san} SAN` : ''}${passou ? ' (metade)' : ''}`);
+        }
+      } else if (anulou) {
+        linhas.push(`${nome}: resistiu`);
+      }
+
+      if (efeito.condicao && !passou) {
+        const c = efeito.condicao;
+        condicoes[alvo.id] = { uid: novoId(), id: c.id, desde: rodada, rodadas: c.rodadas, origem: vez };
+        const nomeCondicao = condicaoPorId(c.id)?.nome.toLowerCase() ?? c.id;
+        const texto = `${nome} ficou ${nomeCondicao}${c.rodadas ? ` (${c.rodadas} rodada${c.rodadas > 1 ? 's' : ''})` : ''}.`;
+        entradas.push([texto, alvo.oculto ? null : texto, 'condicao']);
+        if (!rolagem) linhas.push(`${nome}: ${nomeCondicao}`);
+      }
+    }
+
+    gastarUso();
+    aplicar({
+      efeitos,
+      entradas,
+      mudarDados: (d) => (Object.keys(condicoes).length ? {
+        ...d,
+        participantes: d.participantes.map((p) => (condicoes[p.id] ? { ...p, condicoes: [...(p.condicoes ?? []), condicoes[p.id]] } : p)),
+      } : d),
+    });
+    // Guarda o nome: o item gasto sai do inventário antes do resumo aparecer
+    setFeito({ nome: item.nome, total: rolagem?.total ?? null, linhas });
+  }
+
+  // Item sem efeito no livro: registra; dano ou cura à mão, se precisar
+  function usarSemEfeito() {
+    const alvo = alvosOuEu[0];
+    const n = Math.abs(Number(manual.valor) || 0);
     const emQuem = alvo && alvo.id !== ator.id ? ` em ${alvo.ver.nome}` : '';
     const texto = `${ator.ver.nome} usou ${item.nome}${emQuem}.`;
     const entradas = [[texto, ator.oculto ? null : texto, 'acao']];
     let efeitos = [];
-    if (efeito !== 'nenhum' && n && alvo) {
-      const r = mudarRecursos(alvo, { [recurso]: efeito === 'cura' ? n : -n }, item.nome, ator.id);
+    if (manual.efeito !== 'nenhum' && n && alvo) {
+      const r = mudarRecursos(alvo, { [manual.recurso]: manual.efeito === 'cura' ? n : -n }, item.nome, ator.id);
       efeitos = r.efeitos;
       entradas.push(...r.entradas);
-    }
-    if (gastar && ator.fichaId) {
-      onMudarFicha(ator.fichaId, { inventario: itens.filter((i) => i.uid !== item.uid) });
     }
     aplicar({ efeitos, entradas });
     onFechar();
   }
 
+  // As cartas dos itens: ícone, nome e o efeito resumido
+  const cartas = itens.map((i) => {
+    const e = efeitoDoItem(i);
+    const u = usosRestantes(i);
+    const resumo = e
+      ? [e.rolar && `${e.rolar}${e.efeito === 'cura' ? ' PV' : ''}`, e.condicao && condicaoPorId(e.condicao.id)?.nome, e.alvos === 'varios' && 'área']
+        .filter(Boolean).join(' · ')
+      : 'registrar';
+    return {
+      id: i.uid,
+      tipo: u > 1 && u !== Infinity ? `${u} usos` : (e ? 'Item' : 'Equipamento'),
+      nome: i.nome,
+      detalhe: resumo,
+      icone: iconeDoItem(i),
+      tom: e?.efeito === 'dano' ? 'ataque' : e?.efeito === 'condicao' ? 'condicao' : 'item',
+    };
+  });
+
+  if (feito) {
+    return (
+      <div className={styles.resultado} data-tom="acerto">
+        <div className={styles.placar}>
+          {feito.total != null && <b>{feito.total}</b>}
+          <span>{feito.nome}</span>
+        </div>
+        {feito.linhas.length > 0 && <ul className={styles.listaItem}>{feito.linhas.map((l) => <li key={l}>{l}</li>)}</ul>}
+        <div className={styles.rodape}>
+          <button type="button" className={styles.primario} onClick={onFechar}>Fechar</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-      <div className={styles.campo}>
-        <span>Qual item</span>
-        <Seletor
-          rotulo="Item"
-          valor={item.uid}
-          opcoes={itens.map((i) => ({ valor: i.uid, rotulo: i.nome }))}
-          onMudar={setUid}
-        />
+      <div className={styles.maoDeItens}>
+        <MaoDeCartas cartas={cartas} selecionada={item.uid} onJogar={(c) => c && setUid(c.id)} />
+      </div>
+
+      <div className={styles.detalheItem}>
+        <b>{item.nome}</b>
         {item.descricao && <small className={styles.ajuda}>{item.descricao}</small>}
-      </div>
-      <div className={styles.campo}>
-        <span>Em quem <small>(ou clique no palco)</small></span>
-        <EscolherAlvos lista={participantes} selecionados={[alvo?.id]} mestre={mestre} onEscolher={(id) => setAlvoIds([id])} />
-      </div>
-      <div className={styles.campo}>
-        <span>Efeito</span>
-        <div className={styles.segmentos} role="radiogroup" aria-label="Efeito">
-          {[['nenhum', 'Só registrar'], ['cura', 'Cura'], ['dano', 'Dano']].map(([id, r]) => (
-            <button key={id} type="button" role="radio" aria-checked={efeito === id} onClick={() => setEfeito(id)}>{r}</button>
-          ))}
-        </div>
-        {efeito !== 'nenhum' && (
-          <div className={styles.rodape}>
-            <div className={styles.segmentos} role="radiogroup" aria-label="Recurso">
-              {alvo?.ver.recursos.map((r) => (
-                <button key={r.id} type="button" role="radio" aria-checked={recurso === r.id} onClick={() => setRecurso(r.id)}>{r.sigla}</button>
-              ))}
-            </div>
-            <Numero rotulo="Quanto" valor={valor} min={0} onMudar={setValor} />
-          </div>
+        {efeito?.resiste && (
+          <small className={styles.ajuda}>
+            {efeito.resiste.pericia.charAt(0).toUpperCase() + efeito.resiste.pericia.slice(1)} {rotuloDaDt(efeito.resiste.dt)} = {dt}
+            {efeito.resiste.efeito === 'metade' ? ' (reduz à metade)' : ' (evita)'}
+          </small>
         )}
       </div>
-      <label className={styles.marcar}>
-        <input type="checkbox" checked={gastar} onChange={(e) => setGastar(e.target.checked)} />
-        Gastar o item (tira do inventário)
-      </label>
+
+      <div className={styles.campo}>
+        <span>
+          {area ? 'Quem está na área' : 'Em quem'} <small>{area ? '(clique em cada um)' : '(ou clique no palco)'}</small>
+        </span>
+        <EscolherAlvos lista={participantes} selecionados={alvosOuEu.map((p) => p.id)} mestre={mestre} onEscolher={escolherAlvo} />
+      </div>
+
+      {!efeito && (
+        <div className={styles.campo}>
+          <span>Dano ou cura à mão <small>(opcional)</small></span>
+          <div className={styles.segmentos} role="radiogroup" aria-label="Efeito">
+            {[['nenhum', 'Só registrar'], ['cura', 'Cura'], ['dano', 'Dano']].map(([id, r]) => (
+              <button key={id} type="button" role="radio" aria-checked={manual.efeito === id} onClick={() => setManual({ ...manual, efeito: id })}>{r}</button>
+            ))}
+          </div>
+          {manual.efeito !== 'nenhum' && (
+            <div className={styles.rodape}>
+              <div className={styles.segmentos} role="radiogroup" aria-label="Recurso">
+                {alvosOuEu[0]?.ver.recursos.map((r) => (
+                  <button key={r.id} type="button" role="radio" aria-checked={manual.recurso === r.id} onClick={() => setManual({ ...manual, recurso: r.id })}>{r.sigla}</button>
+                ))}
+              </div>
+              <Numero rotulo="Quanto" valor={manual.valor} min={0} onMudar={(v) => setManual({ ...manual, valor: v })} />
+            </div>
+          )}
+        </div>
+      )}
+
       <div className={styles.rodape}>
-        <button type="button" className={styles.grande} onClick={usar}>Usar {item.nome}</button>
+        {efeito
+          ? (
+            <button type="button" className={styles.grande} onClick={usarComEfeito} disabled={!alvosOuEu.length}>
+              {alvosOuEu.length ? `Usar ${item.nome}` : 'Escolha quem está na área'}
+            </button>
+          )
+          : <button type="button" className={styles.grande} onClick={usarSemEfeito}>Usar {item.nome}</button>}
       </div>
     </>
   );

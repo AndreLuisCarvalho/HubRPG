@@ -85,7 +85,35 @@
     text-align: center;
   }
 
+  // Derrota: vermelho mais escuro e a palavra sorteada
+  &[data-derrota] {
+    max-width: 60%;
+    border-width: 4px;
+    border-style: double;
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+
   @include celular { position: static; justify-self: start; margin-top: 8px; }
+}
+
+// Derrota: quem caiu e como (sob o carimbo)
+.perdidos {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    padding: 8px 12px;
+    border-left: 4px solid #8f1f17;
+    background: rgba(143, 31, 23, 0.08);
+    font-size: 0.9rem;
+    color: #3b2f23;
+  }
+
+  b { text-decoration: line-through; text-decoration-color: #8f1f17; text-decoration-thickness: 2px; }
 }
 
 @keyframes carimbar { from { transform: rotate(-8deg) scale(2); opacity: 0; } }

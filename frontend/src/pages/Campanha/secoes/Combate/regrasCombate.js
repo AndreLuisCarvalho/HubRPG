@@ -42,6 +42,39 @@ export const PALAVRAS_DE_VITORIA = [
 
 export const sortearVitoria = () => PALAVRAS_DE_VITORIA[Math.floor(Math.random() * PALAVRAS_DE_VITORIA.length)];
 
+// Derrota: o carimbo vermelho quando o último agente cai
+const PALAVRAS_DE_DERROTA = [
+  'Missão fracassada',
+  'O Outro Lado venceu',
+  'Agentes perdidos',
+  'Sinal perdido',
+  'Arquivo selado com vocês dentro',
+  'Sem sobreviventes',
+  'A Ordem chegou tarde',
+  'Contenção rompida',
+  'O Medo prevalece',
+  'Fim da transmissão',
+];
+
+export const sortearDerrota = () => PALAVRAS_DE_DERROTA[Math.floor(Math.random() * PALAVRAS_DE_DERROTA.length)];
+
+/** Todos os agentes no chão (PV ou SAN zerados) — precisa haver ao menos um */
+export function agentesCaidos(vistos) {
+  const agentes = vistos.filter((p) => p.lado === 'agentes' && !p.ver.perdida);
+  return agentes.length > 0 && agentes.every((p) => comoCaiu(p) !== null);
+}
+
+/** 'caiu' (PV 0), 'enlouqueceu' (SAN 0) ou null (de pé) */
+export function comoCaiu(p) {
+  const zerado = (rid) => {
+    const r = p.ver.recursos.find((x) => x.id === rid);
+    return (r?.maximo ?? 0) > 0 && r.atual === 0;
+  };
+  if (zerado('pv')) return 'caiu';
+  if (zerado('san')) return 'enlouqueceu';
+  return null;
+}
+
 /** Todas as ameaças (inclusive as ocultas) com PV zerado — precisa haver ao menos uma */
 export function ameacasDerrotadas(vistos) {
   const ameacas = vistos.filter((p) => p.lado === 'ameacas');

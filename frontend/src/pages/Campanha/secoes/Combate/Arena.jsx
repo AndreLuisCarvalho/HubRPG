@@ -12,11 +12,11 @@ import Palco from './Palco';
 import RelatorioCombate from './RelatorioCombate';
 import RolagemIniciativa from './RolagemIniciativa';
 import Timeline from './Timeline';
-import { montarRelatorio, relatorioPara } from './relatorio';
+import { montarRelatorio, relatorioPara, textoDaQueda } from './relatorio';
 import { carregarLivros, cartasDaMao, miraDaCarta } from './acoesCombate';
 import { condicaoPorId, venceu } from './condicoes';
 import {
-  ameacasDerrotadas, comecar, estadoAproximado, sortearVitoria, inserirNaOrdem, mover, mudarPvDaCopia, mudarRecursoDaFicha, novoId,
+  agentesCaidos, ameacasDerrotadas, comecar, comoCaiu, estadoAproximado, sortearDerrota, sortearVitoria, inserirNaOrdem, mover, mudarPvDaCopia, mudarRecursoDaFicha, novoId,
   ordenarPorIniciativa, passarVez, remover, rolarIniciativaCompleta, comIniciativa, verParticipante,
 } from './regrasCombate';
 import styles from './Combate.module.scss';
@@ -96,20 +96,23 @@ export default function Arena({
     setDadosIniciativa(null);
   }
 
-  // Vitória: o carimbo bate na tela de todos; depois o mestre recebe a caixa de encerrar
-  // (a vitória que já estava salva ao abrir a arena não carimba de novo)
-  const [carimboVisto, setCarimboVisto] = useState(dados.vitoria?.id ?? null);
-  const vitoriaId = dados.vitoria?.id ?? null;
-  const carimbo = andamento && vitoriaId && vitoriaId !== carimboVisto ? dados.vitoria : null;
-  const caixaAberta = useRef(dados.vitoria?.id ?? null);
+  // Vitória ou derrota: o carimbo bate na tela de todos; depois o mestre recebe a caixa de encerrar
+  // (o desfecho que já estava salvo ao abrir a arena não carimba de novo)
+  const desfecho = dados.vitoria
+    ? { ...dados.vitoria, derrota: false }
+    : dados.derrota ? { ...dados.derrota, derrota: true } : null;
+  const desfechoId = desfecho?.id ?? null;
+  const [carimboVisto, setCarimboVisto] = useState(desfechoId);
+  const carimbo = andamento && desfechoId && desfechoId !== carimboVisto ? desfecho : null;
+  const caixaAberta = useRef(desfechoId);
   useEffect(() => {
-    if (!mestre || !andamento || !vitoriaId || caixaAberta.current === vitoriaId) return undefined;
+    if (!mestre || !andamento || !desfechoId || caixaAberta.current === desfechoId) return undefined;
     const espera = setTimeout(() => {
-      caixaAberta.current = vitoriaId;
+      caixaAberta.current = desfechoId;
       setEncerrando(true);
-    }, 2600);
+    }, desfecho?.derrota ? 5200 : 2600);   // a derrota fica mais tempo: tem a lista dos caídos
     return () => clearTimeout(espera);
-  }, [vitoriaId, mestre, andamento]);
+  }, [desfechoId, desfecho?.derrota, mestre, andamento]);
 
   /*
    * Registro: cada entrada é [texto do mestre, texto dos jogadores (null = não veem), tipo, carimbo, dados]
@@ -210,13 +213,26 @@ export default function Arena({
     let novo = mudarDados({ ...dados, participantes: lista });
     const fim = [];
     if (andamento) {
-      const venceu = ameacasDerrotadas(novo.participantes.map((p) => ({ ...p, ver: verParticipante(p, fichasDepois) })));
+      const vistosDepois = novo.participantes.map((p) => ({ ...p, ver: verParticipante(p, fichasDepois) }));
+      const venceu = ameacasDerrotadas(vistosDepois);
       if (venceu && !novo.vitoria) {
         const palavra = sortearVitoria();
         novo = { ...novo, vitoria: { id: novoId(), palavra, rodada: novo.rodada } };
         fim.push([`${palavra}! Todas as ameaças caíram.`, `${palavra}!`, 'vitoria', 'sucesso']);
       } else if (!venceu && novo.vitoria) {
         const { vitoria: _vitoria, ...resto } = novo;
+        novo = resto;
+      }
+
+      // Derrota: o último agente caiu (ou, se alguém levantou, o carimbo sai)
+      const perdeu = !venceu && agentesCaidos(vistosDepois);
+      if (perdeu && !novo.derrota) {
+        const palavra = sortearDerrota();
+        const caidos = quemCaiuEComo(vistosDepois, [...(novo.log ?? []), ...entradas.filter(Boolean).map(([, , tipo, , extra]) => ({ tipo, dados: extra }))]);
+        novo = { ...novo, derrota: { id: novoId(), palavra, rodada: novo.rodada, caidos } };
+        fim.push([`${palavra}. Todos os agentes caíram.`, `${palavra}.`, 'derrota', 'fracasso']);
+      } else if (!perdeu && novo.derrota) {
+        const { derrota: _derrota, ...resto } = novo;
         novo = resto;
       }
     }
@@ -408,13 +424,16 @@ export default function Arena({
   /* ---------- Quem age, ações e mira ---------- */
   // O mestre controla só as ameaças (e monitora os agentes); os jogadores, só os agentes à vista
   // (meuUsuarioId: conta do jogador da campanha, que só age com o agente dele; null = a tela da mesa, qualquer agente)
-  const podeAgirCom = (p) => andamento && (mestre ? p.lado === 'ameacas' : p.lado === 'agentes' && !p.oculto
+  const podeControlar = (p) => andamento && (mestre ? p.lado === 'ameacas' : p.lado === 'agentes' && !p.oculto
     && (meuUsuarioId == null || fichas[p.fichaId]?.dono_id === meuUsuarioId));
+  // Só quem está de pé age: ameaça derrotada (PV 0) e agente caído (PV 0 ou SAN 0) só passam a vez
+  const podeAgirCom = (p) => podeControlar(p) && !foraDeCombate(p);
   // Quem está na barra de turno: o da vez, ou outro que o mestre (ou o jogador) escolheu
   const ator = vistos.find((p) => p.id === atorId && (mestre || !p.oculto)) ?? daVez ?? null;
   const agindo = Boolean(ator && podeAgirCom(ator));
-  // Mestre na vez de um agente: a mão aparece apagada, só para ver
-  const soVer = Boolean(andamento && mestre && ator && !agindo);
+  const atorCaido = Boolean(ator && foraDeCombate(ator));
+  // Mestre na vez de um agente, ou a vez de quem caiu: a mão aparece apagada, só para ver
+  const soVer = Boolean(andamento && ator && !agindo && (mestre || (atorCaido && podeControlar(ator))));
   const cartas = agindo || soVer ? cartasDaMao(ator, fichas, livro, agindo && mestre) : [];
 
   // Jogar uma carta da mão (null recolhe)
@@ -638,13 +657,14 @@ export default function Arena({
           preparando={preparando}
           cartas={cartas}
           soVer={soVer}
+          caido={atorCaido}
           cartaId={carta?.id}
           economia={dados.economia}
           lembretes={lembretes}
           onCarta={jogarCarta}
           onEconomia={alternarEconomia}
           // O jogador só passa a vez do próprio agente (o mestre pode passar qualquer uma)
-          onFinalizar={mestre || (daVez && podeAgirCom(daVez)) ? finalizarTurno : null}
+          onFinalizar={mestre || (daVez && podeControlar(daVez)) ? finalizarTurno : null}
           onVoltarTurno={() => { fecharAcao(); setAtorId(null); passar(-1); }}
           onVoltarParaVez={() => agirCom(daVez)}
           onAvancarContagem={(rid) => avancarContagem(ator, rid)}
@@ -664,11 +684,25 @@ export default function Arena({
         <RolagemIniciativa key={dadosIniciativa.chave} participantes={visiveis} onFim={fimDosDados} />
       )}
 
-      {/* Carimbo de vitória */}
+      {/* Carimbo de vitória (verde) ou de derrota (vermelho, com a lista de quem caiu e como) */}
       {carimbo && (
-        <div key={carimbo.id} className={estilo.vitoria} onAnimationEnd={(e) => e.target === e.currentTarget && setCarimboVisto(carimbo.id)} role="status">
+        <div
+          key={carimbo.id}
+          className={`${estilo.vitoria} ${carimbo.derrota ? estilo.derrota : ''}`}
+          onAnimationEnd={(e) => e.target === e.currentTarget && setCarimboVisto(carimbo.id)}
+          role="status"
+        >
           <span>{carimbo.palavra}</span>
-          <small>Todas as ameaças caíram</small>
+          <small>{carimbo.derrota ? 'Todos os agentes caíram' : 'Todas as ameaças caíram'}</small>
+          {carimbo.derrota && carimbo.caidos?.length > 0 && (
+            <ul className={estilo.caidos}>
+              {carimbo.caidos.map((c, i) => (
+                <li key={c.id} style={{ '--i': i }}>
+                  <b>{c.nome}</b> {textoDaQueda(c, mestre)}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
@@ -699,6 +733,31 @@ export default function Arena({
     </section>
   );
 }
+
+/**
+ * A lista da derrota: cada agente, como caiu e o último que o feriu (pelo registro).
+ * porOculto: quem feriu estava oculto (os jogadores leem "algo que ninguém viu").
+ */
+function quemCaiuEComo(vistos, historico) {
+  return vistos.filter((p) => p.lado === 'agentes' && !p.ver.perdida).map((p) => {
+    const como = comoCaiu(p);
+    const rid = como === 'enlouqueceu' ? 'san' : 'pv';
+    // O último golpe com autor (o dano à mão na ficha rápida não tem autor)
+    const golpe = [...historico].reverse()
+      .find((e) => e.tipo === 'dano' && e.dados?.alvo === p.id && e.dados.rid === rid && e.dados.autor);
+    const autor = golpe?.dados?.autor ? vistos.find((x) => x.id === golpe.dados.autor) : null;
+    return {
+      id: p.id,
+      nome: p.ver.nome,
+      como,
+      por: autor?.ver.nome ?? null,
+      porOculto: Boolean(autor?.oculto),
+    };
+  });
+}
+
+// Fora de combate: não age (a vez dele só passa)
+const foraDeCombate = (p) => (p.lado === 'ameacas' ? estaCaido(p) : comoCaiu(p) !== null);
 
 const estaCaido = (p) => {
   const pv = p.ver.recursos.find((r) => r.id === 'pv');
