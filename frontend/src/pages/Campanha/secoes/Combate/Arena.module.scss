@@ -32,6 +32,20 @@ $sangue: #b3261c;
     padding: 6px;
     background: var(--fundo, #16181b);
   }
+
+  // Celular deitado: o campo à esquerda e a barra do turno (ou o painel da carta) numa coluna à
+  // direita, em vez de empilhados (a altura é pouca)
+  @include deitado {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 40%);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: 'topo topo' 'centro hud';
+    gap: 6px;
+    padding: 4px 6px;
+
+    &[data-acao] { grid-template-areas: 'topo topo' 'centro centro'; }
+
+    > .hud { align-self: stretch; align-content: start; overflow-y: auto; }
+  }
 }
 
 // Visão Jogadores: tela cheia, sem o menu da campanha (TV, transmissão)
@@ -186,6 +200,12 @@ $sangue: #b3261c;
   .topo .timelineRetrato { width: 28px; height: 28px; font-size: 0.8rem; }
 }
 
+// Deitado: o topo numa linha só (título, timeline, botões), para sobrar altura ao campo
+@include deitado {
+  .topo { flex-wrap: nowrap; }
+  .topo .timeline { order: 0; flex-basis: auto; padding: 0 2px; overflow-x: auto; }
+}
+
 .conta {
   display: inline-block;
   min-width: 18px;
@@ -303,10 +323,28 @@ $sangue: #b3261c;
   }
 
   @include celular {
-    &[data-acao], &[data-ordem][data-acao] { grid-template-columns: minmax(0, 1fr); }
+    &[data-ordem], &[data-acao], &[data-ordem][data-acao] { grid-template-columns: minmax(0, 1fr); }
+    .ordem { display: none; }
 
-    // O campo sobe e encolhe para os alvos ficarem à vista acima do painel
-    &[data-acao] > div:first-child { height: 42%; }
+    // Carta em jogo: o painel fica embaixo e o campo com toda a altura que sobra acima dele
+    // (sem buraco vazio; as cartas do campo encolhem para caber)
+    &[data-acao] {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    &[data-acao] > div:first-of-type { flex: 1 1 0; height: auto; min-height: 0; }
+  }
+
+  // Celular deitado: campo à esquerda, painel da carta à direita
+  @include deitado {
+    &[data-acao], &[data-ordem][data-acao] {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 42%);
+    }
+
+    &[data-acao] > div:first-of-type { height: 100%; }
   }
 }
 
@@ -469,15 +507,48 @@ $sangue: #b3261c;
     }
   }
 
-  // Celular: abre por cima da parte de baixo do campo
+  // Celular: embaixo do campo, do tamanho do conteúdo (até 72%) ou da altura arrastada na alça
   @include celular {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    max-height: 62%;
+    flex: 0 0 auto;
+    height: var(--altura-painel, auto);
+    max-height: 56%;
     animation-name: subir;
+
+    &[data-puxado] { max-height: none; }
   }
+
+  // Deitado: coluna da direita, altura toda
+  @include deitado {
+    height: auto;
+    max-height: none;
+
+    &[data-puxado] { max-height: none; }
+  }
+}
+
+// Alça para arrastar o painel (só no celular em pé)
+.puxador {
+  display: none;
+
+  @include celular {
+    display: grid;
+    place-items: center;
+    height: 16px;
+    margin: -6px -10px -6px;
+    cursor: ns-resize;
+    touch-action: none;
+
+    i {
+      width: 42px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(242, 238, 230, 0.28);
+    }
+
+    &:active i { background: var(--tom); }
+  }
+
+  @include deitado { display: none; }
 }
 
 .bandejaIcone {
@@ -526,8 +597,8 @@ $sangue: #b3261c;
 
   &[data-lado='ameacas'] { border-top-color: $ameacas; }
 
-  // Celular: abaixo do cartão "Minha ficha" (que fica no canto de cima do campo)
-  @include celular { top: 72px; }
+  // Celular: abaixo da pílula "Minha ficha" (que fica no canto de cima do campo)
+  @include celular { top: 44px; max-height: calc(100% - 52px); overflow-y: auto; }
 
   > header {
     display: flex;
@@ -1178,7 +1249,6 @@ $sangue: #b3261c;
   .arena[data-acao] > .hud { display: none; }
 
   .bandeja {
-    max-height: 72%;
     gap: 8px;
     padding: 8px 10px 10px;
     border-radius: 10px 10px 4px 4px;

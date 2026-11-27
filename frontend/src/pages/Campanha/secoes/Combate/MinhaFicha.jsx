@@ -16,7 +16,7 @@ const ABAS = [
  * A ficha do jogador sempre à mão (fora da vez também): um cartão no canto com retrato, PV/SAN/PE
  * e defesa; clicar abre uma gaveta pela esquerda com perícias, inventário e rituais (só para ver).
  */
-export default function MinhaFicha({ p, fichas, livro, naVez }) {
+export default function MinhaFicha({ p, fichas, livro, naVez, escondido = false }) {
   const [aberta, setAberta] = useState(false);
   const [aba, setAba] = useState('pericias');
 
@@ -38,6 +38,8 @@ export default function MinhaFicha({ p, fichas, livro, naVez }) {
         type="button"
         className={styles.cartao}
         data-na-vez={naVez || undefined}
+        // Celular: some quando a barra de baixo já mostra o meu agente ou há uma ação em jogo
+        data-escondido={escondido || undefined}
         onClick={() => setAberta((v) => !v)}
         aria-expanded={aberta}
         title="Minha ficha"

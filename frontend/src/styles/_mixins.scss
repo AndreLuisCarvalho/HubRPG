@@ -1,7 +1,13 @@
 $celular: 800px;
 
+// Celular: tela estreita, ou celular deitado (baixa e de toque, de qualquer largura)
 @mixin celular {
-  @media (max-width: $celular) { @content; }
+  @media (max-width: $celular), (orientation: landscape) and (max-height: 540px) and (pointer: coarse) { @content; }
+}
+
+// Só o celular deitado (o combate põe o campo e a barra lado a lado)
+@mixin deitado {
+  @media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) { @content; }
 }
 
 @mixin fonte-titulo {

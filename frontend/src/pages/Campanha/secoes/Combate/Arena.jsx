@@ -7,6 +7,7 @@ import Hud from './Hud';
 import Inspecao from './Inspecao';
 import LogCombate from './LogCombate';
 import MinhaFicha from './MinhaFicha';
+import Puxador from './Puxador';
 import AvisosDoCombate from './AvisosDoCombate';
 import PainelAcao from './PainelAcao';
 import IconeArma from './IconeArma';
@@ -50,6 +51,8 @@ export default function Arena({
   const [atorId, setAtorId] = useState(null);       // quem está na barra de turno (null = o da vez)
   const [inspecionado, setInspecionado] = useState(null);   // ficha rápida aberta no palco
   const [logAberto, setLogAberto] = useState(false);        // gaveta do registro
+  const [alturaPainel, setAlturaPainel] = useState(null);   // celular: altura do painel da carta (arrastada)
+  const centroRef = useRef(null);
   const [carta, setCarta] = useState(null);         // carta da mão em jogo ({ id, aba, escolha… })
   const [anuncio, setAnuncio] = useState(null);     // faixa de turno / abertura cruzando a tela
   const [dadosIniciativa, setDadosIniciativa] = useState(null);   // jogadores: dados rolando na abertura
@@ -690,6 +693,7 @@ export default function Arena({
 
       {/* 2 · Centro: o palco (ou o relatório, depois de encerrar) */}
       <div
+        ref={centroRef}
         className={estilo.centro}
         data-acao={(aba && agindo && !verRelatorio) || undefined}
         data-ordem={(mestre && !verRelatorio) || undefined}
@@ -753,12 +757,28 @@ export default function Arena({
 
         {/* Minha ficha: cartão no canto do campo e a gaveta dela */}
         {meu && !verRelatorio && !encerrado && (
-          <MinhaFicha key={meu.id} p={meu} fichas={fichas} livro={livro} naVez={andamento && meu.id === dados.vez} />
+          <MinhaFicha
+            key={meu.id}
+            p={meu}
+            fichas={fichas}
+            livro={livro}
+            naVez={andamento && meu.id === dados.vez}
+            escondido={Boolean((aba && agindo) || (ator && meu.id === ator.id && !preparando))}
+          />
         )}
 
         {/* Painel da carta em jogo: o passo a passo, ao lado do campo (o alvo se escolhe clicando na carta) */}
         {aba && agindo && !verRelatorio && (
-          <div className={estilo.bandeja} data-tom={carta.tom} role="dialog" aria-label={`${rotuloAcao} com ${ator.ver.nome}`}>
+          <div
+            className={estilo.bandeja}
+            data-tom={carta.tom}
+            data-puxado={alturaPainel ? true : undefined}
+            role="dialog"
+            aria-label={`${rotuloAcao} com ${ator.ver.nome}`}
+            style={alturaPainel ? { '--altura-painel': `${alturaPainel}px` } : undefined}
+          >
+            {/* Celular: arrastar a alça muda a altura do painel (o campo fica com o resto) */}
+            <Puxador alvo={centroRef} onMudar={setAlturaPainel} />
             <header>
               <span className={estilo.bandejaIcone} aria-hidden="true">
                 {carta.arma ? <IconeArma id={carta.arma} className={estilo.bandejaArma} /> : carta.icone}
