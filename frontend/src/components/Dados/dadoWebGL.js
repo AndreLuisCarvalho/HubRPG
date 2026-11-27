@@ -60,7 +60,7 @@ const novaTela = (colunas, linhas) => {
   return tela;
 };
 
-function escreverNumeros(ctx, rotulos, colunas, forma, lados, cor, gravado) {
+function escreverNumeros(ctx, rotulos, colunas, forma, lados, cor, gravado, contorno = false) {
   const px = Math.round(LETRA[forma] * (CASA / 2));
   ctx.font = `700 ${px}px "Barlow Condensed", sans-serif`;
   ctx.textAlign = 'center';
@@ -78,6 +78,13 @@ function escreverNumeros(ctx, rotulos, colunas, forma, lados, cor, gravado) {
     if (gravado) {
       ctx.fillStyle = escuro ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.45)';
       ctx.fillText(texto, cx, base + (escuro ? 2 : -3));
+    }
+    // Contorno escuro (imagem própria no fundo: o número precisa aparecer em qualquer foto)
+    if (contorno) {
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(4, px * 0.14);
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
+      ctx.strokeText(texto, cx, base);
     }
     ctx.fillStyle = cor;
     ctx.fillText(texto, cx, base);
@@ -117,7 +124,7 @@ function desenharAtlas(rotulos, forma, lados, ap) {
       ctx.restore();
     });
   }
-  escreverNumeros(ctx, rotulos, colunas, forma, lados, ap.numero, true);
+  escreverNumeros(ctx, rotulos, colunas, forma, lados, ap.numero, true, Boolean(ap.skin?.contorno));
 
   // Brilho (mapa de emissão: preto não acende). "tudo" acende o desenho e os números; "numeros" só os números.
   let brilho = null;

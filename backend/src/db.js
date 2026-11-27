@@ -209,6 +209,13 @@ async function iniciar() {
     combate_id INTEGER PRIMARY KEY,
     imagem     TEXT NOT NULL DEFAULT ''
   )`);
+  // Imagens próprias para os dados de uma ficha (fundo das faces): fora de "dados", que é lido o tempo todo
+  await db.run(`CREATE TABLE IF NOT EXISTS imagens_dado (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    ficha_id  INTEGER NOT NULL,
+    imagem    TEXT NOT NULL,
+    criado_em TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
 
   // Dados iniciais, só se o banco estiver vazio
   const { total } = await db.get('SELECT COUNT(*) AS total FROM campanhas');

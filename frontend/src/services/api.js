@@ -151,6 +151,12 @@ export const api = {
   // Imagem/GIF de fundo do combate (à parte dos dados da luta)
   fundoDoCombate: (id) => requisicao(`/combates/${id}/fundo`),
   salvarFundoDoCombate: (id, imagem) => requisicao(`/combates/${id}/fundo`, { method: 'PUT', body: { imagem } }),
+
+  // Imagens próprias dos dados de uma ficha (fundo das faces)
+  listarImagensDado: (fichaId) => requisicao(`/fichas/${fichaId}/imagens-dado`),
+  imagemDado: (fichaId, id) => requisicao(`/fichas/${fichaId}/imagens-dado/${id}`),
+  enviarImagemDado: (fichaId, imagem) => requisicao(`/fichas/${fichaId}/imagens-dado`, { method: 'POST', body: { imagem } }),
+  apagarImagemDado: (fichaId, id) => requisicao(`/fichas/${fichaId}/imagens-dado/${id}`, { method: 'DELETE' }),
 };
 
 const escreverCombate = ({ nome, sessao_id, dados }) => ({

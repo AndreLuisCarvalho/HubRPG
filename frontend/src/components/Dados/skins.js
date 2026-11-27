@@ -8,6 +8,8 @@
  * O dado em CSS (sem WebGL) usa só a cor base.
  */
 
+import { imagemDoDado } from './imagensDeDado';
+
 export const COR_PADRAO = '#a3181b';
 
 export const PALETA = [
@@ -192,10 +194,40 @@ export const SKINS = [
 
 export const skinPorId = (id) => SKINS.find((s) => s.id === id) ?? null;
 
+/*
+ * Uma "skin" feita da imagem própria: a foto cobre cada face (recortada no meio, como capa), com um
+ * escurecido nas bordas; os números saem brancos com contorno escuro para ler em qualquer foto.
+ */
+const skinsDeFoto = new Map();
+function skinDaFoto(id, img) {
+  if (skinsDeFoto.has(id)) return skinsDeFoto.get(id);
+  const skin = {
+    id,
+    contorno: true,
+    material: { roughness: 0.42, clearcoat: 0.7, clearcoatRoughness: 0.2 },
+    pintar(ctx, x, y, lado) {
+      const escala = Math.max(lado / img.naturalWidth, lado / img.naturalHeight);
+      const w = img.naturalWidth * escala;
+      const h = img.naturalHeight * escala;
+      ctx.drawImage(img, x + (lado - w) / 2, y + (lado - h) / 2, w, h);
+      const sombra = ctx.createRadialGradient(x + lado / 2, y + lado / 2, lado * 0.2, x + lado / 2, y + lado / 2, lado * 0.75);
+      sombra.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      sombra.addColorStop(1, 'rgba(0, 0, 0, 0.45)');
+      ctx.fillStyle = sombra;
+      ctx.fillRect(x, y, lado, lado);
+    },
+  };
+  skinsDeFoto.set(id, skin);
+  return skin;
+}
+
 /** As peças do kit, na ordem da página Dados. O d100 é o d10 das dezenas (joga junto com o d10). */
 export const KIT = [4, 6, 8, 10, 12, 20, 100];
 
-/** O que o kit guarda para um dado: { cor } ou { skin }. Aceita o formato antigo ({ cor, skin } para todos). */
+/**
+ * O que o kit guarda para um dado: { cor }, { skin } ou { imagem, ficha, cor? } (imagem própria;
+ * "cor" é a da aresta). Aceita o formato antigo ({ cor, skin } para todos).
+ */
 export function escolhaDoKit(estilo, lados) {
   if (estilo?.kit) return estilo.kit[`d${lados}`] ?? {};
   return estilo?.skin ? { skin: estilo.skin } : { cor: estilo?.cor };
@@ -208,6 +240,13 @@ export function escolhaDoKit(estilo, lados) {
  */
 export function aparencia(estilo, lados = 20, skinDaParte = null) {
   const escolha = escolhaDoKit(estilo, lados);
+  // Imagem própria (fundo das faces): só quando já carregou; antes disso o dado sai com a cor
+  const foto = !skinDaParte && escolha.imagem ? imagemDoDado(escolha.ficha, escolha.imagem) : null;
+  if (foto) {
+    const aresta = escolha.cor ?? '#1d1f23';
+    const skinFoto = skinDaFoto(`img:${escolha.ficha}:${escolha.imagem}`, foto);
+    return { chave: skinFoto.id, base: '#15161a', aresta, numero: '#ffffff', skin: skinFoto, material: skinFoto.material };
+  }
   const skin = skinPorId(skinDaParte) ?? skinPorId(escolha.skin);
   if (skin) {
     return { chave: `skin:${skin.id}`, base: skin.base, aresta: skin.aresta, numero: skin.numero, skin, material: skin.material };

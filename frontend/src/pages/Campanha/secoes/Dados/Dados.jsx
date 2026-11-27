@@ -3,7 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import PreviaDado from '../../../../components/Dados/PreviaDado';
 import { useRolagem } from '../../../../components/Dados/rolagem';
 import { aparencia, COR_PADRAO, corDoNumero, escolhaDoKit, KIT, PALETA, SKINS } from '../../../../components/Dados/skins';
+import { guardarImagemDoDado, imagemDoDado, useVersaoDasImagens } from '../../../../components/Dados/imagensDeDado';
 import Seletor from '../../../../components/Seletor/Seletor';
+import EnviarImagemDoDado from './EnviarImagemDoDado';
 import { api } from '../../../../services/api';
 import styles from './Dados.module.scss';
 
@@ -14,8 +16,9 @@ const GRUPOS = [
 ];
 
 /**
- * Kit de dados de cada ficha: d4, d6, d8, d10, d12, d20 e d100, cada peça com a sua cor ou skin.
- * Fica em ficha.dados.dado = { kit: { d4: { cor } | { skin }, … } } e vale em todas as rolagens dela.
+ * Kits de dados de cada ficha: d4, d6, d8, d10, d12, d20 e d100, cada peça com a sua cor ou skin.
+ * Fica em ficha.dados.dado = { kits: [{ nome, kit }, ×3], ativo, kit }: "kit" é a cópia do kit em
+ * uso, o que todas as rolagens leem (as fichas antigas, só com "kit", continuam valendo).
  */
 export default function Dados({ campanha }) {
   const [fichas, setFichas] = useState(null);
@@ -33,11 +36,28 @@ export default function Dados({ campanha }) {
     return () => { efeito.ativo = false; };
   }, [campanha.id]);
 
+  // Imagens próprias da ficha aberta (só os ids; cada imagem vem do cache de imagensDeDado)
+  const fichaIdAtual = fichas ? (fichas.find((f) => f.id === Number(busca.get('ficha'))) ?? fichas[0])?.id : null;
+  const [imagens, setImagens] = useState({ ficha: null, ids: [] });
+  const [enviando, setEnviando] = useState(false);
+  useVersaoDasImagens();   // redesenha as miniaturas quando uma imagem termina de carregar
+  useEffect(() => {
+    if (!fichaIdAtual) return undefined;
+    const efeito = { ativo: true };
+    api.listarImagensDado(fichaIdAtual)
+      .then((ids) => efeito.ativo && setImagens({ ficha: fichaIdAtual, ids }))
+      .catch(() => efeito.ativo && setImagens({ ficha: fichaIdAtual, ids: [] }));
+    return () => { efeito.ativo = false; };
+  }, [fichaIdAtual]);
+
   if (erro && !fichas) return <p className="erro">{erro}</p>;
   if (!fichas) return <p className={styles.carregando}>Carregando…</p>;
 
   const ficha = fichas.find((f) => f.id === Number(busca.get('ficha'))) ?? fichas[0];
-  const estilo = ficha?.dados?.dado ?? {};
+  const { kits, ativo } = kitsDaFicha(ficha?.dados?.dado);
+  // O kit que está sendo montado (não precisa ser o que está em uso)
+  const editando = [0, 1, 2].includes(Number(busca.get('kit'))) && busca.get('kit') !== null ? Number(busca.get('kit')) : ativo;
+  const estilo = { kit: kits[editando].kit };
   const peca = KIT.includes(Number(busca.get('peca'))) ? Number(busca.get('peca')) : 20;
   const escolha = escolhaDoKit(estilo, peca);
   const skin = SKINS.find((s) => s.id === escolha.skin);
@@ -57,10 +77,48 @@ export default function Dados({ campanha }) {
     }, 350);
   }
 
-  // O kit atual completo (o formato antigo, uma cor para tudo, vira um kit com todas as peças iguais)
+  // Guarda os três kits; "kit" (o que as rolagens leem) é sempre a cópia do kit em uso
+  const salvarKits = (novos, emUso = ativo) => salvar({ kits: novos, ativo: emUso, kit: novos[emUso].kit });
+  const mudarKit = (mudar) => salvarKits(kits.map((k, i) => (i === editando ? mudar(k) : k)));
+
+  // O kit em edição completo (o formato antigo, uma cor para tudo, vira um kit com todas as peças iguais)
   const kitAtual = () => Object.fromEntries(KIT.map((l) => [`d${l}`, escolhaDoKit(estilo, l)]));
-  const mudarPeca = (nova) => salvar({ kit: { ...kitAtual(), [`d${peca}`]: nova } });
-  const aplicarATodos = () => salvar({ kit: Object.fromEntries(KIT.map((l) => [`d${l}`, escolha])) });
+  const mudarPeca = (nova) => mudarKit((k) => ({ ...k, kit: { ...kitAtual(), [`d${peca}`]: nova } }));
+  const aplicarATodos = () => mudarKit((k) => ({ ...k, kit: Object.fromEntries(KIT.map((l) => [`d${l}`, escolha])) }));
+  const renomear = (nome) => mudarKit((k) => ({ ...k, nome }));
+  const usarEste = () => salvarKits(kits, editando);
+
+  // Imagem própria na peça (a aresta fica escura; uma cor escolhida depois tira a imagem)
+  // Regra: uma imagem própria por kit. Escolher outra troca a imagem em todas as peças deste kit
+  // que já usavam uma (cada uma mantém a cor da aresta)
+  const usarImagem = (id) => mudarKit((k) => {
+    const completo = kitAtual();
+    const novo = Object.fromEntries(Object.entries(completo).map(([chave, p]) => (
+      [chave, p?.imagem ? { ...p, imagem: id, ficha: ficha.id } : p]
+    )));
+    return { ...k, kit: { ...novo, [`d${peca}`]: { imagem: id, ficha: ficha.id } } };
+  });
+  // A imagem que este kit usa (se usa alguma)
+  const imagemDoKit = Object.values(kits[editando].kit).find((p) => p?.imagem)?.imagem ?? null;
+  const idsDaFicha = imagens.ficha === ficha.id ? imagens.ids : [];
+
+  async function enviarImagem(dataUrl) {
+    const { id } = await api.enviarImagemDado(ficha.id, dataUrl);
+    guardarImagemDoDado(ficha.id, id, dataUrl);
+    setImagens((atual) => ({ ficha: ficha.id, ids: [...(atual.ficha === ficha.id ? atual.ids : []), id] }));
+    usarImagem(id);
+  }
+
+  async function apagarImagem(id) {
+    if (!window.confirm('Apagar esta imagem? As peças que usam ela voltam para a cor.')) return;
+    try {
+      await api.apagarImagemDado(ficha.id, id);
+      setImagens((atual) => ({ ...atual, ids: atual.ids.filter((x) => x !== id) }));
+      if (escolha.imagem === id) mudarPeca({ cor: COR_PADRAO });
+    } catch (e) {
+      setErro(`Não foi possível apagar: ${e.message}`);
+    }
+  }
 
   // Testes: a peça escolhida (o d20 num teste, as outras num dano) e o kit inteiro de uma vez
   const testarPeca = () => rolar(peca === 20
@@ -78,7 +136,7 @@ export default function Dados({ campanha }) {
     <section className={styles.pagina}>
       <header className={styles.topo}>
         <h1>Dados</h1>
-        <p>Cada ficha tem o seu kit: d4, d6, d8, d10, d12, d20 e d100, cada peça com a sua cor ou skin.</p>
+        <p>Cada ficha tem até 3 kits (d4, d6, d8, d10, d12, d20 e d100, cada peça com a sua cor ou skin); o kit em uso vale em todas as rolagens dela.</p>
       </header>
 
       {erro && <p className="erro">{erro}</p>}
@@ -89,7 +147,7 @@ export default function Dados({ campanha }) {
         <div className={styles.grade}>
           {/* ---------- Vitrine ---------- */}
           <div className={styles.vitrine}>
-            <PreviaDado estilo={estilo} selecionado={peca} />
+            <PreviaDado estilo={estilo} selecionado={peca} className={styles.previaGrande} />
             <div className={styles.testar}>
               <button type="button" className={styles.primario} onClick={testarPeca}>Rolar o d{peca}</button>
               <button type="button" onClick={testarKit}>Rolar o kit inteiro</button>
@@ -98,20 +156,67 @@ export default function Dados({ campanha }) {
               Dano de elemento (Sangue, Morte, Conhecimento, Energia, Medo) cai com a skin do elemento,
               qualquer que seja o kit. O d100 é o d10 das dezenas: ele rola junto com o d10.
             </p>
-          </div>
 
-          {/* ---------- Escolhas ---------- */}
-          <div className={styles.controles}>
+            {/* Ficha e kits embaixo da vitrine, lado a lado */}
+            <div className={styles.fichaEKits}>
             <div className={styles.bloco}>
               <h2>Ficha</h2>
               <Seletor
                 rotulo="Ficha"
                 valor={ficha.id}
                 opcoes={fichas.map((f) => ({ valor: f.id, rotulo: f.nome, detalhe: TIPOS[f.tipo] }))}
-                onMudar={(id) => irPara({ ficha: id })}
+                onMudar={(id) => {
+                  const proxima = new URLSearchParams(busca);
+                  proxima.set('ficha', String(id));
+                  proxima.delete('kit');   // a outra ficha abre no kit em uso dela
+                  setBusca(proxima, { replace: true });
+                }}
               />
             </div>
 
+            {/* Três kits por ficha: um em uso nas rolagens, os outros guardados para trocar */}
+            <div className={styles.bloco}>
+              <h2>Kits da ficha</h2>
+              <div className={styles.kits} role="tablist" aria-label="Kits da ficha">
+                {kits.map((k, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    role="tab"
+                    aria-selected={i === editando}
+                    onClick={() => irPara({ kit: i })}
+                  >
+                    <span className={styles.miniKit} aria-hidden="true">
+                      {[20, 6, 4].map((l) => {
+                        const ap = aparencia({ kit: k.kit }, l);
+                        return <i key={l} style={{ '--base': ap.base, '--aresta': ap.aresta }} />;
+                      })}
+                    </span>
+                    <b>{k.nome || `Kit ${i + 1}`}</b>
+                    {i === ativo && <small>Em uso</small>}
+                  </button>
+                ))}
+              </div>
+              <div className={styles.kitLinha}>
+                <input
+                  value={kits[editando].nome}
+                  onChange={(e) => renomear(e.target.value)}
+                  maxLength={20}
+                  placeholder={`Kit ${editando + 1}`}
+                  aria-label="Nome do kit"
+                />
+                {editando === ativo ? (
+                  <span className={styles.emUso}>✓ Em uso nas rolagens</span>
+                ) : (
+                  <button type="button" className={styles.usarKit} onClick={usarEste}>Usar este kit</button>
+                )}
+              </div>
+            </div>
+            </div>
+          </div>
+
+          {/* ---------- Escolhas da peça ---------- */}
+          <div className={styles.controles}>
             <div className={styles.bloco}>
               <h2>Peça do kit</h2>
               <div className={styles.pecas} role="tablist" aria-label="Peça do kit">
@@ -139,8 +244,8 @@ export default function Dados({ campanha }) {
 
             <div className={styles.bloco}>
               <h2>Cor do d{peca}</h2>
-              <Cores valor={skin ? null : escolha.cor ?? COR_PADRAO} onMudar={(cor) => mudarPeca({ cor })} />
-              {skin && <p className={styles.dica}>Escolher uma cor tira a skin desta peça.</p>}
+              <Cores valor={skin || escolha.imagem ? null : escolha.cor ?? COR_PADRAO} onMudar={(cor) => mudarPeca({ cor })} />
+              {(skin || escolha.imagem) && <p className={styles.dica}>Escolher uma cor tira a skin desta peça.</p>}
             </div>
 
             <div className={styles.bloco}>
@@ -148,11 +253,48 @@ export default function Dados({ campanha }) {
               <button
                 type="button"
                 className={styles.semSkin}
-                aria-pressed={!skin}
+                aria-pressed={!skin && !escolha.imagem}
                 onClick={() => mudarPeca({ cor: escolha.cor ?? COR_PADRAO })}
               >
                 Sem skin (usar a cor)
               </button>
+
+              {/* Personalizadas: imagens próprias da ficha (até 3, uma por kit) e o "+" para enviar outra */}
+              <div className={styles.grupo}>
+                <h3>Personalizadas <small className={styles.regra}>1 imagem por kit</small></h3>
+                {imagemDoKit && idsDaFicha.length > 1 && (
+                  <p className={styles.dica}>Este kit usa a Imagem {idsDaFicha.indexOf(imagemDoKit) + 1}. Escolher outra troca em todas as peças dele.</p>
+                )}
+                <div className={styles.skins}>
+                  {idsDaFicha.map((id) => {
+                    const img = imagemDoDado(ficha.id, id);
+                    return (
+                      <div key={id} className={styles.personalizada}>
+                        <button
+                          type="button"
+                          aria-pressed={escolha.imagem === id}
+                          onClick={() => usarImagem(id)}
+                          title="Usar esta imagem na peça"
+                        >
+                          <span className={styles.amostraFoto} aria-hidden="true">
+                            {img && <img src={img.src} alt="" />}
+                            <b>20</b>
+                          </span>
+                          Imagem {idsDaFicha.indexOf(id) + 1}
+                        </button>
+                        <button type="button" className={styles.apagarFoto} onClick={() => apagarImagem(id)} aria-label="Apagar esta imagem" title="Apagar">✕</button>
+                      </div>
+                    );
+                  })}
+                  {idsDaFicha.length < 3 && (
+                    <button type="button" className={styles.novaFoto} onClick={() => setEnviando(true)} title="Enviar uma imagem própria para os dados">
+                      <span className={styles.amostraMais} aria-hidden="true">+</span>
+                      Personalizada
+                    </button>
+                  )}
+                </div>
+              </div>
+              <EnviarImagemDoDado aberto={enviando} onFechar={() => setEnviando(false)} onPronto={enviarImagem} />
               {GRUPOS.map((grupo) => (
                 <div key={grupo.id} className={styles.grupo}>
                   <h3>{grupo.titulo}</h3>
@@ -178,6 +320,21 @@ export default function Dados({ campanha }) {
       )}
     </section>
   );
+}
+
+/*
+ * Os três kits da ficha: { kits: [{ nome, kit }, ×3], ativo }. Ficha antiga (um kit só, ou o
+ * formato de uma cor para tudo) vira o Kit 1 em uso; os vazios começam com a cor padrão.
+ */
+function kitsDaFicha(dado) {
+  const ativo = [0, 1, 2].includes(dado?.ativo) ? dado.ativo : 0;
+  const atual = Object.fromEntries(KIT.map((l) => [`d${l}`, escolhaDoKit(dado, l)]));
+  const kits = [0, 1, 2].map((i) => {
+    const guardado = dado?.kits?.[i];
+    if (guardado) return { nome: guardado.nome ?? `Kit ${i + 1}`, kit: guardado.kit ?? {} };
+    return { nome: `Kit ${i + 1}`, kit: i === ativo ? atual : {} };
+  });
+  return { kits, ativo };
 }
 
 // Paleta pronta + cor livre
