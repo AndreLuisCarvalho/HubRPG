@@ -281,7 +281,7 @@ function AbaItem({
 
       <div className={styles.detalheItem}>
         <b>{item.nome}</b>
-        {item.descricao && <small className={styles.ajuda}>{item.descricao}</small>}
+        {item.descricao && <TextoRecolhido className={styles.ajuda}>{item.descricao}</TextoRecolhido>}
         {efeito?.resiste && (
           <small className={styles.ajuda}>
             {efeito.resiste.pericia.charAt(0).toUpperCase() + efeito.resiste.pericia.slice(1)} {rotuloDaDt(efeito.resiste.dt)} = {dt}
@@ -441,6 +441,21 @@ const caido = (p) => (pvDe(p)?.maximo ?? 0) > 0 && pvDe(p)?.atual === 0;
 const temSan = (p) => p.ver.recursos.some((r) => r.id === 'san');
 // Visão Jogadores: números das ameaças (Defesa, resistências, testes) ficam escondidos
 const secreto = (p, mestre) => !mestre && p?.lado === 'ameacas';
+
+// Texto longo que, no celular, fica em 2 linhas com "ver texto" (no computador aparece inteiro)
+function TextoRecolhido({ children, className }) {
+  const [aberto, setAberto] = useState(false);
+  const longo = typeof children === 'string' && children.length > 110;
+  if (!longo) return <p className={className}>{children}</p>;
+  return (
+    <div className={styles.recolhivel} data-aberto={aberto || undefined}>
+      <p className={className}>{children}</p>
+      <button type="button" className={styles.verTexto} onClick={() => setAberto((v) => !v)}>
+        {aberto ? 'mostrar menos' : 'ver texto'}
+      </button>
+    </div>
+  );
+}
 
 // Jogador esperando o mestre rolar a resistência das ameaças (sem limite de tempo; dá para desistir)
 function EsperaDoMestre({ alvos, respostas, onCancelar }) {
@@ -999,7 +1014,7 @@ function AbaRitual({
         <p className={styles.feito}>
           <b>{ritual.nome}</b> conjurado ({forma.custo} PE). DT {ritual.dt}.
         </p>
-        <p className={styles.efeito}>{forma.texto}</p>
+        <TextoRecolhido className={styles.efeito}>{forma.texto}</TextoRecolhido>
 
         {resistencia && listaAlvos.length > 0 && (
           etapa.resistencias ? (
@@ -1103,7 +1118,7 @@ function AbaRitual({
           <div><dt>Resistência</dt><dd>{ritual.resistencia ?? '—'}</dd></div>
           <div><dt>DT</dt><dd>{ritual.dt}</dd></div>
         </dl>
-        <p>{forma.texto}</p>
+        <TextoRecolhido>{forma.texto}</TextoRecolhido>
         <small>{custoParanormal(ritual, ritual.elemento, forma.id)} · PE de {ator.ver.nome}: {pe?.atual ?? '—'}</small>
       </div>
 

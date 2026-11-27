@@ -30,12 +30,23 @@ $ouro: #d9a54a;
   // Na minha vez: o cartão acende
   &[data-na-vez] { border-left-color: $ouro; box-shadow: 0 0 0 1px color-mix(in srgb, $ouro 40%, transparent), 0 6px 18px rgba(0, 0, 0, 0.5); }
 
+  // Celular: vira uma pílula (retrato e a barra de PV) que abre a gaveta; some quando a barra de
+  // baixo já mostra o meu agente ou há uma ação em jogo (não cobre o alvo)
   @include celular {
     top: 4px;
     left: 4px;
-    gap: 6px;
-    width: min(170px, 48vw);
-    padding: 4px 6px 4px 4px;
+    gap: 5px;
+    width: auto;
+    padding: 3px 8px 3px 3px;
+    border-left-width: 2px;
+    border-radius: 999px;
+
+    .corpo > b, .contaCond { display: none; }
+    .barras > span:not(:first-child) { display: none; }
+    .barras > span { grid-template-columns: 54px auto; }
+    .barras em { display: none; }
+
+    &[data-escondido] { display: none; }
   }
 }
 

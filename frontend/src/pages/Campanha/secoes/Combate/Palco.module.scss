@@ -22,9 +22,18 @@ $ouro: #d9a54a;
   overflow: hidden;
   isolation: isolate;
 
+  // Celular: a carta cresce até onde o campo deixa (largura e altura): duas fileiras sempre cabem,
+  // com o painel da carta aberto ou não (100cqh = a altura do campo)
   @include celular {
-    --carta: clamp(62px, 19vw, 84px);
-    padding: 38px 6px 10px;
+    container-type: size;
+    --carta: clamp(40px, min(22vw, calc((100cqh - 36px) / 2.9)), 108px);
+    padding: 32px 6px 6px;
+  }
+
+  // Deitado: o campo é largo e baixo
+  @include deitado {
+    --carta: clamp(40px, min(14vw, calc((100cqh - 36px) / 2.9)), 108px);
+    padding: 34px 6px 6px;
   }
 }
 
@@ -43,7 +52,7 @@ $ouro: #d9a54a;
   &[data-lado='ameacas'] { align-content: flex-end; }
   &[data-lado='agentes'] { align-content: flex-start; }
 
-  @include celular { gap: 10px 8px; }
+  @include celular { gap: 10px 8px; padding: 4px 0; }
 }
 
 // A linha do meio do campo
