@@ -12,6 +12,7 @@ import { avisarMudancas, rotasTempoReal } from './tempoReal.js';
 import parentesRouter from './routes/parentes.js';
 import fundosCombateRouter from './routes/fundosCombate.js';
 import imagensDadoRouter from './routes/imagensDado.js';
+import roteiroCampanhaRouter from './routes/roteiroCampanha.js';
 
 const app = express();
  
@@ -37,6 +38,8 @@ app.use('/api', avisarMudancas);
 app.use('/api', rotasTempoReal);
 
 app.use('/api', contasRouter);
+// Antes das campanhas: /campanhas/:id/roteiro (o quadro geral do mestre)
+app.use('/api', roteiroCampanhaRouter);
 app.use('/api/campanhas', campanhasRouter);
 // Antes das fichas: apagar uma ficha leva as imagens dos dados dela junto
 app.use('/api', imagensDadoRouter);

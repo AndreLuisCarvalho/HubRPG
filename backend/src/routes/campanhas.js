@@ -156,7 +156,10 @@ router.delete('/:id/membros/:usuarioId', async (req, res) => {
 router.delete('/:id', exigirMestre, async (req, res) => {
   const id = Number(req.params.id);
   await db.lote([
-    ...['sessoes', 'personagens', 'notas', 'fichas', 'itens', 'arquivos', 'mapas', 'combates', 'parentes', 'membros']
+    // Imagens dos dados das fichas e o fundo dos combates (guardados à parte), antes das fichas e combates
+    ['DELETE FROM imagens_dado WHERE ficha_id IN (SELECT id FROM fichas WHERE campanha_id = ?)', id],
+    ['DELETE FROM fundos_combate WHERE combate_id IN (SELECT id FROM combates WHERE campanha_id = ?)', id],
+    ...['sessoes', 'personagens', 'notas', 'fichas', 'itens', 'arquivos', 'mapas', 'combates', 'parentes', 'membros', 'missoes', 'roteiros_campanha']
       .map((tabela) => [`DELETE FROM ${tabela} WHERE campanha_id = ?`, id]),
     ['DELETE FROM campanhas WHERE id = ?', id],
   ]);

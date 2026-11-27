@@ -217,6 +217,11 @@ async function iniciar() {
     dados       TEXT DEFAULT '{}',
     criado_em   TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
+  // Roteiro da campanha (o quadro geral do mestre): um por campanha
+  await db.run(`CREATE TABLE IF NOT EXISTS roteiros_campanha (
+    campanha_id INTEGER PRIMARY KEY,
+    dados       TEXT NOT NULL DEFAULT '{}'
+  )`);
   // Imagens próprias para os dados de uma ficha (fundo das faces): fora de "dados", que é lido o tempo todo
   await db.run(`CREATE TABLE IF NOT EXISTS imagens_dado (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
