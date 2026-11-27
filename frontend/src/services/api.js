@@ -159,6 +159,10 @@ export const api = {
   atualizarMissao: async (id, missao) =>
     lerItem(await requisicao(`/missoes/${id}`, { method: 'PUT', body: escreverMissao(missao) })),
   excluirMissao: (id) => requisicao(`/missoes/${id}`, { method: 'DELETE' }),
+  // O quadro geral da campanha (premissa, verdade, ameaça, relógio, facções, arco, desfechos)
+  roteiroDaCampanha: async (campanhaId) => (await requisicao(`/campanhas/${campanhaId}/roteiro`)).dados,
+  salvarRoteiroDaCampanha: (campanhaId, dados) =>
+    requisicao(`/campanhas/${campanhaId}/roteiro`, { method: 'PUT', body: { dados } }),
 
   // Imagens próprias dos dados de uma ficha (fundo das faces)
   listarImagensDado: (fichaId) => requisicao(`/fichas/${fichaId}/imagens-dado`),

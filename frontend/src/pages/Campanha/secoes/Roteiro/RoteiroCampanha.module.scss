@@ -1,0 +1,385 @@
+@use '../../../../styles/mixins' as *;
+
+$ouro: #d9a54a;
+
+// 7 etapas numa linha no PC (4 + 3 no celular)
+.passos7 {
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+
+  @media (max-width: 1250px) { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  @include celular { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+}
+
+// A campanha não tem a lista "falta para jogar": a etapa ocupa a largura toda
+.corpoLargo { grid-template-columns: minmax(0, 1fr) !important; }
+
+.diagramaVazio {
+  padding: 18px;
+  border: 1px dashed var(--borda);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+  text-align: center;
+}
+
+/* ---------- Verdade ---------- */
+.segredo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+
+  > input { flex: 2 1 220px; }
+  > button { border: 0; background: none; color: var(--texto-suave); cursor: pointer; }
+}
+
+.segredoMissao { flex: 1 1 180px; min-width: 0; }
+
+/* ---------- Relógio ---------- */
+.relogio {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 12px;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.relogioSvg {
+  flex: 0 0 auto;
+  width: 110px;
+  height: 110px;
+
+  path, circle {
+    fill: rgba(255, 255, 255, 0.06);
+    stroke: #121316;
+    stroke-width: 2;
+  }
+
+  [data-feito] { fill: #b3261c; }
+}
+
+.relogioTexto {
+  display: grid;
+  gap: 4px;
+
+  b { @include fonte-titulo; font-size: 1.3rem; }
+  small { font-size: 0.82rem; color: var(--texto-suave); }
+}
+
+.relogioBotoes {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+
+  button {
+    padding: 6px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.78rem;
+    cursor: pointer;
+
+    &:disabled { opacity: 0.35; cursor: default; }
+  }
+}
+
+.passo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  i {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--borda);
+    border-radius: 50%;
+    font-size: 0.72rem;
+    font-style: normal;
+  }
+
+  input { flex: 1; }
+  > button { border: 0; background: none; color: var(--texto-suave); cursor: pointer; }
+
+  &[data-feito] i { border-color: #b3261c; background: #b3261c; color: #fff; }
+}
+
+/* ---------- Facções ---------- */
+.cores {
+  display: flex;
+  gap: 4px;
+
+  button {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: 2px solid transparent !important;
+    border-radius: 50%;
+    background: var(--c) !important;
+    cursor: pointer;
+
+    &[aria-pressed='true'] { border-color: var(--texto) !important; }
+  }
+}
+
+.relacao {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1.2fr) auto;
+  align-items: center;
+  gap: 6px;
+
+  > button { border: 0; background: none; color: var(--texto-suave); cursor: pointer; }
+
+  @include celular { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+
+// O organograma
+.organograma {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 46px;
+  padding: 14px 10px 16px;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(179, 38, 28, 0.12), transparent 60%),
+    rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+.noAmeaca {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  padding: 8px 18px;
+  border: 2px solid #b3261c;
+  border-radius: 6px;
+  background: #1a0c0b;
+  box-shadow: 0 0 22px rgba(179, 38, 28, 0.35);
+
+  small { @include fonte-ficha; font-size: 0.6rem; letter-spacing: 0.14em; color: #e2675d; }
+  b { @include fonte-titulo; font-size: 1.15rem; }
+}
+
+.ligacoes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path { fill: none; stroke-width: 2; }
+  text { @include fonte-ficha; font-size: 10px; letter-spacing: 0.06em; paint-order: stroke; stroke: #121316; stroke-width: 3px; }
+
+  [data-tipo='alianca'] path { stroke: #6fcf97; }
+  [data-tipo='alianca'] text { fill: #6fcf97; }
+  [data-tipo='rivalidade'] path { stroke: #e2675d; }
+  [data-tipo='rivalidade'] text { fill: #e2675d; }
+  [data-tipo='controle'] path { stroke: $ouro; stroke-dasharray: 6 4; }
+  [data-tipo='controle'] text { fill: $ouro; }
+}
+
+.faccoes {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 40px 18px;
+  width: 100%;
+}
+
+.noFaccao {
+  display: grid;
+  gap: 4px;
+  width: 170px;
+
+  // Celular: uma embaixo da outra, com espaço à direita para as ligações
+  @include celular { width: min(220px, calc(100% - 70px)); margin-right: 50px; }
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--c) 60%, var(--borda));
+  border-top: 3px solid var(--c);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--c) 10%, #141518);
+
+  header { display: grid; gap: 2px; }
+  b { @include fonte-titulo; font-size: 0.98rem; }
+
+  em {
+    justify-self: start;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-style: normal;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.08);
+
+    &[data-relacao='aliada'] { color: #6fcf97; }
+    &[data-relacao='hostil'] { color: #e2675d; }
+    &[data-relacao='neutra'] { color: var(--texto-suave); }
+  }
+
+  > small { font-size: 0.7rem; line-height: 1.3; color: var(--texto-suave); }
+}
+
+.lider { font-size: 0.78rem; font-weight: 600; color: var(--c); }
+.membro { font-size: 0.74rem; color: var(--texto); padding-left: 10px; border-left: 1px solid var(--borda); }
+
+/* ---------- Arco / linha do tempo ---------- */
+.linhaDoTempo {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.22);
+  overflow-x: auto;
+}
+
+.trilha {
+  display: grid;
+  gap: 8px;
+
+  ol {
+    position: relative;
+    display: flex;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    // A linha que liga os pontos
+    &::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      left: 20px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--cor), rgba(255, 255, 255, 0.12));
+    }
+
+    > li { position: relative; display: grid; align-content: start; gap: 4px; flex: 0 0 150px; }
+  }
+}
+
+.rotuloTrilha { @include rotulo-campo; }
+
+.noMissao {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--texto);
+  text-align: left;
+  cursor: pointer;
+
+  i {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--cor);
+    border-radius: 50%;
+    background: #15161a;
+    @include fonte-titulo;
+    font-size: 1rem;
+    font-style: normal;
+  }
+
+  b { font-size: 0.85rem; line-height: 1.25; }
+
+  em {
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-style: normal;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.08);
+
+    &[data-estado='pronta'] { color: #6fcf97; }
+    &[data-estado='jogada'] { color: $ouro; }
+    &[data-estado='montando'] { color: var(--texto-suave); }
+  }
+
+  &:hover b { text-decoration: underline; }
+}
+
+.revela {
+  padding-left: 8px;
+  border-left: 2px solid #9b6bd6;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  color: #cfb6f0;
+}
+
+.trilhaRelogio {
+  &::before { background: rgba(255, 255, 255, 0.12) !important; }
+
+  li {
+    i {
+      position: relative;
+      width: 14px;
+      height: 14px;
+      margin: 11px 0 0 11px;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-radius: 50%;
+      background: #15161a;
+    }
+
+    small { font-size: 0.72rem; line-height: 1.3; color: var(--texto-suave); }
+
+    &[data-feito] i { border-color: #b3261c; background: #b3261c; }
+    &[data-feito] small { color: #f0a39b; }
+    &[data-proximo] i { border-color: #e2675d; box-shadow: 0 0 10px rgba(226, 103, 93, 0.7); }
+    &[data-proximo] small { color: var(--texto); font-weight: 600; }
+  }
+}
+
+.itemArco {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+
+  i {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--cor);
+    border-radius: 50%;
+    font-size: 0.72rem;
+    font-style: normal;
+  }
+
+  b { flex: 1; font-size: 0.88rem; }
+
+  button {
+    padding: 2px 6px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: none;
+    color: var(--texto-suave);
+    font-size: 0.7rem;
+    cursor: pointer;
+
+    &:disabled { opacity: 0.3; cursor: default; }
+  }
+}
+
+/* ---------- Desfechos ---------- */
+.tipoDesfecho { flex: 0 1 220px; }

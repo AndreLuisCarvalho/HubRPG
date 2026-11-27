@@ -8,6 +8,8 @@ import { COMBATE_NOVO, copiasDoLivro, daFicha } from '../Combate/regrasCombate';
 import {
   dadosCompletos, ETAPAS, etapasFeitas, novoId, pendencias, PISTAS_POR_REVELACAO, pistasPorRevelacao,
 } from './missao';
+import { ETAPAS_CAMPANHA } from './campanhaRoteiro';
+import RoteiroCampanha from './RoteiroCampanha';
 import styles from './Roteiro.module.scss';
 
 /**
@@ -46,7 +48,9 @@ export default function Roteiro({ campanha }) {
   if (!missoes) return <p className={styles.carregando}>Carregando…</p>;
 
   const aberta = missoes.find((m) => m.id === Number(busca.get('missao'))) ?? null;
+  const campanhaAberta = !aberta && busca.get('campanha') !== null;
   const abrir = (id) => setBusca(id ? { missao: String(id) } : {}, { replace: true });
+  const etapaCampanha = ETAPAS_CAMPANHA.some((e) => e.id === busca.get('campanha')) ? busca.get('campanha') : 'premissa';
 
   async function criar(e) {
     e.preventDefault();
@@ -76,15 +80,25 @@ export default function Roteiro({ campanha }) {
       <header className={styles.topo}>
         <div>
           <h1>Roteiro</h1>
-          <p>Monte cada missão passo a passo: gancho, cenas, pistas, NPCs, confronto e clímax. Só você (o mestre) vê esta página.</p>
+          <p>O quadro geral da campanha e cada missão passo a passo. Só você (o mestre) vê esta página.</p>
         </div>
       </header>
 
       {erro && <p className="erro">{erro}</p>}
 
-      <div className={styles.grade} data-aberta={aberta ? true : undefined}>
-        {/* ---------- Lista de missões ---------- */}
+      <div className={styles.grade} data-aberta={aberta || campanhaAberta ? true : undefined}>
+        {/* ---------- Lista: a campanha (fixa no topo) e as missões ---------- */}
         <aside className={styles.lista} aria-label="Missões">
+          <button
+            type="button"
+            className={`${styles.cartao} ${styles.cartaoCampanha}`}
+            aria-current={campanhaAberta || undefined}
+            onClick={() => setBusca({ campanha: 'premissa' }, { replace: true })}
+          >
+            <small className={styles.sobre}>A campanha</small>
+            <b>{campanha.nome}</b>
+            <small>Premissa, verdade oculta, ameaça, relógio, facções, arco e desfechos</small>
+          </button>
           <form className={styles.nova} onSubmit={criar}>
             <input value={nova} onChange={(e) => setNova(e.target.value)} placeholder="Nome da nova missão" maxLength={80} aria-label="Nome da nova missão" />
             <button type="submit" disabled={!nova.trim()}>+ Missão</button>
@@ -111,8 +125,19 @@ export default function Roteiro({ campanha }) {
           </ul>
         </aside>
 
-        {/* ---------- A missão aberta ---------- */}
-        {aberta ? (
+        {/* ---------- A campanha ou a missão aberta ---------- */}
+        {campanhaAberta ? (
+          <RoteiroCampanha
+            campanha={campanha}
+            missoes={missoes}
+            fichas={apoio.fichas}
+            etapa={etapaCampanha}
+            onEtapa={(etapa) => setBusca({ campanha: etapa }, { replace: true })}
+            onFechar={() => abrir(null)}
+            onErro={setErro}
+            onAbrirMissao={abrir}
+          />
+        ) : aberta ? (
           <EditorDaMissao
             key={aberta.id}
             campanha={campanha}

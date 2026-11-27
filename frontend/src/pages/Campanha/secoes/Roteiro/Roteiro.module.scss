@@ -98,6 +98,14 @@ $ouro: #d9a54a;
   &[aria-current] { border-color: var(--cor); border-left-color: var(--cor); background: color-mix(in srgb, var(--cor) 10%, var(--superficie)); }
 }
 
+// "A campanha": fixa no topo da lista, com a borda dourada
+.cartaoCampanha {
+  border-left-color: #d9a54a;
+  background: linear-gradient(135deg, rgba(217, 165, 74, 0.1), transparent 60%), var(--superficie);
+}
+
+.sobre { @include fonte-ficha; font-size: 0.62rem !important; letter-spacing: 0.14em; color: #d9a54a !important; }
+
 .progresso {
   display: flex;
   align-items: center;
