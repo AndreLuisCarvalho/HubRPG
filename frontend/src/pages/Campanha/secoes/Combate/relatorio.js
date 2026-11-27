@@ -85,6 +85,53 @@ export function textoDaQueda(c, mestre) {
   return `${verbo} ${c.porOculto && !mestre ? 'algo que ninguém viu' : c.por}`;
 }
 
+/*
+ * Momentos para mostrar, sem repetição: os críticos de um mesmo atacante no mesmo alvo viram uma
+ * linha só ("André Carvalho: 2 críticos em Zumbi de Sangue (Faca)", R6–R7); quedas e contagens
+ * ficam como estão. [{ id, rodadas: 'R6' | 'R6–R7' | 'R6, R9', carimbo, texto }], na ordem da luta.
+ */
+const ATAQUE = /^(.+?) atacou (.+?) com (.+?)(?::|\s\(|\.$)/;
+
+export function resumirMomentos(momentos) {
+  const linhas = [];
+  const criticos = new Map();   // "autor>alvo" → linha
+  for (const m of momentos) {
+    const achado = m.carimbo === 'critico' && m.texto.match(ATAQUE);
+    if (!achado) {
+      linhas.push({ id: m.id, rodadasLista: [m.rodada], carimbo: m.carimbo, texto: m.texto });
+      continue;
+    }
+    const [, autor, alvo, arma] = achado;
+    const chave = `${autor}>${alvo}`;
+    const linha = criticos.get(chave);
+    if (linha) {
+      linha.n += 1;
+      linha.rodadasLista.push(m.rodada);
+      linha.armas.add(arma);
+    } else {
+      const nova = { id: m.id, rodadasLista: [m.rodada], carimbo: 'critico', autor, alvo, n: 1, armas: new Set([arma]) };
+      criticos.set(chave, nova);
+      linhas.push(nova);
+    }
+  }
+  return linhas.map((l) => ({
+    id: l.id,
+    carimbo: l.carimbo,
+    rodadas: rotuloDasRodadas(l.rodadasLista),
+    texto: l.autor
+      ? `${l.autor}: ${l.n > 1 ? `${l.n} críticos` : 'crítico'} em ${l.alvo} (${[...l.armas].join(', ')})`
+      : l.texto,
+  }));
+}
+
+// [6, 7] → "R6–R7"; [6, 9] → "R6, R9"; [6] → "R6"
+function rotuloDasRodadas(lista) {
+  const unicas = [...new Set(lista)].sort((a, b) => a - b);
+  if (unicas.length === 1) return `R${unicas[0]}`;
+  const seguidas = unicas.every((r, i) => i === 0 || r === unicas[i - 1] + 1);
+  return seguidas ? `R${unicas[0]}–R${unicas[unicas.length - 1]}` : unicas.map((r) => `R${r}`).join(', ');
+}
+
 /** Destaques: quem mais causou dano, quem mais sofreu e quem mais acertou crítico (só agentes) */
 export function destaquesDo(relatorio) {
   const agentes = relatorio.participantes.filter((p) => p.lado === 'agentes');

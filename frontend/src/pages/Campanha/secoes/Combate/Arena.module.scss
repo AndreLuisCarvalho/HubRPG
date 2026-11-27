@@ -21,6 +21,9 @@ $sangue: #b3261c;
   gap: 8px;
   height: calc(100dvh - 48px);
   min-height: 0;
+  // As gavetas fechadas (Registro à direita, Minha ficha à esquerda) ficam escondidas fora da
+  // arena: sem isto, criavam uma barra de rolagem lateral na página
+  overflow-x: clip;
 
   // Celular: a arena ocupa a tela toda (o ← volta para a lista)
   @include celular {
@@ -459,6 +462,9 @@ $sangue: #b3261c;
   height: 100%;
   overflow-y: auto;
   padding: 4px;
+
+  // Tela larga: o relatório ocupa o espaço todo e cabe sem rolar (cada parte se ajusta)
+  @media (min-width: 1000px) { overflow: hidden; }
 }
 
 // Painel da carta em jogo: ao lado do campo, como a carta ampliada
