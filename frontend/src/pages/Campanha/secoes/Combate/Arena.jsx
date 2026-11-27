@@ -6,6 +6,7 @@ import CaixaEncerrar from './CaixaEncerrar';
 import Hud from './Hud';
 import Inspecao from './Inspecao';
 import LogCombate from './LogCombate';
+import MinhaFicha from './MinhaFicha';
 import PainelAcao from './PainelAcao';
 import IconeArma from './IconeArma';
 import PedidoDeReacao from './PedidoDeReacao';
@@ -511,6 +512,7 @@ export default function Arena({
   // O "aplicar" do painel da carta: na primeira vez que a ação acontece, paga o custo dela
   // (custo: o da carta, ou o que a ação escolheu, como na Ação livre; semGasto: ainda não aconteceu)
   const jogadasPagas = useRef(new Set());
+  const ultimoMeu = useRef(null);
   function aplicarDaCarta({ custo, semGasto = false, mudarDados = (d) => d, ...resto }) {
     const valor = custo !== undefined ? custo : carta?.custo;
     const paga = Boolean(!semGasto && carta && naVez && valor && valor !== 'livre' && !jogadasPagas.current.has(carta.jogada));
@@ -544,6 +546,12 @@ export default function Arena({
       return [{ rid, c }];
     })
     : [];
+
+  // Minha ficha (jogadores): o agente desta conta; na tela da mesa, o agente da vez (ou o último que jogou)
+  const meus = mestre ? [] : visiveis.filter((p) => p.lado === 'agentes' && fichas[p.fichaId]
+    && (meuUsuarioId == null || fichas[p.fichaId].dono_id === meuUsuarioId));
+  const meu = meus.find((p) => p.id === daVez?.id) ?? meus.find((p) => p.id === ultimoMeu.current) ?? meus[0] ?? null;
+  ultimoMeu.current = meu?.id ?? null;
 
   const inspecao = vistos.find((p) => p.id === inspecionado && (mestre || !p.oculto));
   const verRelatorio = encerrado && dados.relatorio && !verPalco;
@@ -666,6 +674,11 @@ export default function Arena({
               />
             )}
           />
+        )}
+
+        {/* Minha ficha: cartão no canto do campo e a gaveta dela */}
+        {meu && !verRelatorio && !encerrado && (
+          <MinhaFicha key={meu.id} p={meu} fichas={fichas} livro={livro} naVez={andamento && meu.id === dados.vez} />
         )}
 
         {/* Painel da carta em jogo: o passo a passo, ao lado do campo (o alvo se escolhe clicando na carta) */}
