@@ -291,6 +291,15 @@
       color: var(--texto);
     }
   }
+
+  // "mostrar aliados": só um link, depois dos inimigos
+  .verAliados {
+    padding: 3px 6px;
+    border: 0;
+    border-radius: 0;
+    font-size: 0.72rem;
+    text-decoration: underline;
+  }
 }
 
 .miniRetrato {

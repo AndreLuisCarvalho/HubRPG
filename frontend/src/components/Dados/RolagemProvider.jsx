@@ -11,11 +11,13 @@ export default function RolagemProvider({ children }) {
   const [pedido, setPedido] = useState(null);
   const [historico, setHistorico] = useState([]);
 
+  const aberta = Boolean(pedido);
   const valor = useMemo(() => ({
     disponivel: true,
+    aberta,   // a mesa está na tela (o combate segura os avisos enquanto isso)
     // "chave" nova a cada pedido: a mesa recomeça do zero
     rolar: (novo) => setPedido((atual) => ({ ...novo, chave: (atual?.chave ?? 0) + 1 })),
-  }), []);
+  }), [aberta]);
   // Estáveis: a mesa usa dentro de um efeito
   const registrar = useCallback((r) => setHistorico((h) => [r, ...h].slice(0, LIMITE_HISTORICO)), []);
   const fechar = useCallback(() => setPedido(null), []);

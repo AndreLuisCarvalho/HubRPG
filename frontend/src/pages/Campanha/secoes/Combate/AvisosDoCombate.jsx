@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useRolagem } from '../../../../components/Dados/rolagem';
 import styles from './AvisosDoCombate.module.scss';
 
 const SEGUNDOS_DO_AVISO = 6;
@@ -35,17 +36,25 @@ export default function AvisosDoCombate({ log, mirando = false }) {
     });
   }, [log]);
 
+  // Com a mesa de dados na tela, o tempo para: quando ela fecha, os avisos recomeçam a contar
+  // (senão o resumo do próprio ataque some enquanto os dados ainda estão rolando)
+  const { aberta } = useRolagem();
+  useEffect(() => {
+    if (aberta) return;
+    setAvisos((l) => (l.length ? l.map((a) => ({ ...a, ate: Date.now() + SEGUNDOS_DO_AVISO * 1000 })) : l));
+  }, [aberta]);
+
   // Cada aviso some sozinho no fim do tempo dele (o dano que chega depois renova o do ataque)
   useEffect(() => {
-    if (!avisos.length) return undefined;
+    if (!avisos.length || aberta) return undefined;
     const proximo = Math.min(...avisos.map((a) => a.ate));
     const espera = setTimeout(() => setAvisos((l) => l.filter((a) => a.ate > Date.now() + 50)), Math.max(0, proximo - Date.now()));
     return () => clearTimeout(espera);
-  }, [avisos]);
+  }, [avisos, aberta]);
 
   if (!avisos.length) return null;
   return (
-    <ol className={styles.avisos} data-mirando={mirando || undefined} aria-live="polite" aria-label="O que acabou de acontecer">
+    <ol className={styles.avisos} data-mirando={mirando || undefined} data-pausado={aberta || undefined} aria-live="polite" aria-label="O que acabou de acontecer">
       {[...avisos].reverse().map((a) => (
         <li key={a.chave} className={styles.aviso} data-tipo={a.tipo} data-tom={a.carimbo ?? undefined}>
           <p>

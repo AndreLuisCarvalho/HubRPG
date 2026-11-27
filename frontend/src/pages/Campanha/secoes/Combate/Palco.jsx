@@ -256,16 +256,9 @@ function Carta({
         {/* Condições: um ícone por condição na lateral da carta, com as rodadas que faltam */}
         {(p.condicoes ?? []).length > 0 && (
           <ul className={styles.condicoes} aria-label="Condições">
-            {p.condicoes.map((c) => {
-              const resta = rodadasRestantes(c, rodada);
-              const texto = textoDaCondicao(c, rodada);
-              return (
-                <li key={c.uid} style={{ '--cor-cond': corDaCondicao(c.id) }} title={texto} aria-label={texto}>
-                  <IconeCondicao id={c.id} className={styles.iconeCond} />
-                  {resta != null && <b>{resta}</b>}
-                </li>
-              );
-            })}
+            {p.condicoes.map((c) => (
+              <IconeDaCarta key={c.uid} c={c} rodada={rodada} />
+            ))}
           </ul>
         )}
 
@@ -288,6 +281,77 @@ function Carta({
           </span>
         )}
       </div>
+    </li>
+  );
+}
+
+/*
+ * Ícone de uma condição na lateral da carta. No celular não há "passar o mouse": tocar e segurar
+ * (ou só tocar) abre um balão com o nome, as rodadas que faltam e o efeito; some ao soltar o dedo
+ * depois de segurar, ou ao tocar fora.
+ */
+const SEGURAR = 350;   // ms para o toque virar "segurar"
+
+function IconeDaCarta({ c, rodada }) {
+  const [aberto, setAberto] = useState(false);
+  // O balão abre para o lado com mais espaço na tela (o campo corta o que passar da borda)
+  const [paraDireita, setParaDireita] = useState(false);
+  const [largura, setLargura] = useState(220);
+  const relogio = useRef(null);
+  const segurou = useRef(false);
+  const el = useRef(null);
+  const info = condicaoPorId(c.id);
+  const resta = rodadasRestantes(c, rodada);
+  const texto = textoDaCondicao(c, rodada);
+
+  // Tocar fora fecha o balão
+  useEffect(() => {
+    if (!aberto) return undefined;
+    const fora = (e) => { if (!el.current?.contains(e.target)) setAberto(false); };
+    document.addEventListener('pointerdown', fora);
+    return () => document.removeEventListener('pointerdown', fora);
+  }, [aberto]);
+
+  function apertar() {
+    const r = el.current?.getBoundingClientRect();
+    if (r) {
+      const direita = window.innerWidth - r.right;
+      setParaDireita(direita > r.left);
+      setLargura(Math.max(130, Math.min(220, Math.max(direita, r.left) - 22)));
+    }
+    segurou.current = false;
+    clearTimeout(relogio.current);
+    relogio.current = setTimeout(() => { segurou.current = true; setAberto(true); }, SEGURAR);
+  }
+
+  function soltar() {
+    clearTimeout(relogio.current);
+    // Segurou: solta e o balão some. Toque rápido: abre/fecha
+    if (segurou.current) setAberto(false);
+    else setAberto((v) => !v);
+  }
+
+  return (
+    <li
+      ref={el}
+      style={{ '--cor-cond': corDaCondicao(c.id) }}
+      title={texto}
+      aria-label={texto}
+      data-aberto={aberto || undefined}
+      onPointerDown={apertar}
+      onPointerUp={soltar}
+      onPointerCancel={() => { clearTimeout(relogio.current); setAberto(false); }}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <IconeCondicao id={c.id} className={styles.iconeCond} />
+      {resta != null && <b>{resta}</b>}
+      {aberto && (
+        <span className={styles.balaoCond} data-direita={paraDireita || undefined} style={{ maxWidth: largura }} role="tooltip">
+          <strong>{info?.nome ?? c.id}</strong>
+          <em>{resta == null ? 'até o fim da cena' : `falta${resta > 1 ? 'm' : ''} ${resta} rodada${resta > 1 ? 's' : ''}`}</em>
+          {info?.resumo && <span>{info.resumo}</span>}
+        </span>
+      )}
     </li>
   );
 }

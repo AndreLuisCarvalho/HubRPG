@@ -143,6 +143,26 @@
 // Enquanto os dados rolam, os botões de nova rolagem ficam esmaecidos
 .esperando button:disabled { opacity: 0.4; cursor: default; }
 
+// Fecha sozinha (combate): uma barrinha esvazia embaixo do "Fechar"
+.botoes .fechando {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--cor, #c4974a);
+    transform-origin: left;
+    animation: esvaziarFechar 2.5s linear forwards;
+  }
+}
+
+@keyframes esvaziarFechar { to { transform: scaleX(0); } }
+
 .botoes button {
   padding: 9px 16px;
   border: 1px solid var(--borda, #33363b);
