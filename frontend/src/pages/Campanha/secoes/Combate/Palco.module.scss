@@ -371,7 +371,42 @@ $ouro: #d9a54a;
   }
 }
 
-.iconeCond { width: 64%; height: 64%; }
+.iconeCond { width: 64%; height: 64%; pointer-events: none; }
+
+.condicoes li {
+  -webkit-touch-callout: none;
+  user-select: none;
+  touch-action: manipulation;
+
+  &[data-aberto] { z-index: 2; box-shadow: 0 0 0 2px var(--cor-cond), 0 2px 6px rgba(0, 0, 0, 0.7); }
+}
+
+// Balão da condição: à esquerda do ícone (por cima da carta), com nome, tempo e efeito
+.balaoCond {
+  position: absolute;
+  top: -4px;
+  right: calc(100% + 8px);
+  z-index: 8;
+  display: grid;
+  gap: 2px;
+  width: max-content;
+  padding: 7px 10px;
+  border: 1px solid var(--cor-cond);
+  border-radius: 6px;
+  background: rgba(10, 11, 13, 0.97);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.7);
+  text-align: left;
+  animation: aparecerBalao 0.15s ease-out;
+  pointer-events: none;
+
+  &[data-direita] { right: auto; left: calc(100% + 8px); }
+
+  strong { @include fonte-ficha; font-size: 0.8rem; color: var(--cor-cond); }
+  em { font-size: 0.66rem; font-style: normal; color: #c9c4ba; }
+  span { font-size: 0.72rem; line-height: 1.35; color: #f2eee6; }
+}
+
+@keyframes aparecerBalao { from { opacity: 0; transform: translateX(6px); } }
 
 /* Na mira: etiqueta no alvo e a seta da ameaça até ele */
 .naMira {

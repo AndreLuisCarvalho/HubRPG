@@ -55,6 +55,26 @@ export default function Hud({
   const marca = marcaDe(ator);
   const foraDaVez = daVez && ator.id !== daVez.id;
 
+  // Jogadores na vez de uma ameaça (ou de alguém oculto): uma barra fina, sem as cartas viradas,
+  // para o campo ficar com a altura
+  if (segredo && !onFinalizar) {
+    return (
+      <div className={styles.hud} data-lado={ator.lado} data-modo="fina">
+        <span className={styles.hudRetrato} data-lado={ator.lado} data-estado={estado.id}>
+          {ver.imagem && !ator.oculto ? <img src={ver.imagem} alt="" /> : ver.nome.charAt(0)}
+        </span>
+        <div className={styles.hudFinaTexto}>
+          <small>Vez de</small>
+          <b>{ator.oculto ? 'algo nas sombras…' : ver.nome}{marca && <em className={styles.hudMarca}>{marca}</em>}</b>
+        </div>
+        {!ator.oculto && !semNumeros && ver.recursos[0] && (
+          <span className={styles.hudFinaPv}>{ver.recursos[0].sigla} {ver.recursos[0].atual}/{ver.recursos[0].maximo}</span>
+        )}
+        {!ator.oculto && semNumeros && <span className={styles.hudFinaEstado} data-estado={estado.id}>{estado.rotulo}</span>}
+      </div>
+    );
+  }
+
   return (
     <div className={styles.hud} data-lado={ator.lado}>
       {/* Esquerda: quem age, com os contadores */}

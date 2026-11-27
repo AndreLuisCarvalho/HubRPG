@@ -1274,6 +1274,40 @@ $sangue: #b3261c;
   .hudFim & { justify-self: end; }
 }
 
+/* Barra fina: jogadores na vez de uma ameaça (sem a mão virada; o campo fica com a altura) */
+.hud[data-modo='fina'] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+
+  .hudRetrato { width: 34px; height: 34px; font-size: 1rem; }
+}
+
+.hudFinaTexto {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.1;
+
+  small { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--texto-suave); }
+  b { display: flex; align-items: center; gap: 6px; overflow: hidden; @include fonte-titulo; font-size: 1.05rem; white-space: nowrap; text-overflow: ellipsis; }
+}
+
+.hudFinaPv, .hudFinaEstado {
+  flex: 0 0 auto;
+  @include fonte-ficha;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.hudFinaEstado {
+  &[data-estado='ileso'] { color: #6fcf97; }
+  &[data-estado='ferido'] { color: #e0c23a; }
+  &[data-estado='muitoFerido'] { color: #ff8a4d; }
+  &[data-estado='caido'] { color: var(--texto-suave); }
+}
+
 /* ---------- 4 · Registro da missão ---------- */
 // Gaveta pela direita, por cima de tudo
 .log {
@@ -1317,6 +1351,64 @@ $sangue: #b3261c;
   button { border: 0; background: none; color: var(--texto-suave); cursor: pointer; }
 }
 
+.logAcoes { display: flex; align-items: center; gap: 8px; }
+
+// "Só meu agente"
+.logTitulo .logFiltro {
+  padding: 3px 9px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  @include fonte-ficha;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+
+  &[aria-pressed='true'] { border-color: $ouro; background: color-mix(in srgb, $ouro 22%, transparent); color: var(--texto); }
+}
+
+// Uma rodada: cabeçalho que abre/recolhe e as linhas dela
+.logRodada {
+  display: grid;
+  gap: 4px;
+
+  > ol { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+}
+
+.logCabeca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 4px;
+  padding: 4px 6px;
+  border: 0;
+  border-block: 1px solid var(--borda);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--texto);
+  @include fonte-ficha;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-align: left;
+  cursor: pointer;
+
+  > span { flex: 1; }
+  small { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.04em; color: var(--texto-suave); text-transform: none; }
+  i { font-style: normal; color: var(--texto-suave); }
+}
+
+// Dano / queda que vieram do ataque: logo embaixo dele, recuado
+.logFilho {
+  display: block;
+  margin-top: 2px;
+  padding-left: 8px;
+  border-left: 2px solid #c8423a;
+  color: #f0a39b;
+
+  &[data-tipo='dano'][data-recurso='san'] { border-left-color: #a24bff; color: #cfa8ff; }
+  &[data-tipo='cura'] { border-left-color: #2f9c5c; color: #a9e5bf; }
+  &[data-tipo='queda'] { border-left-color: #ff3b2f; color: #ff8a7d; font-weight: 700; }
+}
+
 .logLista {
   flex: 1;
   display: grid;
@@ -1324,7 +1416,7 @@ $sangue: #b3261c;
   gap: 4px;
   min-height: 0;
   margin: 0;
-  padding: 8px 10px 12px;
+  padding: 4px 10px 12px;
   list-style: none;
   overflow-y: auto;
   overscroll-behavior: contain;

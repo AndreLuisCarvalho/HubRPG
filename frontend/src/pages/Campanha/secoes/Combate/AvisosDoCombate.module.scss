@@ -114,6 +114,9 @@ $ouro: #d9a54a;
   animation: tempo var(--duracao) linear forwards;
 }
 
+// Mesa de dados aberta: a barrinha do tempo fica parada
+.avisos[data-pausado] .tempo { animation-play-state: paused; }
+
 @keyframes entrar { from { opacity: 0; translate: 0 -10px; } }
 @keyframes tempo { to { transform: scaleX(0); } }
 

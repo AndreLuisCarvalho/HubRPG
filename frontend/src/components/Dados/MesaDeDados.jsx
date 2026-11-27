@@ -7,6 +7,7 @@ import { escreverFormula, lerFormula, rolarDanos, rolarTeste } from './formula';
 import styles from './MesaDeDados.module.scss';
 
 const DURACAO = 1900;   // ms do arremesso de cada dado (os dados em CSS usam $duracao no SCSS)
+const FECHA_SOZINHA = 2500;   // ms depois do resultado, nas rolagens do combate
 const VAZIA = { grupos: [], bonus: 0, pior: false };
 
 // Muitos dados → dados menores (e um pouco menores no celular)
@@ -80,6 +81,15 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
     return () => clearTimeout(relogio);
   }, [resultado, onRegistrar, pedido.titulo]);
 
+  // Rolagem que já veio pronta (o combate): depois de parar, fecha sozinha em pouco tempo, e
+  // qualquer toque fecha na hora (no celular não é preciso achar o "Fechar")
+  const fechaSozinha = pronto && !pedido.ataque;
+  useEffect(() => {
+    if (!parou || !fechaSozinha) return undefined;
+    const relogio = setTimeout(onFechar, FECHA_SOZINHA);
+    return () => clearTimeout(relogio);
+  }, [parou, fechaSozinha, onFechar]);
+
   function rolarDeNovo() {
     setResultado((atual) => ({ ...rolarPedido(pedido, formula), rodada: atual.rodada + 1 }));
     setParou(false);
@@ -121,7 +131,10 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
       className={styles.mesa}
       aria-label={`Rolagem: ${pedido.titulo}`}
       onCancel={(e) => { e.preventDefault(); onFechar(); }}
-      onClick={(e) => e.target === e.currentTarget && onFechar()}
+      onClick={(e) => {
+        // Combate: depois de parar, tocar em qualquer lugar (fora de um botão) fecha
+        if (e.target === e.currentTarget || (fechaSozinha && parou && !e.target.closest('button'))) onFechar();
+      }}
     >
       {webgl ? (
         <div className={styles.palco3d} style={{ '--tam': `${tamanho}px` }}>
@@ -201,7 +214,9 @@ export default function MesaDeDados({ pedido, historico, onRegistrar, onPedir, o
             )}
             {!pronto && <button type="button" onClick={rolarDeNovo} disabled={!parou}>Rolar de novo</button>}
             {/* Foco no Fechar: Enter/Esc saem rápido */}
-            <button type="button" onClick={onFechar} autoFocus>Fechar</button>
+            <button type="button" onClick={onFechar} autoFocus className={fechaSozinha && parou ? styles.fechando : undefined}>
+              Fechar
+            </button>
           </div>
         </div>
 

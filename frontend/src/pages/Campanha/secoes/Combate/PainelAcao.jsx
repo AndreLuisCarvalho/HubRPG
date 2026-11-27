@@ -401,10 +401,17 @@ function AbaMover({ ator, aplicar, onFechar }) {
 
 /* ---------- Comum ---------- */
 // Escolher alvo(s): mini-retratos (o palco faz o mesmo)
-function EscolherAlvos({ lista, selecionados, onEscolher, mestre }) {
+// ladoDeQuemAge: no ataque, os aliados (do mesmo lado) ficam escondidos atrás de "mostrar aliados"
+// (a não ser que um deles já esteja escolhido, pelo campo)
+function EscolherAlvos({ lista, selecionados, onEscolher, mestre, ladoDeQuemAge = null }) {
+  const [comAliados, setComAliados] = useState(false);
+  const aliados = ladoDeQuemAge ? lista.filter((p) => p.lado === ladoDeQuemAge) : [];
+  const mostrar = !aliados.length || comAliados || aliados.some((p) => selecionados.includes(p.id))
+    ? lista
+    : lista.filter((p) => p.lado !== ladoDeQuemAge);
   return (
     <div className={styles.alvos} role="group" aria-label="Alvo">
-      {lista.map((p) => (
+      {mostrar.map((p) => (
         <button
           key={p.id}
           type="button"
@@ -418,6 +425,11 @@ function EscolherAlvos({ lista, selecionados, onEscolher, mestre }) {
           {p.ver.nome}{mestre && p.oculto ? ' (oculto)' : ''}
         </button>
       ))}
+      {mostrar.length < lista.length && (
+        <button type="button" className={styles.verAliados} onClick={() => setComAliados(true)}>
+          mostrar aliados ({aliados.length})
+        </button>
+      )}
     </div>
   );
 }
@@ -746,6 +758,7 @@ function AbaAtaque({
           lista={outros}
           selecionados={alvoIds}
           mestre={mestre}
+          ladoDeQuemAge={ator.lado}
           onEscolher={(id) => { setAlvoIds([id]); setDano(null); }}
         />
         {alvo && (

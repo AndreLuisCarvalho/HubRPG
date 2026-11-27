@@ -10,7 +10,7 @@ import { createContext, useContext } from 'react';
  */
 export const RolagemContexto = createContext(null);
 
-const SEM_MESA = { disponivel: false, rolar: () => {} };
+const SEM_MESA = { disponivel: false, aberta: false, rolar: () => {} };
 
 export function useRolagem() {
   return useContext(RolagemContexto) ?? SEM_MESA;
