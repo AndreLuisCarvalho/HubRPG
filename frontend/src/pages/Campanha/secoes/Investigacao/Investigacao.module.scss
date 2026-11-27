@@ -1,0 +1,109 @@
+@use '../../../../styles/mixins' as *;
+
+.pagina {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+
+  @include celular { grid-template-rows: none; flex: none; }
+}
+
+.topo {
+  h1 { @include fonte-titulo; font-size: 1.8rem; }
+  p { font-size: 0.88rem; color: var(--texto-suave); }
+}
+
+.carregando { color: var(--texto-suave); }
+
+.vazio {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  border: 1px dashed var(--borda);
+  border-radius: 6px;
+  color: var(--texto-suave);
+
+  span { font-size: 2rem; filter: grayscale(0.4); }
+}
+
+// O mural de cortiça
+.mural {
+  display: grid;
+  align-content: start;
+  gap: 22px;
+  padding: 20px;
+  border: 10px solid #3b2a1a;
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(0, 0, 0, 0.18) 0 1px, transparent 2px) 0 0 / 9px 9px,
+    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.06) 0 1px, transparent 2px) 0 0 / 13px 13px,
+    linear-gradient(135deg, #a07447, #8a6038);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.45);
+  overflow-y: auto;
+
+  @include celular { padding: 14px 10px; border-width: 6px; }
+}
+
+.missao {
+  display: grid;
+  gap: 12px;
+
+  h2 {
+    justify-self: start;
+    padding: 4px 14px;
+    background: #f2ead6;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+    @include fonte-ficha;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #2a1d12;
+    transform: rotate(-1deg);
+  }
+
+  ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    position: relative;
+    display: grid;
+    gap: 6px;
+    padding: 18px 14px 12px;
+    background: #f7f1df;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+    color: #2a221a;
+    transform: rotate(var(--giro));
+    animation: pregar 0.35s ease-out;
+
+    p { font-size: 0.9rem; line-height: 1.45; }
+    small { @include fonte-ficha; font-size: 0.66rem; letter-spacing: 0.08em; color: #8f1f17; }
+  }
+}
+
+// A tachinha vermelha
+.tacha {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff6b5e, #a3181b 70%);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.5);
+  translate: -50% 0;
+}
+
+@keyframes pregar { from { opacity: 0; transform: translateY(-8px) rotate(var(--giro)); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .missao li { animation: none; }
+}

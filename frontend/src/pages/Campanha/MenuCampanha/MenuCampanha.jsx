@@ -10,6 +10,8 @@ const GRUPOS = [
       { caminho: 'sessoes', rotulo: 'Sessões', icone: '◷' },
       // Só o mestre: o que ele prepara antes de jogar
       { caminho: 'roteiro', rotulo: 'Roteiro', icone: '◫', soMestre: true },
+      // Todos: o mural com as pistas que o mestre marcou como encontradas
+      { caminho: 'investigacao', rotulo: 'Investigação', icone: '⌕' },
     ],
   },
   {

@@ -13,6 +13,17 @@ $ouro: #d9a54a;
   @include celular { grid-template-rows: none; flex: none; }
 }
 
+// Modo mesa: a missão ocupa a altura toda da janela
+.paginaMesa {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+
+  @include celular { flex: none; }
+}
+
 .topo {
   h1 { @include fonte-titulo; font-size: 1.8rem; }
   p { font-size: 0.88rem; line-height: 1.5; color: var(--texto-suave); }
@@ -169,6 +180,19 @@ $ouro: #d9a54a;
 
 .nome { @include fonte-titulo; font-size: 1.5rem; }
 .resumo { font: inherit; font-size: 0.86rem; color: var(--texto-suave); }
+
+.jogar {
+  padding: 6px 14px;
+  border: 1px solid var(--cor);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--cor) 26%, transparent);
+  color: var(--texto);
+  @include fonte-ficha;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
 
 .apagar {
   padding: 6px 12px;
