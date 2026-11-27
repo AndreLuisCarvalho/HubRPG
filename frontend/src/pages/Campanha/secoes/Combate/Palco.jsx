@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ELEMENTOS } from '../../../../sistemas/ordemParanormal/modelo';
 import Contador from './Contador';
 import FundoDoCombate from './FundoDoCombate';
-import { condicaoPorId } from './condicoes';
+import IconeCondicao from './IconeCondicao';
+import { condicaoPorId, corDaCondicao, rodadasRestantes, textoDaCondicao } from './condicoes';
 import { estadoAproximado, marcaDe } from './regrasCombate';
 import styles from './Palco.module.scss';
 
@@ -16,10 +17,63 @@ const semMovimento = () => window.matchMedia?.('(prefers-reduced-motion: reduce)
  */
 export default function Palco({
   participantes, vez, mestre, preparando, mirando, alvos, selecionado, golpes, avisos = null, ultimoAtaque, inspecao,
-  onEscolher, onIniciativa, fundo = null, combateId,
+  onEscolher, onIniciativa, fundo = null, combateId, rodada = 1, mira = null,
 }) {
   const cartas = useRef(new Map());
+  const palco = useRef(null);
   const visto = useRef(ultimoAtaque?.id);
+
+  // Na mira: a ameaça escolheu o alvo (mira = { autor, alvos }); uma seta liga as cartas
+  const alvosDaMira = mira?.alvos ?? [];
+  const chaveDaMira = mira ? `${mira.autor}>${alvosDaMira.join(',')}` : '';
+  const [setas, setSetas] = useState([]);
+  useLayoutEffect(() => {
+    if (!chaveDaMira) { setSetas([]); return undefined; }
+    let quadro = 0;
+    const medir = () => {
+      const base = palco.current?.getBoundingClientRect();
+      const de = cartas.current.get(mira.autor)?.getBoundingClientRect();
+      if (!base || !de) return setSetas([]);
+      const x = (v) => v - base.left;
+      const y = (v) => v - base.top;
+      setSetas(alvosDaMira.flatMap((id) => {
+        const para = cartas.current.get(id)?.getBoundingClientRect();
+        if (!para || id === mira.autor) return [];
+        const ax = x(de.left + de.width / 2);
+        const bx = x(para.left + para.width / 2);
+        const ay = y(de.top + de.height / 2);
+        const by = y(para.top + para.height / 2);
+        // Um em cima do outro: a seta faz uma curva pela esquerda das cartas (a direita tem as condições)
+        if (Math.abs(bx - ax) < (de.width + para.width) / 2) {
+          const x1 = x(de.left) - 6;
+          const x2 = x(para.left) - 6;
+          const curva = Math.min(x1, x2) - Math.max(36, Math.abs(by - ay) * 0.35);
+          return [{ id, d: `M${x1} ${ay} Q${curva} ${(ay + by) / 2} ${x2} ${by}` }];
+        }
+        // Lado a lado: reta de borda a borda, com um leve arco
+        const dx = bx - ax;
+        const dy = by - ay;
+        const dist = Math.hypot(dx, dy) || 1;
+        const saida = (de.width / 2) * 0.95;
+        const recuo = (para.width / 2) * 1.05;
+        const x1 = ax + (dx / dist) * saida;
+        const y1 = ay + (dy / dist) * saida;
+        const x2 = bx - (dx / dist) * recuo;
+        const y2 = by - (dy / dist) * recuo;
+        const cx = (x1 + x2) / 2 - (dy / dist) * 30;
+        const cy = (y1 + y2) / 2 + (dx / dist) * 30;
+        return [{ id, d: `M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}` }];
+      }));
+    };
+    // Depois do quadro (a carta da vez ainda está subindo) e a cada mudança de tamanho
+    const agendar = () => { cancelAnimationFrame(quadro); quadro = requestAnimationFrame(medir); };
+    agendar();
+    const tarde = setTimeout(agendar, 400);
+    const observador = new ResizeObserver(agendar);
+    if (palco.current) observador.observe(palco.current);
+    return () => { cancelAnimationFrame(quadro); clearTimeout(tarde); observador.disconnect(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a chave já diz quem mira quem
+  }, [chaveDaMira, participantes.length]);
 
   // Golpe no alvo: o atacante avança até o alvo; o alvo recua com o impacto
   useEffect(() => {
@@ -63,6 +117,8 @@ export default function Palco({
       preparando={preparando}
       mirando={mirando}
       alvo={alvos.includes(p.id)}
+      naMira={alvosDaMira.includes(p.id)}
+      rodada={rodada}
       selecionado={p.id === selecionado}
       golpe={golpes[p.id]}
       registrar={(el) => (el ? cartas.current.set(p.id, el) : cartas.current.delete(p.id))}
@@ -72,8 +128,20 @@ export default function Palco({
   );
 
   return (
-    <div className={styles.palco} data-mirando={mirando || undefined}>
+    <div ref={palco} className={styles.palco} data-mirando={mirando || undefined}>
       <FundoDoCombate fundo={fundo} combateId={combateId} />
+      {setas.length > 0 && (
+        <svg className={styles.setas} aria-hidden="true">
+          <defs>
+            <marker id="ponta-da-mira" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M0 0 10 5 0 10z" fill="#ff4b3e" />
+            </marker>
+          </defs>
+          {setas.map((s) => (
+            <path key={`${chaveDaMira}:${s.id}`} d={s.d} markerEnd="url(#ponta-da-mira)" />
+          ))}
+        </svg>
+      )}
       {avisos}
       {mirando && <p className={styles.dicaMira}>Escolha o alvo</p>}
 
@@ -93,7 +161,7 @@ export default function Palco({
 
 /* ---------- Uma carta no campo ---------- */
 function Carta({
-  p, daVez, mestre, preparando, mirando, alvo, selecionado, golpe, registrar, onEscolher, onIniciativa,
+  p, daVez, mestre, preparando, mirando, alvo, naMira, rodada, selecionado, golpe, registrar, onEscolher, onIniciativa,
 }) {
   const face = useRef(null);
   const { ver } = p;
@@ -102,7 +170,8 @@ function Carta({
   const estado = estadoAproximado(pv);
   const marca = marcaDe(p);
   const caiu = estado.id === 'caido' || Boolean(marca && !marca.startsWith('Enlouquecendo'));
-  const segredo = ameaca && !mestre;
+  // Ameaça para os jogadores: só o estado aproximado, a menos que o mestre a tenha revelado
+  const segredo = ameaca && !mestre && !p.aberto;
   const cor = ELEMENTOS[ver.elemento]?.cor;
 
   // Golpe: a carta treme (dano) ou brilha (cura)
@@ -182,11 +251,22 @@ function Carta({
 
         {daVez && <span className={styles.suaVez}>Vez</span>}
 
+        {naMira && <span className={styles.naMira}>Na mira</span>}
+
+        {/* Condições: um ícone por condição na lateral da carta, com as rodadas que faltam */}
         {(p.condicoes ?? []).length > 0 && (
-          <span className={styles.condicoes}>
-            {p.condicoes.slice(0, 2).map((c) => <i key={c.uid}>{condicaoPorId(c.id)?.nome ?? c.id}</i>)}
-            {p.condicoes.length > 2 && <i>+{p.condicoes.length - 2}</i>}
-          </span>
+          <ul className={styles.condicoes} aria-label="Condições">
+            {p.condicoes.map((c) => {
+              const resta = rodadasRestantes(c, rodada);
+              const texto = textoDaCondicao(c, rodada);
+              return (
+                <li key={c.uid} style={{ '--cor-cond': corDaCondicao(c.id) }} title={texto} aria-label={texto}>
+                  <IconeCondicao id={c.id} className={styles.iconeCond} />
+                  {resta != null && <b>{resta}</b>}
+                </li>
+              );
+            })}
+          </ul>
         )}
 
         {preparando && mestre && (

@@ -526,6 +526,9 @@ $sangue: #b3261c;
 
   &[data-lado='ameacas'] { border-top-color: $ameacas; }
 
+  // Celular: abaixo do cartão "Minha ficha" (que fica no canto de cima do campo)
+  @include celular { top: 72px; }
+
   > header {
     display: flex;
     align-items: flex-start;
@@ -602,19 +605,81 @@ $sangue: #b3261c;
   list-style: none;
 
   li {
+    --cor-cond: #f3cf74;
     display: inline-flex;
     align-items: center;
     gap: 4px;
     padding: 1px 7px;
-    background: rgba(240, 180, 41, 0.14);
-    border: 1px solid rgba(240, 180, 41, 0.5);
+    background: color-mix(in srgb, var(--cor-cond) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--cor-cond) 55%, transparent);
     @include fonte-ficha;
     font-size: 0.68rem;
-    color: #f3cf74;
+    color: var(--cor-cond);
     cursor: help;
+
+    small { font-size: 0.58rem; opacity: 0.75; }
   }
 
   button { padding: 0; border: 0; background: none; color: inherit; cursor: pointer; }
+}
+
+.inspecaoIconeCond { width: 12px; height: 12px; }
+
+// Resistências e fraquezas da ameaça
+.inspecaoDefesas {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: 0.72rem;
+
+  div { display: flex; gap: 6px; }
+  dt { flex: 0 0 72px; @include fonte-ficha; font-weight: 700; color: var(--texto-suave); }
+  dd { margin: 0; color: var(--texto); }
+}
+
+// Interruptor do mestre: números da ameaça à vista dos jogadores
+.inspecaoAbrir {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  background: none;
+  font-size: 0.74rem;
+  color: var(--texto-suave);
+  text-align: left;
+  cursor: pointer;
+
+  i {
+    position: relative;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 14px;
+    border-radius: 999px;
+    background: #3a3c42;
+    transition: background 0.2s;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #c9c4ba;
+      transition: translate 0.2s;
+    }
+  }
+
+  &[aria-pressed='true'] {
+    border-color: color-mix(in srgb, $ouro 60%, transparent);
+    color: var(--texto);
+
+    i { background: $ouro; }
+    i::after { translate: 12px 0; background: #1b1408; }
+  }
 }
 
 .inspecaoLinha {

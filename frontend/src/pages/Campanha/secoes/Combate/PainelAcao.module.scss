@@ -466,6 +466,35 @@
 
 .esperaCancelar { margin-left: auto; color: var(--texto-suave) !important; }
 
+// Esperando o mestre rolar a resistência das ameaças
+.esperaMestre {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(162, 75, 255, 0.45);
+  border-radius: 6px;
+  background: rgba(162, 75, 255, 0.1);
+
+  > div { display: grid; flex: 1; min-width: 0; }
+  b { font-size: 0.86rem; color: #e6d4ff; }
+  small { font-size: 0.74rem; color: var(--texto-suave); }
+  button { flex: 0 0 auto; padding: 6px 12px; }
+}
+
+.esperaPonto {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #a24bff;
+  box-shadow: 0 0 10px #a24bff;
+  animation: respirar 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes respirar { to { opacity: 0.3; transform: scale(0.7); } }
+
 /* ---------- Celular: tudo mais junto, para o painel caber sem rolar ---------- */
 @include celular {
   .painel, .aba { gap: 9px; }

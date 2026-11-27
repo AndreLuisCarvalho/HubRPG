@@ -49,6 +49,8 @@ export default function Hud({
   const ameaca = ator.lado === 'ameacas';
   // Jogadores na vez de uma ameaça (ou de alguém oculto): só nome, estado e a mão virada
   const segredo = !mestre && (ameaca || ator.oculto);
+  // Ameaça às claras (o mestre abriu os números): os jogadores veem PV e Defesa, mas a mão segue virada
+  const semNumeros = segredo && !(ameaca && ator.aberto && !ator.oculto);
   const estado = estadoAproximado(ver.recursos.find((r) => r.id === 'pv'));
   const marca = marcaDe(ator);
   const foraDaVez = daVez && ator.id !== daVez.id;
@@ -66,11 +68,11 @@ export default function Hud({
             {marca && <em className={styles.hudMarca}>{marca}</em>}
           </b>
           <small>
-            {segredo
+            {semNumeros
               ? (ator.oculto ? '' : estado.rotulo)
               : [ver.resumo ?? (ver.doLivro ? 'Do livro' : TIPOS[ver.tipo]), ver.defesa !== '—' ? `Defesa ${ver.defesa}` : null].filter(Boolean).join(' · ')}
           </small>
-          {!segredo && (
+          {!semNumeros && (
             <div className={styles.hudBarras}>
               {ver.recursos.map((r) => (
                 <span key={r.id} style={{ '--cor-barra': r.cor }}>
