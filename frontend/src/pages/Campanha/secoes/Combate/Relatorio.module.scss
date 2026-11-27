@@ -6,6 +6,7 @@
   display: grid;
   gap: 18px;
   max-width: 920px;
+  margin: 0 auto;   // a folha no meio da tela (antes ficava encostada à esquerda)
   padding: 28px 32px;
   border-radius: 2px;
   background:
@@ -29,6 +30,104 @@
 }
 
 @keyframes chegar { from { opacity: 0; transform: translateY(14px) rotate(-0.6deg); } }
+
+// As duas metades: resumo (título, carimbo, saldo, destaques) e detalhes (tabelas e momentos)
+.resumo, .detalhes {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  min-width: 0;
+}
+
+/*
+ * Tela larga (fora da sessão): a folha ocupa a área toda do combate, sem rolar.
+ *   [ resumo ] [ agentes / ameaças ] [ momentos ]     (≥ 1100px)
+ *   [ resumo ] [ agentes / ameaças / momentos ]       (1000–1100px)
+ * O resumo se estica na altura (destaques crescem); as tabelas e os momentos rolam por dentro só
+ * se a lista for maior que o espaço.
+ */
+@media (min-width: 1000px) {
+  .relatorio:not(.compacto) {
+    box-sizing: border-box;
+    max-width: none;
+    height: 100%;
+    margin: 0;
+    padding: clamp(14px, 2.4vh, 26px) clamp(18px, 2vw, 32px);
+    grid-template-columns: minmax(300px, 0.9fr) minmax(0, 2fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0 clamp(18px, 2vw, 30px);
+
+    .resumo {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(8px, 1.6vh, 16px);
+      min-height: 0;
+    }
+
+    .cabeca h2 { font-size: clamp(1.4rem, 3.4vh, 2.1rem); }
+    .saldo b { font-size: clamp(1.5rem, 4.4vh, 2.6rem); }
+    .saldo div { padding: clamp(4px, 1.2vh, 12px) 6px; }
+
+    // Os destaques em pé, um embaixo do outro (nome e valor na mesma linha); crescem com a altura
+    // da tela, até um limite
+    .destaques {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: clamp(5px, 1.2vh, 12px);
+      min-height: 0;
+    }
+    .destaques div {
+      flex: 1 1 0;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-content: center;
+      align-items: baseline;
+      column-gap: 10px;
+      max-height: 130px;
+      padding-block: 4px;
+    }
+    .destaques span { grid-column: 1 / -1; font-size: clamp(0.62rem, 1.4vh, 0.8rem); }
+    .destaques b { font-size: clamp(1rem, 3vh, 1.7rem); }
+    .destaques small { font-size: clamp(0.75rem, 1.8vh, 1rem); }
+
+    // Letras e linhas crescem com a altura da tela (a folha enche o espaço sem sobrar buraco)
+    h3 { font-size: clamp(0.78rem, 1.8vh, 1rem); }
+    .cabeca p { font-size: clamp(0.8rem, 1.8vh, 1rem); }
+    .saldo span { font-size: clamp(0.62rem, 1.4vh, 0.82rem); }
+    .tabela { font-size: clamp(0.85rem, 2vh, 1.1rem); }
+    .tabela th { font-size: clamp(0.62rem, 1.4vh, 0.8rem); }
+    .tabela td { padding-block: clamp(4px, 1.3vh, 13px); }
+    .momentos { gap: clamp(4px, 1.3vh, 13px); font-size: clamp(0.85rem, 2vh, 1.1rem); }
+    .momentos small { font-size: clamp(0.66rem, 1.5vh, 0.85rem); }
+
+    .detalhes {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, auto) minmax(0, 1fr);
+      gap: clamp(8px, 1.6vh, 16px);
+      min-height: 0;
+      padding-left: clamp(18px, 2vw, 30px);
+      border-left: 1px dashed rgba(35, 29, 22, 0.3);
+
+      > section { display: flex; flex-direction: column; min-height: 0; }
+      > section > :last-child { min-height: 0; overflow-y: auto; }
+    }
+  }
+}
+
+@media (min-width: 1100px) {
+  .relatorio:not(.compacto) {
+    grid-template-columns: minmax(300px, 0.8fr) minmax(0, 2.2fr);
+
+    // Agentes e ameaças à esquerda, momentos numa coluna própria à direita, de alto a baixo
+    .detalhes {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
+      column-gap: clamp(18px, 2vw, 30px);
+
+      > .secMomentos { grid-column: 2; grid-row: 1 / -1; }
+    }
+  }
+}
 
 // Dentro da sessão: menor e sem animação
 .compacto {
@@ -152,6 +251,16 @@
   span { @include fonte-ficha; font-size: 0.66rem; letter-spacing: 0.12em; color: #8f1f17; }
   b { @include fonte-titulo; font-size: 1.25rem; }
   small { font-size: 0.8rem; color: #5d5240; }
+
+  // Celular: um embaixo do outro, nome e valor na mesma linha (menos altura para rolar)
+  @include celular {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+
+    div { grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 10px; padding: 6px 10px; }
+    span { grid-column: 1 / -1; }
+    b { font-size: 1.1rem; }
+  }
 }
 
 .tabela {
@@ -181,35 +290,13 @@
 
   td:first-child { font-weight: 600; }
 
+  // Ameaça derrotada: nome riscado e a situação em vermelho
+  tr[data-derrotado] td:first-child { text-decoration: line-through; text-decoration-color: #8f1f17; text-decoration-thickness: 2px; }
+  td[data-situacao='Derrotado'] { color: #8f1f17; font-weight: 700; }
+
   @include celular {
     font-size: 0.8rem;
     th, td { padding: 4px 3px; }
-  }
-}
-
-.ameacas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-
-  li {
-    display: grid;
-    gap: 1px;
-    min-width: 150px;
-    padding: 8px 10px;
-    border: 1px solid rgba(35, 29, 22, 0.25);
-    background: rgba(255, 255, 255, 0.3);
-
-    b { font-weight: 600; }
-    span { font-size: 0.82rem; color: #5d5240; }
-    small { font-size: 0.74rem; color: #8a7d64; }
-
-    // Derrotada: riscada
-    &[data-derrotado] b { text-decoration: line-through; text-decoration-color: #8f1f17; text-decoration-thickness: 2px; }
-    &[data-derrotado] span { color: #8f1f17; font-weight: 700; }
   }
 }
 
