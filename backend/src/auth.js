@@ -194,7 +194,7 @@ rotasDeLogin.get('/auth/eu', exigirLogin, async (req, res) => {
 
 /* ---------- Acesso às campanhas ---------- */
 // Tabelas cujos itens são acessados direto por id (/fichas/12): de qual campanha é o item
-const TABELAS = ['fichas', 'sessoes', 'personagens', 'notas', 'itens', 'combates', 'arquivos', 'mapas', 'parentes'];
+const TABELAS = ['fichas', 'sessoes', 'personagens', 'notas', 'itens', 'combates', 'arquivos', 'mapas', 'parentes', 'missoes'];
 
 /** Papel do usuário na campanha: 'mestre', 'jogador' ou null */
 export async function papelNa(campanhaId, usuarioId) {

@@ -21,6 +21,7 @@ const Itens = lazy(() => import('./secoes/Itens/Itens'));
 const Arquivos = lazy(() => import('./secoes/Arquivos/Arquivos'));
 const Mapas = lazy(() => import('./secoes/Mapas/Mapas'));
 const Combate = lazy(() => import('./secoes/Combate/Combate'));
+const Roteiro = lazy(() => import('./secoes/Roteiro/Roteiro'));   // só o mestre
 
 export default function Campanha() {
   const { id } = useParams();
@@ -81,6 +82,7 @@ export default function Campanha() {
             <Route path="arquivos" element={<Suspense fallback={null}><Arquivos campanha={campanha} /></Suspense>} />
             <Route path="mapas" element={<Suspense fallback={null}><Mapas campanha={campanha} /></Suspense>} />
             <Route path="combate" element={<Suspense fallback={null}><Combate campanha={campanha} /></Suspense>} />
+            <Route path="roteiro" element={mestre ? <Suspense fallback={null}><Roteiro campanha={campanha} /></Suspense> : <Navigate to=".." replace />} />
             <Route path=":secao" element={<EmBreve />} />
           </Routes>
         </main>

@@ -152,6 +152,14 @@ export const api = {
   fundoDoCombate: (id) => requisicao(`/combates/${id}/fundo`),
   salvarFundoDoCombate: (id, imagem) => requisicao(`/combates/${id}/fundo`, { method: 'PUT', body: { imagem } }),
 
+  // Roteiro do mestre: missões ("dados" entra e sai como objeto)
+  listarMissoes: async (campanhaId) => (await requisicao(`/campanhas/${campanhaId}/missoes`)).map(lerItem),
+  criarMissao: async (campanhaId, missao) =>
+    lerItem(await requisicao(`/campanhas/${campanhaId}/missoes`, { method: 'POST', body: escreverMissao(missao) })),
+  atualizarMissao: async (id, missao) =>
+    lerItem(await requisicao(`/missoes/${id}`, { method: 'PUT', body: escreverMissao(missao) })),
+  excluirMissao: (id) => requisicao(`/missoes/${id}`, { method: 'DELETE' }),
+
   // Imagens próprias dos dados de uma ficha (fundo das faces)
   listarImagensDado: (fichaId) => requisicao(`/fichas/${fichaId}/imagens-dado`),
   imagemDado: (fichaId, id) => requisicao(`/fichas/${fichaId}/imagens-dado/${id}`),
@@ -159,7 +167,12 @@ export const api = {
   apagarImagemDado: (fichaId, id) => requisicao(`/fichas/${fichaId}/imagens-dado/${id}`, { method: 'DELETE' }),
 };
 
-const escreverCombate = ({ nome, sessao_id, dados }) => ({
+const escreverMissao = ({ nome, dados }) => ({
+  ...(nome !== undefined ? { nome } : {}),
+  ...(dados ? { dados: JSON.stringify(dados) } : {}),
+});
+
+const escreverCombate =({ nome, sessao_id, dados }) => ({
   ...(nome !== undefined ? { nome } : {}),
   ...(sessao_id !== undefined ? { sessao_id } : {}),
   ...(dados ? { dados: JSON.stringify(dados) } : {}),

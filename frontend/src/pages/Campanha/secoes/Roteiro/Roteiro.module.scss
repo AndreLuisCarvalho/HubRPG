@@ -1,0 +1,531 @@
+@use '../../../../styles/mixins' as *;
+
+$ouro: #d9a54a;
+
+// PC: a página ocupa a altura da janela; a lista e a missão rolam cada uma por dentro
+.pagina {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+
+  @include celular { grid-template-rows: none; flex: none; }
+}
+
+.topo {
+  h1 { @include fonte-titulo; font-size: 1.8rem; }
+  p { font-size: 0.88rem; line-height: 1.5; color: var(--texto-suave); }
+}
+
+.carregando, .vazio { color: var(--texto-suave); font-size: 0.85rem; }
+
+.grade {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 16px;
+  min-height: 0;
+
+  // Celular: ou a lista, ou a missão aberta
+  @include celular {
+    grid-template-columns: minmax(0, 1fr);
+
+    &[data-aberta] .lista { display: none; }
+    &:not([data-aberta]) .semMissao { display: none; }
+  }
+}
+
+/* ---------- Lista ---------- */
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+
+  ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+}
+
+.nova {
+  display: flex;
+  gap: 6px;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.85rem;
+  }
+
+  button {
+    padding: 8px 12px;
+    border: 1px solid var(--cor);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--cor) 24%, transparent);
+    color: var(--texto);
+    @include fonte-ficha;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:disabled { opacity: 0.45; cursor: default; }
+  }
+}
+
+.cartao {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--borda);
+  border-left: 3px solid var(--borda);
+  border-radius: 4px;
+  background: var(--superficie);
+  color: var(--texto);
+  text-align: left;
+  cursor: pointer;
+
+  b { @include fonte-titulo; font-size: 1.02rem; }
+  small { font-size: 0.75rem; line-height: 1.35; color: var(--texto-suave); }
+
+  &:hover { border-color: color-mix(in srgb, var(--cor) 50%, var(--borda)); }
+  &[aria-current] { border-color: var(--cor); border-left-color: var(--cor); background: color-mix(in srgb, var(--cor) 10%, var(--superficie)); }
+}
+
+.progresso {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+
+  i { width: 14px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.12); }
+  i[data-feita] { background: var(--cor); }
+
+  em { margin-left: 6px; font-size: 0.68rem; font-style: normal; color: var(--texto-suave); }
+  em[data-pronta] { color: #6fcf97; font-weight: 600; }
+}
+
+.semMissao {
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--borda);
+  border-radius: 6px;
+  color: var(--texto-suave);
+}
+
+/* ---------- Editor ---------- */
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.editorTopo {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.voltar {
+  display: none;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  background: none;
+  color: var(--texto);
+  cursor: pointer;
+
+  @include celular { display: grid; place-items: center; flex: 0 0 auto; }
+}
+
+.nomes { display: grid; flex: 1; gap: 2px; min-width: 0; }
+
+.nome, .resumo {
+  width: 100%;
+  padding: 2px 4px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: none;
+  color: var(--texto);
+
+  &:hover, &:focus { border-color: var(--borda); outline: none; }
+}
+
+.nome { @include fonte-titulo; font-size: 1.5rem; }
+.resumo { font: inherit; font-size: 0.86rem; color: var(--texto-suave); }
+
+.apagar {
+  padding: 6px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  background: none;
+  color: #e2675d;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.sessoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+
+  > span { @include rotulo-campo; margin-right: 4px; }
+
+  button {
+    padding: 3px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 999px;
+    background: none;
+    color: var(--texto-suave);
+    font-size: 0.75rem;
+    cursor: pointer;
+
+    &[aria-pressed='true'] { border-color: var(--cor); background: color-mix(in srgb, var(--cor) 18%, transparent); color: var(--texto); }
+  }
+}
+
+// Passo a passo: 6 etapas numeradas (✓ nas feitas)
+.passos {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @include celular { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    background: var(--superficie);
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    i {
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 22px;
+      height: 22px;
+      border: 1px solid var(--borda);
+      border-radius: 50%;
+      font-style: normal;
+      font-size: 0.72rem;
+    }
+
+    span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    &[data-feita] i { border-color: #6fcf97; background: rgba(111, 207, 151, 0.15); color: #6fcf97; }
+    &[aria-current] { border-color: var(--cor); background: color-mix(in srgb, var(--cor) 16%, var(--superficie)); color: var(--texto); }
+    &[aria-current] i { border-color: var(--cor); }
+  }
+}
+
+.corpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+
+  @media (max-width: 1100px) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.etapa {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  overflow-y: auto;
+}
+
+.dica {
+  padding: 6px 10px;
+  border-left: 3px solid var(--cor);
+  background: color-mix(in srgb, var(--cor) 8%, transparent);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--texto-suave);
+}
+
+.campos { display: grid; gap: 12px; }
+
+.campo, .campoCurto, .campoDt {
+  display: grid;
+  gap: 4px;
+
+  > span { @include rotulo-campo; small { text-transform: none; letter-spacing: normal; font-weight: 400; } }
+}
+
+.campos input, .campos textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--texto);
+  font: inherit;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  resize: vertical;
+
+  &:focus { border-color: var(--cor); outline: none; }
+  &:disabled { opacity: 0.4; }
+}
+
+.linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  > .campoCurto { flex: 1 1 160px; min-width: 0; }
+  > .campoDt { flex: 0 0 70px; }
+}
+
+.duas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  @include celular { grid-template-columns: minmax(0, 1fr); }
+}
+
+.subtitulo {
+  @include fonte-titulo;
+  font-size: 1.05rem;
+
+  small { margin-left: 6px; font-family: inherit; font-size: 0.75rem; font-weight: 400; color: var(--texto-suave); }
+}
+
+.cartaoEtapa {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.18);
+
+  > header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    b { flex: 1; @include fonte-ficha; font-size: 0.78rem; letter-spacing: 0.08em; color: var(--texto-suave); }
+    button { border: 0; background: none; color: var(--texto-suave); cursor: pointer; }
+  }
+}
+
+.revelacao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  input { flex: 1; }
+  > button:last-child { border: 0; background: none; color: var(--texto-suave); cursor: pointer; }
+}
+
+// Regra das 3 pistas: três bolinhas que acendem
+.contaPistas {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  color: #6fcf97;
+
+  i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.14); }
+  i[data-tem] { background: #6fcf97; }
+
+  .revelacao[data-faltando] & { color: #e0a33a; }
+  .revelacao[data-faltando] & i[data-tem] { background: #e0a33a; }
+}
+
+.miniBotao {
+  padding: 4px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  background: none;
+  color: var(--texto-suave);
+  font-size: 0.74rem;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover { color: var(--texto); border-color: var(--cor); }
+}
+
+.adicionar {
+  justify-self: start;
+  padding: 7px 14px;
+  border: 1px dashed var(--borda);
+  border-radius: 3px;
+  background: none;
+  color: var(--texto-suave);
+  font-size: 0.82rem;
+  cursor: pointer;
+
+  &:hover { color: var(--texto); border-color: var(--cor); }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px 3px 3px;
+    border: 1px solid var(--borda);
+    border-radius: 999px;
+    background: none;
+    color: var(--texto-suave);
+    font-size: 0.8rem;
+    cursor: pointer;
+
+    &[aria-pressed='true'] { border-color: var(--cor); background: color-mix(in srgb, var(--cor) 18%, transparent); color: var(--texto); }
+    &[data-tipo='monstro'] .retratoMini { border-color: #c8423a; }
+  }
+}
+
+.retratoMini, .retrato {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid #4f8fd6;
+  border-radius: 50%;
+  background: #0d0e10;
+  font-size: 0.72rem;
+  color: var(--texto);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.retratoMini { width: 22px; height: 22px; }
+.retrato { width: 30px; height: 30px; }
+
+.criatura {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+
+  b { flex: 1; font-size: 0.86rem; }
+  label { display: flex; align-items: center; gap: 6px; small { font-size: 0.72rem; color: var(--texto-suave); } }
+  input { width: 60px !important; }
+  > button { border: 0; background: none; color: var(--texto-suave); cursor: pointer; }
+}
+
+.montar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--cor) 40%, var(--borda));
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--cor) 6%, transparent);
+  font-size: 0.84rem;
+}
+
+.abrirCombate {
+  padding: 6px 12px;
+  border: 1px solid var(--cor);
+  border-radius: 3px;
+  color: var(--texto);
+  text-decoration: none;
+  @include fonte-ficha;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.navegar {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 8px;
+
+  button {
+    padding: 8px 14px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: none;
+    color: var(--texto-suave);
+    @include fonte-ficha;
+    font-size: 0.8rem;
+    cursor: pointer;
+
+    &:disabled { opacity: 0.35; cursor: default; }
+  }
+}
+
+.seguir {
+  border-color: var(--cor) !important;
+  background: color-mix(in srgb, var(--cor) 24%, transparent) !important;
+  color: var(--texto) !important;
+  font-weight: 700;
+}
+
+// O que falta para jogar
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  overflow-y: auto;
+
+  h2 { @include rotulo-campo; }
+  ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+
+  li button {
+    display: grid;
+    gap: 1px;
+    width: 100%;
+    padding: 6px 8px;
+    border: 0;
+    border-left: 3px solid #e0a33a;
+    border-radius: 2px;
+    background: rgba(224, 163, 58, 0.07);
+    color: var(--texto);
+    font-size: 0.8rem;
+    line-height: 1.35;
+    text-align: left;
+    cursor: pointer;
+
+    small { @include fonte-ficha; font-size: 0.62rem; letter-spacing: 0.08em; color: var(--texto-suave); }
+  }
+
+  li[data-grave] button { border-left-color: #e2675d; background: rgba(226, 103, 93, 0.08); }
+}
+
+.tudoCerto { font-size: 0.85rem; color: #6fcf97; }
