@@ -10,6 +10,7 @@ import {
 } from './missao';
 import { ETAPAS_CAMPANHA } from './campanhaRoteiro';
 import RoteiroCampanha from './RoteiroCampanha';
+import ModoMesa from './ModoMesa';
 import styles from './Roteiro.module.scss';
 
 /**
@@ -74,6 +75,23 @@ export default function Roteiro({ campanha }) {
   }
 
   const trocar = (atualizada) => setMissoes((l) => l.map((m) => (m.id === atualizada.id ? atualizada : m)));
+
+  // Modo mesa: a missão em tela cheia para jogar (sem a lista)
+  if (aberta && busca.get('mesa') !== null) {
+    return (
+      <section className={styles.paginaMesa}>
+        {erro && <p className="erro">{erro}</p>}
+        <ModoMesa
+          key={aberta.id}
+          missao={aberta}
+          fichas={apoio.fichas}
+          onSalva={trocar}
+          onSair={() => setBusca({ missao: String(aberta.id) }, { replace: true })}
+          onErro={setErro}
+        />
+      </section>
+    );
+  }
 
   return (
     <section className={styles.pagina}>
@@ -147,6 +165,7 @@ export default function Roteiro({ campanha }) {
             onEtapa={(etapa) => setBusca({ missao: String(aberta.id), etapa }, { replace: true })}
             onSalva={trocar}
             onFechar={() => abrir(null)}
+            onJogar={() => setBusca({ missao: String(aberta.id), mesa: '1' }, { replace: true })}
             onExcluir={() => excluir(aberta)}
             onErro={setErro}
           />
@@ -162,7 +181,7 @@ export default function Roteiro({ campanha }) {
 
 /* ====================================================================== */
 
-function EditorDaMissao({ campanha, missao, apoio, etapa, onEtapa, onSalva, onFechar, onExcluir, onErro }) {
+function EditorDaMissao({ campanha, missao, apoio, etapa, onEtapa, onSalva, onFechar, onJogar, onExcluir, onErro }) {
   const [nome, setNome] = useState(missao.nome);
   const [d, setD] = useState(() => dadosCompletos(missao.dados));
   const temporizador = useRef(null);
@@ -213,6 +232,7 @@ function EditorDaMissao({ campanha, missao, apoio, etapa, onEtapa, onSalva, onFe
             maxLength={160}
           />
         </div>
+        <button type="button" className={styles.jogar} onClick={() => { gravar(); onSalva({ ...missao, nome: nome.trim() || missao.nome, dados: d }); onJogar(); }} title="Abrir o modo mesa para jogar esta missão">▶ Jogar</button>
         <button type="button" className={styles.apagar} onClick={onExcluir}>Apagar</button>
       </header>
 

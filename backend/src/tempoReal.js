@@ -39,7 +39,8 @@ async function publicar(campanhaId, evento) {
 
 /* ---------- O que mudou ---------- */
 // Tabelas cujas mudanças viram aviso, e a "chave de liberar" de cada uma
-const TABELAS = ['fichas', 'sessoes', 'itens', 'combates', 'arquivos', 'mapas', 'parentes', 'membros', 'campanhas'];
+// missoes: só o aviso (sem conteúdo); o quadro de investigação dos jogadores recarrega com ele
+const TABELAS = ['fichas', 'sessoes', 'itens', 'combates', 'arquivos', 'mapas', 'parentes', 'membros', 'campanhas', 'missoes'];
 const LIBERAVEIS = {
   itens: { tipo: 'item', liberado: (d) => Boolean(d.liberado) },
   arquivos: { tipo: 'arquivo', liberado: (d) => Boolean(d.liberado) },

@@ -159,6 +159,8 @@ export const api = {
   atualizarMissao: async (id, missao) =>
     lerItem(await requisicao(`/missoes/${id}`, { method: 'PUT', body: escreverMissao(missao) })),
   excluirMissao: (id) => requisicao(`/missoes/${id}`, { method: 'DELETE' }),
+  // Quadro de investigação (todos): as pistas que o mestre marcou como encontradas
+  investigacao: (campanhaId) => requisicao(`/campanhas/${campanhaId}/investigacao`),
   // O quadro geral da campanha (premissa, verdade, ameaça, relógio, facções, arco, desfechos)
   roteiroDaCampanha: async (campanhaId) => (await requisicao(`/campanhas/${campanhaId}/roteiro`)).dados,
   salvarRoteiroDaCampanha: (campanhaId, dados) =>
