@@ -846,7 +846,12 @@ export default function Arena({
       )}
 
       {/* O registro da missão, numa gaveta */}
-      <LogCombate log={log} aberto={logAberto} onFechar={() => setLogAberto(false)} />
+      <LogCombate
+        log={log}
+        aberto={logAberto}
+        onFechar={() => setLogAberto(false)}
+        meu={meu ? { id: meu.id, nome: meu.ver.nome } : null}
+      />
 
       {/* Abertura (jogadores): um d20 por participante à vista, na ordem do turno */}
       {verDadosIniciativa && (
