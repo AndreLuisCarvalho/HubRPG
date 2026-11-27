@@ -7,6 +7,7 @@ import Hud from './Hud';
 import Inspecao from './Inspecao';
 import LogCombate from './LogCombate';
 import MinhaFicha from './MinhaFicha';
+import AvisosDoCombate from './AvisosDoCombate';
 import PainelAcao from './PainelAcao';
 import IconeArma from './IconeArma';
 import PedidoDeReacao from './PedidoDeReacao';
@@ -531,7 +532,6 @@ export default function Arena({
     .map((e) => ({ ...e, mostrar: mestre ? e.texto : e.textoJogadores }))
     .filter((e) => e.mostrar)
     .reverse();
-  const legenda = log.find((e) => !['rodada', 'turno', 'sistema'].includes(e.tipo));
   // O ataque mais novo que esta tela pode ver (anima o golpe no campo)
   const ataque = log.find((e) => e.tipo === 'ataque' && e.dados?.autor);
   const ultimoAtaque = ataque ? { id: ataque.id, ...ataque.dados } : null;
@@ -648,7 +648,7 @@ export default function Arena({
             alvos={alvoIds}
             selecionado={inspecao?.id}
             golpes={golpes}
-            legenda={legenda}
+            avisos={<AvisosDoCombate key={mestre ? 'mestre' : 'jogadores'} log={log} mirando={Boolean(mira)} />}
             ultimoAtaque={ultimoAtaque}
             onEscolher={clicarNoPalco}
             onIniciativa={mudarIniciativa}

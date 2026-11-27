@@ -105,7 +105,7 @@ $ouro: #d9a54a;
   &[data-oculto] { opacity: 0.55; }
 
   // A carta com o mouse (e a dica dela) fica por cima de tudo no campo: a outra fileira,
-  // a faixa "Escolha o alvo" e a legenda. Vem depois do [data-vez] para valer também na carta da vez.
+  // a faixa "Escolha o alvo" e os avisos. Vem depois do [data-vez] para valer também na carta da vez.
   &:hover, &:focus-within { z-index: 7; }
 }
 
@@ -385,34 +385,6 @@ $ouro: #d9a54a;
   100% { opacity: 0; transform: translate(-50%, -46px) scale(0.95); }
 }
 
-/* ---------- Banner: a última ação, no topo ---------- */
-.banner {
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  z-index: 3;
-  max-width: calc(100% - 32px);
-  translate: -50% 0;
-  padding: 5px 18px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-bottom: 2px solid $ouro;
-  background: rgba(6, 6, 7, 0.82);
-  font-size: 0.88rem;
-  color: #f2eee6;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  animation: banner 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
-
-  &[data-tom='acerto'], &[data-tom='sucesso'] { border-bottom-color: #6fcf97; }
-  &[data-tom='falha'], &[data-tom='fracasso'] { border-bottom-color: #e2675d; }
-  &[data-tom='critico'] { border-bottom-color: #ffcf5a; }
-
-  @include celular { white-space: normal; font-size: 0.78rem; }
-}
-
-@keyframes banner { from { opacity: 0; translate: -50% -10px; } }
 
 /* ---------- Dica ao mirar ---------- */
 .dica {
@@ -445,6 +417,6 @@ $ouro: #d9a54a;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .face, .golpe, .banner, .dicaMira, .barra b { animation: none !important; }
+  .face, .golpe, .dicaMira, .barra b { animation: none !important; }
   .carta { transition: none; }
 }

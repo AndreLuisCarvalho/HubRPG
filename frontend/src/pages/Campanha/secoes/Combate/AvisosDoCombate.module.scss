@@ -1,0 +1,123 @@
+@use '../../../../styles/mixins' as *;
+
+$ouro: #d9a54a;
+
+/* Pilha de avisos no topo do campo: o mais novo em cima */
+.avisos {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  z-index: 4;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: min(520px, calc(100% - 32px));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  translate: -50% 0;
+  pointer-events: none;
+
+  // Escolhendo o alvo: a dica "Escolha o alvo" fica no topo, os avisos descem
+  &[data-mirando] { top: 40px; }
+
+  // Celular: o canto de cima tem o cartão da ficha; os avisos ficam no pé do campo
+  @include celular {
+    top: auto;
+    bottom: 6px;
+    width: calc(100% - 12px);
+    gap: 4px;
+
+    &[data-mirando] { top: auto; }
+  }
+}
+
+.aviso {
+  --tom: #{$ouro};
+  position: relative;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 6px 16px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--tom);
+  border-radius: 4px;
+  background: rgba(6, 6, 7, 0.86);
+  backdrop-filter: blur(3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  color: #f2eee6;
+  text-align: center;
+  animation: entrar 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  // Os mais antigos (embaixo) ficam mais apagados
+  &:nth-child(2) { opacity: 0.82; }
+  &:nth-child(3) { opacity: 0.62; }
+
+  &[data-tipo='dano'] { --tom: #c8423a; }
+  &[data-tipo='cura'] { --tom: #2f9c5c; }
+  &[data-tipo='ritual'] { --tom: #a24bff; }
+  &[data-tipo='queda'], &[data-tipo='derrota'] { --tom: #e2675d; }
+  &[data-tipo='vitoria'] { --tom: #6fcf97; }
+  &[data-tipo='sistema'], &[data-tipo='condicao'] { --tom: #8b8f99; }
+  &[data-tom='acerto'], &[data-tom='sucesso'] { --tom: #6fcf97; }
+  &[data-tom='falha'], &[data-tom='fracasso'] { --tom: #e2675d; }
+  &[data-tom='critico'] { --tom: #ffcf5a; }
+
+  p {
+    margin: 0;
+    font-size: 0.86rem;
+    line-height: 1.35;
+  }
+
+  em {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 0 6px;
+    border: 1.5px solid var(--tom);
+    @include fonte-ficha;
+    font-size: 0.62rem;
+    font-style: normal;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--tom);
+    transform: rotate(-3deg);
+  }
+
+  @include celular {
+    padding: 4px 10px 6px;
+
+    p { font-size: 0.74rem; }
+  }
+}
+
+// O dano/queda que continua o ataque, logo embaixo dele
+.continua {
+  margin-top: 2px !important;
+  font-weight: 600;
+  color: #f0a39b;
+  animation: entrar 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  &[data-tipo='cura'] { color: #a9e5bf; }
+  &[data-tipo='queda'] { color: #ff8a80; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem !important; }
+}
+
+// Barrinha do tempo que falta
+.tempo {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--tom);
+  opacity: 0.6;
+  transform-origin: left;
+  animation: tempo var(--duracao) linear forwards;
+}
+
+@keyframes entrar { from { opacity: 0; translate: 0 -10px; } }
+@keyframes tempo { to { transform: scaleX(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .aviso, .continua { animation: none; }
+  .tempo { display: none; }
+}
