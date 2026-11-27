@@ -107,6 +107,14 @@ app.use('/api', criarRotasDeItens({
   jogador: { ler: true, editar: true },
 }));
 
+// Roteiro: as missões que o mestre monta (gancho, cenas, pistas…). Só o mestre vê e mexe
+app.use('/api', criarRotasDeItens({
+  tabela: 'missoes',
+  campos: { nome: '', dados: '{}' },
+  obrigatorio: 'nome',
+  ordem: 'id',
+}));
+
 // Erros inesperados viram uma resposta JSON (em vez de derrubar a função na Vercel)
 app.use((erro, req, res, next) => {
   console.error(erro);

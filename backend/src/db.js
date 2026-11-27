@@ -209,6 +209,14 @@ async function iniciar() {
     combate_id INTEGER PRIMARY KEY,
     imagem     TEXT NOT NULL DEFAULT ''
   )`);
+  // Roteiro do mestre: as missões (gancho, cenas, pistas, NPCs, confronto, clímax) em "dados" (JSON)
+  await db.run(`CREATE TABLE IF NOT EXISTS missoes (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    campanha_id INTEGER NOT NULL REFERENCES campanhas(id) ON DELETE CASCADE,
+    nome        TEXT DEFAULT '',
+    dados       TEXT DEFAULT '{}',
+    criado_em   TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
   // Imagens próprias para os dados de uma ficha (fundo das faces): fora de "dados", que é lido o tempo todo
   await db.run(`CREATE TABLE IF NOT EXISTS imagens_dado (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,

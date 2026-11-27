@@ -8,6 +8,8 @@ const GRUPOS = [
     itens: [
       { caminho: '', rotulo: 'Visão geral', icone: '◈' },
       { caminho: 'sessoes', rotulo: 'Sessões', icone: '◷' },
+      // Só o mestre: o que ele prepara antes de jogar
+      { caminho: 'roteiro', rotulo: 'Roteiro', icone: '◫', soMestre: true },
     ],
   },
   {
@@ -60,7 +62,8 @@ export default function MenuCampanha({ campanha }) {
       </div>
 
       <div id="itens-campanha" className={styles.itens}>
-        {GRUPOS.map((grupo, i) => (
+        {/* Grupo sem nenhum item para esta conta (ex.: "Mestre" para o jogador) não aparece */}
+        {GRUPOS.filter((grupo) => grupo.itens.some((item) => mestre || !item.soMestre)).map((grupo, i) => (
           <div key={i} className={styles.grupo}>
             {grupo.titulo && <span className={styles.rotuloGrupo}>{grupo.titulo}</span>}
 
