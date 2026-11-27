@@ -11,6 +11,7 @@ import contasRouter from './routes/contas.js';
 import { avisarMudancas, rotasTempoReal } from './tempoReal.js';
 import parentesRouter from './routes/parentes.js';
 import fundosCombateRouter from './routes/fundosCombate.js';
+import imagensDadoRouter from './routes/imagensDado.js';
 
 const app = express();
  
@@ -37,6 +38,8 @@ app.use('/api', rotasTempoReal);
 
 app.use('/api', contasRouter);
 app.use('/api/campanhas', campanhasRouter);
+// Antes das fichas: apagar uma ficha leva as imagens dos dados dela junto
+app.use('/api', imagensDadoRouter);
 app.use('/api', fichasRouter);
 app.use('/api', arquivosRouter);
 app.use('/api', mapasRouter);

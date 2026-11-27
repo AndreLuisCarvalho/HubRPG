@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { criarPalco, materiaisDo, pecasDoDado } from './dadoWebGL';
 import { aparencia, KIT } from './skins';
+import { useVersaoDasImagens } from './imagensDeDado';
 import styles from './PreviaDado.module.scss';
 
 const FOV = 26;
@@ -20,6 +21,8 @@ const POSICOES = {
 export default function PreviaDado({ estilo, selecionado = 20, className = '' }) {
   const tela = useRef(null);
   const mundo = useRef(null);
+  // Uma imagem própria terminou de carregar: os dados são montados de novo (com a foto)
+  const versaoImagens = useVersaoDasImagens();
 
   /* ---------- Palco (uma vez) e o giro contínuo ---------- */
   useEffect(() => {
@@ -38,6 +41,8 @@ export default function PreviaDado({ estilo, selecionado = 20, className = '' })
       if (!w || !h) return;
       m.renderer.setSize(w, h, false);
       m.camera.aspect = w / h;
+      // Vitrine estreita (mais alta que larga): a câmera recua para as 7 peças caberem de lado
+      m.camera.position.z = DISTANCIA * Math.max(1, 1.4 / m.camera.aspect);
       m.camera.updateProjectionMatrix();
     }
     const observador = new ResizeObserver(medir);
@@ -96,7 +101,7 @@ export default function PreviaDado({ estilo, selecionado = 20, className = '' })
       });
       m.dados = [];
     };
-  }, [estilo, selecionado]);
+  }, [estilo, selecionado, versaoImagens]);
 
   return (
     <div className={`${styles.previa} ${className}`}>

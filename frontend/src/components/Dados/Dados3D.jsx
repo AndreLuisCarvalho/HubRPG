@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { criarPalco, faceDoValor, materiaisDo, pecasDoDado, sombraRedonda } from './dadoWebGL';
 import { aparencia } from './skins';
+import { esperarImagens } from './imagensDeDado';
 import styles from './Dados3D.module.scss';
 
 const FOV = 26;
@@ -122,6 +123,8 @@ export default function Dados3D({ dados, rodada, tamanho, duracao, etiqueta, onF
     async function montar() {
       // O atlas dos números usa a fonte da página: espera ela carregar
       await document.fonts?.load('700 64px "Barlow Condensed"').catch(() => {});
+      // Imagens próprias do kit (fundo das faces): o arremesso já sai com elas
+      await esperarImagens(estilo);
       if (vivo.cancelado) return;
       const destinos = alvos();
       const raio = (tamanho / 2) * m.pxMundo;

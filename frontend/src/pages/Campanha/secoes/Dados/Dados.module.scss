@@ -1,8 +1,14 @@
 @use '../../../../styles/mixins' as *;
 
+// PC: a página ocupa a altura da janela, sem rolar (a vitrine cresce com o espaço que sobra)
 .pagina {
   display: grid;
-  gap: 16px;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+
+  @include celular { grid-template-rows: none; flex: none; }
 }
 
 .topo {
@@ -22,24 +28,45 @@
   text-align: center;
 }
 
-// PC: vitrine à esquerda (fica parada ao rolar a página), escolhas à direita · celular: uma embaixo da outra
+// PC: vitrine, ficha e kits à esquerda; peça, cor e skin à direita, as duas colunas na altura da
+// janela · celular: tudo um embaixo do outro (aí rola)
 .grade {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  align-items: start;
-  gap: 20px;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 18px;
+  min-height: 0;
 
-  @include celular { grid-template-columns: 1fr; }
+  @include celular { grid-template-columns: 1fr; align-items: start; }
 }
 
 /* ---------- Vitrine ---------- */
 .vitrine {
-  position: sticky;
-  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+
+  @include celular { display: grid; }
+}
+
+// A prévia 3D fica com a altura que sobrar na coluna
+.previaGrande {
+  flex: 1 1 0;
+  min-height: 180px;
+  aspect-ratio: auto;
+
+  @include celular { flex: none; aspect-ratio: 4 / 3; }
+}
+
+// Ficha e kits lado a lado embaixo da vitrine
+.fichaEKits {
   display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
   gap: 10px;
 
-  @include celular { position: static; }
+  @media (max-width: 1250px) { grid-template-columns: minmax(0, 1fr); }
+  @include celular { grid-template-columns: minmax(0, 1fr); }
 }
 
 
@@ -70,8 +97,20 @@
 
 /* ---------- Escolhas ---------- */
 .controles {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
+  min-height: 0;
+
+  // O bloco das skins fica com o resto da altura (e rola por dentro, se precisar)
+  > .bloco:last-child {
+    flex: 1 1 auto;
+    align-content: start;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  @include celular { display: grid; > .bloco:last-child { overflow: visible; } }
 }
 
 .bloco {
@@ -187,6 +226,103 @@
   }
 }
 
+/* Os três kits da ficha (abas) */
+.kits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+
+  button {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 10px 6px 8px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--texto-suave);
+    cursor: pointer;
+
+    b {
+      max-width: 100%;
+      overflow: hidden;
+      @include fonte-titulo;
+      font-size: 0.92rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    small {
+      position: absolute;
+      top: -8px;
+      right: 6px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: var(--cor);
+      @include fonte-ficha;
+      font-size: 0.56rem;
+      font-weight: 700;
+      color: #15120c;
+    }
+
+    &:hover { color: var(--texto); }
+
+    &[aria-selected='true'] {
+      border-color: var(--cor);
+      color: var(--texto);
+      background: color-mix(in srgb, var(--cor) 16%, transparent);
+    }
+  }
+}
+
+// Três peças do kit, uma ao lado da outra, como amostra
+.miniKit {
+  display: flex;
+  gap: 2px;
+
+  i {
+    width: 16px;
+    aspect-ratio: 1;
+    clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+    background: linear-gradient(150deg, var(--aresta), var(--base) 60%);
+  }
+}
+
+.kitLinha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+
+  input {
+    flex: 1 1 160px;
+    min-width: 0;
+    padding: 7px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.88rem;
+  }
+}
+
+.usarKit {
+  padding: 7px 14px;
+  border: 1px solid var(--cor);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--cor) 24%, transparent);
+  color: var(--texto);
+  @include fonte-ficha;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.emUso { font-size: 0.8rem; color: var(--cor); }
+
 .amostraPeca {
   width: 22px;
   aspect-ratio: 1;
@@ -265,6 +401,127 @@
       background: color-mix(in srgb, var(--cor) 14%, transparent);
     }
   }
+}
+
+/* ---------- Skins personalizadas (imagem própria) ---------- */
+.regra {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--texto-suave);
+}
+
+.personalizada {
+  position: relative;
+  display: grid;
+
+  > button:first-child { width: 100%; }
+}
+
+// A imagem dentro do hexágono, com o 20 por cima
+.amostraFoto {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  background: #1d1f23;
+
+  img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  b {
+    position: relative;
+    @include fonte-titulo;
+    font-size: 1.05rem;
+    color: #fff;
+    -webkit-text-stroke: 2px rgba(0, 0, 0, 0.85);
+    paint-order: stroke fill;
+  }
+}
+
+.apagarFoto {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid !important;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  font-size: 0.65rem !important;
+  opacity: 0.6;
+
+  &:hover { opacity: 1; color: #e2675d !important; }
+}
+
+// O "+" para enviar uma imagem nova
+.skins .novaFoto {
+  border-style: dashed;
+
+  &:hover { border-color: var(--cor); }
+}
+
+.amostraMais {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  aspect-ratio: 1;
+  clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  background: color-mix(in srgb, var(--cor) 22%, #1d1f23);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--cor);
+}
+
+/* Janela de envio */
+.envio { display: grid; gap: 12px; }
+
+.envioCaixa {
+  width: min(320px, 100%);
+  aspect-ratio: 1;
+  justify-self: center;
+  border: 1px dashed var(--borda);
+  border-radius: 4px;
+  background: #121316;
+}
+
+.envioEscolher, .envioTrocar {
+  cursor: pointer;
+
+  input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+}
+
+.envioEscolher {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+
+  span { font-size: 2.4rem; line-height: 1; color: var(--cor); }
+  &:hover { color: var(--texto); }
+}
+
+.envioRodape {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.envioTrocar {
+  position: relative;
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+  text-decoration: underline;
 }
 
 // Hexágono na cor da skin, como um d20 visto de frente
