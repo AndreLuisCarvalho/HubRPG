@@ -15,6 +15,7 @@ import MaoDeCartas from './MaoDeCartas';
 import { novoId } from './regrasCombate';
 import { FOLGA_DA_REACAO, SEGUNDOS_DE_REACAO, useContagem } from './reacao';
 import { custoDaExecucao } from './economia';
+import { resistePeloMestre, semPedido, useResistenciaDoMestre } from './resistenciaDoMestre';
 import styles from './PainelAcao.module.scss';
 
 /**
@@ -80,7 +81,7 @@ const ACOES_LIVRES = ['Padrão', 'Movimento', 'Completa', 'Livre', 'Reação'];
  */
 function AbaItem({
   ator, participantes, fichas, livro, rodada, vez, base, mestre, alvoIds, setAlvoIds, aplicar, mudarRecursos, onMudarFicha, onFechar,
-  itemUid,
+  itemUid, pedidoResistencia,
 }) {
   const { rolar } = useRolagem();
   const itens = base.tipo === 'agente' ? itensUsaveis(base.dados) : [];
@@ -97,6 +98,10 @@ function AbaItem({
   const alvosOuEu = alvos.length ? alvos : (area ? [] : [ator]);
   const dt = efeito?.resiste ? dtDoItem(base.dados, efeito.resiste.dt) : null;
   const usos = item ? usosRestantes(item) : 0;
+
+  // Jogador contra ameaça: a resistência dela é do mestre; o item só acontece quando ele responder
+  const mestreResiste = useResistenciaDoMestre(pedidoResistencia, (respostas, id) => usarComEfeito(respostas, id));
+  const doMestre = efeito?.resiste ? alvosOuEu.filter((p) => resistePeloMestre(p, mestre)) : [];
 
   if (!itens.length && !feito) {
     return <p className={styles.vazio}>{ator.ver.nome} não tem itens para usar (as armas ficam na carta Atacar).</p>;
@@ -117,7 +122,21 @@ function AbaItem({
     });
   }
 
-  function usarComEfeito() {
+  // Antes de usar: se alguma ameaça precisa resistir, pede ao mestre e espera (nada é gasto ainda)
+  function usar() {
+    if (doMestre.length) {
+      const { mudarDados } = mestreResiste.pedir({
+        autor: ator.id, nome: item.nome, fonte: 'item', pericia: efeito.resiste.pericia, dt,
+        efeito: efeito.resiste.efeito === 'metade' ? 'reduz à metade' : 'evita', alvos: doMestre.map((p) => p.id),
+      });
+      aplicar({ semGasto: true, mudarDados });
+      return;
+    }
+    usarComEfeito();
+  }
+
+  // respostas: as resistências que o mestre rolou ({ [id]: { total, passou } }); pedidoId: o pedido a tirar
+  function usarComEfeito(respostas = null, pedidoId = null) {
     const emQuem = alvosOuEu.filter((p) => p.id !== ator.id).map((p) => (p.oculto && !mestre ? 'alguém' : p.ver.nome));
     const abertura = `${ator.ver.nome} usou ${item.nome}${emQuem.length ? ` em ${emQuem.join(', ')}` : ''}.`;
     const entradas = [[abertura, ator.oculto ? null : abertura, 'acao']];
@@ -143,7 +162,10 @@ function AbaItem({
       const nome = alvo.ver.nome;
       // Teste de resistência do alvo contra a DT do item
       let passou = false;
-      if (efeito.resiste) {
+      if (efeito.resiste && respostas?.[alvo.id]) {
+        // O mestre já rolou (e registrou) a resistência desta ameaça
+        passou = respostas[alvo.id].passou;
+      } else if (efeito.resiste) {
         const formula = formulaDeResistencia(baseDe(alvo, fichas, livro), efeito.resiste.pericia);
         const teste = rolarTeste(lerFormula(formula));
         passou = teste.total >= dt;
@@ -187,10 +209,13 @@ function AbaItem({
     aplicar({
       efeitos,
       entradas,
-      mudarDados: (d) => (Object.keys(condicoes).length ? {
-        ...d,
-        participantes: d.participantes.map((p) => (condicoes[p.id] ? { ...p, condicoes: [...(p.condicoes ?? []), condicoes[p.id]] } : p)),
-      } : d),
+      mudarDados: (d) => {
+        const novo = pedidoId ? semPedido(pedidoId)(d) : d;
+        return Object.keys(condicoes).length ? {
+          ...novo,
+          participantes: novo.participantes.map((p) => (condicoes[p.id] ? { ...p, condicoes: [...(p.condicoes ?? []), condicoes[p.id]] } : p)),
+        } : novo;
+      },
     });
     // Guarda o nome: o item gasto sai do inventário antes do resumo aparecer
     setFeito({ nome: item.nome, total: rolagem?.total ?? null, linhas });
@@ -294,9 +319,15 @@ function AbaItem({
       )}
 
       <div className={styles.rodape}>
-        {efeito
+        {mestreResiste.esperando ? (
+          <EsperaDoMestre
+            alvos={doMestre}
+            respostas={mestreResiste.pedido?.respostas}
+            onCancelar={() => aplicar({ semGasto: true, mudarDados: mestreResiste.cancelar() })}
+          />
+        ) : efeito
           ? (
-            <button type="button" className={styles.grande} onClick={usarComEfeito} disabled={!alvosOuEu.length}>
+            <button type="button" className={styles.grande} onClick={usar} disabled={!alvosOuEu.length}>
               {alvosOuEu.length ? `Usar ${item.nome}` : 'Escolha quem está na área'}
             </button>
           )
@@ -410,6 +441,22 @@ const caido = (p) => (pvDe(p)?.maximo ?? 0) > 0 && pvDe(p)?.atual === 0;
 const temSan = (p) => p.ver.recursos.some((r) => r.id === 'san');
 // Visão Jogadores: números das ameaças (Defesa, resistências, testes) ficam escondidos
 const secreto = (p, mestre) => !mestre && p?.lado === 'ameacas';
+
+// Jogador esperando o mestre rolar a resistência das ameaças (sem limite de tempo; dá para desistir)
+function EsperaDoMestre({ alvos, respostas, onCancelar }) {
+  return (
+    <div className={styles.esperaMestre} role="status">
+      <span className={styles.esperaPonto} aria-hidden="true" />
+      <div>
+        <b>Aguardando o mestre…</b>
+        <small>
+          Ele rola a resistência de {alvos.map((p) => `${p.ver.nome}${respostas?.[p.id] ? ' ✓' : ''}`).join(', ')}.
+        </small>
+      </div>
+      <button type="button" className={styles.secundario} onClick={onCancelar}>Cancelar</button>
+    </div>
+  );
+}
 
 function Numero({ rotulo, valor, onMudar, min }) {
   return (
@@ -796,6 +843,7 @@ function AbaAtaque({
 /* ---------- Ritual ---------- */
 function AbaRitual({
   ator, participantes, fichas, livro, base, mestre, alvoIds, setAlvoIds, aplicar, mudarRecursos, onFechar, escolha,
+  pedidoResistencia,
 }) {
   const { rolar } = useRolagem();
   const rituais = rituaisDe(base, livro);
@@ -808,6 +856,13 @@ function AbaRitual({
   const danoTexto = danoEditado ?? forma?.dano ?? '';
   const [etapa, setEtapa] = useState(null);   // depois de conjurar: { resistencias, rolagem, porAlvo }
   const [erro, setErro] = useState('');
+
+  // Resistência de ameaça pedida ao mestre: quando ele responde todas, junta com as rolagens daqui
+  // (etapa.locais) e tira o pedido do combate
+  const mestreResiste = useResistenciaDoMestre(pedidoResistencia, (respostas, id) => {
+    setEtapa((e) => ({ ...e, resistencias: { ...(e?.locais ?? {}), ...respostas } }));
+    aplicar({ semGasto: true, mudarDados: semPedido(id) });
+  });
 
   if (!livro) return <p className={styles.ajuda}>Abrindo o grimório…</p>;
   if (!rituais.length) return <p className={styles.vazio}>{ator.ver.nome} não conhece rituais.</p>;
@@ -843,7 +898,9 @@ function AbaRitual({
   function rolarResistencias() {
     const resistencias = {};
     const entradas = [];
-    for (const alvo of listaAlvos) {
+    // Jogador contra ameaça: quem rola é o mestre (o teste dela é segredo); os outros rolam aqui
+    const doMestre = listaAlvos.filter((p) => resistePeloMestre(p, mestre));
+    for (const alvo of listaAlvos.filter((p) => !doMestre.includes(p))) {
       const formula = formulaDeResistencia(baseDe(alvo, fichas, livro), resistencia.pericia);
       const teste = rolarTeste(lerFormula(formula));
       const passou = teste.total >= ritual.dt;
@@ -853,7 +910,7 @@ function AbaRitual({
       entradas.push([texto, alvo.oculto ? null : `${alvo.ver.nome} ${passou ? 'resistiu' : 'não resistiu'} ao ritual.`, 'acao', passou ? 'sucesso' : 'fracasso']);
     }
     // Um alvo só: a resistência rola na mesa (menos para os jogadores contra ameaça: o teste dela é segredo)
-    if (listaAlvos.length === 1 && !secreto(listaAlvos[0], mestre)) {
+    if (listaAlvos.length === 1 && !doMestre.length) {
       const [alvo] = listaAlvos;
       const r = resistencias[alvo.id];
       rolar({
@@ -866,8 +923,23 @@ function AbaRitual({
         estilo: alvo.ver.estilo,
       });
     }
+    if (doMestre.length) {
+      // Pede ao mestre; as que já rolaram aqui esperam junto
+      const { mudarDados } = mestreResiste.pedir({
+        autor: ator.id, nome: ritual.nome, fonte: 'ritual', pericia: resistencia.pericia, dt: ritual.dt,
+        efeito: resistencia.texto, alvos: doMestre.map((p) => p.id),
+      });
+      aplicar({ entradas, semGasto: true, mudarDados });
+      setEtapa((e) => ({ ...e, locais: resistencias }));
+      return;
+    }
     aplicar({ entradas });
     setEtapa((e) => ({ ...e, resistencias, porAlvo: e.rolagem ? danoPorAlvo(e.rolagem, resistencias) : e.porAlvo }));
+  }
+
+  function cancelarEspera() {
+    aplicar({ semGasto: true, mudarDados: mestreResiste.cancelar() });
+    onFechar();
   }
 
   function danoPorAlvo(rolagem, resistencias) {
@@ -942,6 +1014,12 @@ function AbaRitual({
                 </li>
               ))}
             </ul>
+          ) : mestreResiste.esperando ? (
+            <EsperaDoMestre
+              alvos={listaAlvos.filter((p) => resistePeloMestre(p, mestre))}
+              respostas={mestreResiste.pedido?.respostas}
+              onCancelar={cancelarEspera}
+            />
           ) : (
             <button type="button" className={styles.primario} onClick={rolarResistencias}>
               Rolar resistências ({resistencia.texto}, DT {ritual.dt})

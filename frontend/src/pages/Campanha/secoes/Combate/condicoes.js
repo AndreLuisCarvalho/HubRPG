@@ -37,6 +37,43 @@ export const CONDICOES = [
 
 export const condicaoPorId = (id) => CONDICOES.find((c) => c.id === id);
 
+/* Grupo de cada condição (o ícone dela) e a cor do grupo */
+const GRUPO = {
+  abalado: 'medo', apavorado: 'medo', confuso: 'mente', esmorecido: 'medo', fascinado: 'mente', frustrado: 'medo', pasmo: 'mente',
+  agarrado: 'preso', enredado: 'preso', imovel: 'preso', paralisado: 'preso', lento: 'lento',
+  cego: 'sentidos', ofuscado: 'sentidos', surdo: 'surdo',
+  desprevenido: 'defesa', vulneravel: 'defesa', indefeso: 'defesa', surpreendido: 'surpresa',
+  debilitado: 'fraqueza', exausto: 'fraqueza', fatigado: 'fraqueza', fraco: 'fraqueza', enjoado: 'enjoo',
+  atordoado: 'atordoado', inconsciente: 'sono',
+  caido: 'caido',
+  sangrando: 'sangue', envenenado: 'veneno', asfixiado: 'ar',
+};
+const COR_DO_GRUPO = {
+  medo: '#b48cff', mente: '#b48cff',
+  preso: '#e09a2b', lento: '#e09a2b', caido: '#e09a2b',
+  sentidos: '#7fb2e6', surdo: '#7fb2e6',
+  defesa: '#f0d27a', surpresa: '#f0d27a',
+  fraqueza: '#c9a06a', enjoo: '#9fcf6a',
+  atordoado: '#ffd75e', sono: '#9aa0ad',
+  sangue: '#ff5a4a', veneno: '#7fd36a', ar: '#7fd0e6',
+};
+export const grupoDaCondicao = (id) => GRUPO[id] ?? 'defesa';
+export const corDaCondicao = (id) => COR_DO_GRUPO[grupoDaCondicao(id)];
+
+/** Rodadas que faltam (null = até o fim da cena); a última rodada conta 1 */
+export function rodadasRestantes(c, rodada) {
+  if (c.rodadas == null) return null;
+  return Math.max(1, (c.desde ?? rodada) + c.rodadas - rodada);
+}
+
+/** "Caído · faltam 2 rodadas" — com o resumo do livro */
+export function textoDaCondicao(c, rodada) {
+  const info = condicaoPorId(c.id);
+  const resta = rodadasRestantes(c, rodada);
+  const tempo = resta == null ? 'até o fim da cena' : `falta${resta > 1 ? 'm' : ''} ${resta} rodada${resta > 1 ? 's' : ''}`;
+  return `${info?.nome ?? c.id} · ${tempo}${info?.resumo ? `\n${info.resumo}` : ''}`;
+}
+
 export const DURACOES = [
   { id: '1', rotulo: '1 rodada', rodadas: 1 },
   { id: '2', rotulo: '2 rodadas', rodadas: 2 },

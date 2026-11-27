@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { condicaoPorId } from './condicoes';
+import IconeCondicao from './IconeCondicao';
+import { condicaoPorId, corDaCondicao, rodadasRestantes, textoDaCondicao } from './condicoes';
 import { estadoAproximado, marcaDe } from './regrasCombate';
 import styles from './Arena.module.scss';
 
@@ -11,10 +12,12 @@ const TIPOS = { jogador: 'Agente', npc: 'NPC', monstro: 'Ameaça' };
  */
 export default function Inspecao({
   p, mestre, preparando, podeAgir, onFechar, onAgir, onAjustar, onTirarCondicao, onIniciativa, onRolarIniciativa,
-  onMover, onRevelar, onTirar,
+  onMover, onRevelar, onTirar, onAbrirFicha, defesas = null, rodada = 1,
 }) {
   const { ver } = p;
-  const segredo = p.lado === 'ameacas' && !mestre;
+  const ameaca = p.lado === 'ameacas';
+  // Ameaça às claras (o mestre abriu os números): os jogadores veem como o mestre
+  const segredo = ameaca && !mestre && !p.aberto;
   const estado = estadoAproximado(ver.recursos.find((r) => r.id === 'pv'));
   const marca = marcaDe(p);
 
@@ -55,14 +58,39 @@ export default function Inspecao({
         <ul className={styles.inspecaoCondicoes}>
           {p.condicoes.map((c) => {
             const info = condicaoPorId(c.id);
+            const resta = rodadasRestantes(c, rodada);
             return (
-              <li key={c.uid} title={info?.resumo}>
+              <li key={c.uid} title={textoDaCondicao(c, rodada)} style={{ '--cor-cond': corDaCondicao(c.id) }}>
+                <IconeCondicao id={c.id} className={styles.inspecaoIconeCond} />
                 {info?.nome ?? c.id}
+                <small>{resta == null ? 'cena' : `${resta}r`}</small>
                 {mestre && <button type="button" onClick={() => onTirarCondicao(c)} aria-label={`Tirar ${info?.nome}`}>✕</button>}
               </li>
             );
           })}
         </ul>
+      )}
+
+      {/* Resistências e fraquezas: o mestre sempre vê; os jogadores, quando a ameaça está às claras */}
+      {!segredo && defesas?.length > 0 && (
+        <dl className={styles.inspecaoDefesas}>
+          {defesas.map(([rotulo, texto]) => (
+            <div key={rotulo}><dt>{rotulo}</dt><dd>{texto}</dd></div>
+          ))}
+        </dl>
+      )}
+
+      {mestre && ameaca && (
+        <button
+          type="button"
+          className={styles.inspecaoAbrir}
+          aria-pressed={Boolean(p.aberto)}
+          onClick={onAbrirFicha}
+          title="Mostra (ou esconde) aos jogadores o PV exato, a Defesa e as resistências desta ameaça"
+        >
+          <i aria-hidden="true" />
+          {p.aberto ? 'Números à vista dos jogadores' : 'Mostrar números aos jogadores'}
+        </button>
       )}
 
       {mestre && preparando && (

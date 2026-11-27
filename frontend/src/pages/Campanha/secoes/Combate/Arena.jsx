@@ -11,6 +11,8 @@ import AvisosDoCombate from './AvisosDoCombate';
 import PainelAcao from './PainelAcao';
 import IconeArma from './IconeArma';
 import PedidoDeReacao from './PedidoDeReacao';
+import PedidoDeResistencia from './PedidoDeResistencia';
+import { nomeDaPericia, semPedido } from './resistenciaDoMestre';
 import EscolherFundoDoCombate from './EscolherFundoDoCombate';
 import { cenarioDe } from './cenarios';
 import { pagar, podePagar, semAcoes } from './economia';
@@ -21,7 +23,7 @@ import RelatorioCombate from './RelatorioCombate';
 import RolagemIniciativa from './RolagemIniciativa';
 import Timeline from './Timeline';
 import { montarRelatorio, relatorioPara, textoDaQueda } from './relatorio';
-import { carregarLivros, cartasDaMao, miraDaCarta } from './acoesCombate';
+import { baseDe, carregarLivros, cartasDaMao, miraDaCarta } from './acoesCombate';
 import { condicaoPorId, venceu } from './condicoes';
 import {
   agentesCaidos, ameacasDerrotadas, comecar, comoCaiu, estadoAproximado, sortearDerrota, sortearVitoria, inserirNaOrdem, mover, mudarPvDaCopia, mudarRecursoDaFicha, novoId,
@@ -317,7 +319,9 @@ export default function Arena({
 
     if (passo > 0 && proximo) entradas.push(textoDeTurno(proximo));
     // Turno novo: a economia de ação volta a ficar livre
-    salvar(comLog({ ...novo, economia: {} }, ...entradas));
+    // Turno novo: a economia zera e a mira (se ficou) sai
+    const { mira: _mira, ...semMira } = novo;
+    salvar(comLog({ ...semMira, economia: {} }, ...entradas));
   }
 
   // [texto do mestre, texto dos jogadores (null se oculto), tipo]
@@ -415,6 +419,25 @@ export default function Arena({
     salvar(p.oculto ? comLog(novo, [`${p.ver.nome} foi revelado.`, `${p.ver.nome} surge!`, 'sistema']) : novo);
   }
 
+  // Ameaça às claras: os jogadores passam a ver o PV exato, a Defesa e as resistências dela
+  function abrirFicha(p) {
+    const aberto = !p.aberto;
+    const texto = aberto ? `Os agentes agora sabem os números de ${p.ver.nome}.` : `Os números de ${p.ver.nome} voltaram a ficar ocultos.`;
+    salvar(comLog(
+      { ...dados, participantes: participantes.map((x) => (x.id === p.id ? { ...x, aberto } : x)) },
+      [texto, aberto && !p.oculto ? `${p.ver.nome} foi analisado: PV e Defesa à vista.` : null, 'sistema'],
+    ));
+  }
+
+  // RD, vulnerabilidades e imunidades de quem tem (ameaças e fichas de monstro)
+  function defesasDe(p) {
+    const base = baseDe(p, fichas, livro);
+    if (base.tipo !== 'monstro' || !base.dados) return null;
+    const { resistencias, vulnerabilidades, imunidades } = base.dados;
+    const linhas = [['RD', resistencias], ['Vulnerável', vulnerabilidades], ['Imune', imunidades]].filter(([, v]) => v && String(v).trim());
+    return linhas.length ? linhas : [];
+  }
+
   function tirar(p) {
     if (!window.confirm(`Tirar ${p.ver.nome} do combate?`)) return;
     salvar(remover(dados, p.id, fichas));
@@ -444,6 +467,21 @@ export default function Arena({
     aplicar({
       mudarDados: (d) => (d.pedidoReacao?.id === pedido.id && !d.pedidoReacao.escolha
         ? { ...d, pedidoReacao: { ...d.pedidoReacao, escolha: tipo } }
+        : d),
+    });
+  }
+
+  // Resistência de uma ameaça que o jogador pediu: o mestre responde (o jogador só vê Resistiu/Falhou)
+  function responderResistencia(p, total) {
+    const pedido = dados.pedidoResistencia;
+    if (!pedido) return;
+    const passou = total >= pedido.dt;
+    const texto = `${p.ver.nome} ${passou ? 'resistiu' : 'não resistiu'} a ${pedido.nome}: ${nomeDaPericia(pedido.pericia)} ${total} contra DT ${pedido.dt}.`;
+    const jogadores = p.oculto ? null : `${p.ver.nome} ${passou ? 'resistiu' : 'não resistiu'} a ${pedido.nome}.`;
+    aplicar({
+      entradas: [[texto, jogadores, 'acao', passou ? 'sucesso' : 'fracasso']],
+      mudarDados: (d) => (d.pedidoResistencia?.id === pedido.id
+        ? { ...d, pedidoResistencia: { ...d.pedidoResistencia, respostas: { ...d.pedidoResistencia.respostas, [p.id]: { total, passou } } } }
         : d),
     });
   }
@@ -518,14 +556,41 @@ export default function Arena({
     const valor = custo !== undefined ? custo : carta?.custo;
     const paga = Boolean(!semGasto && carta && naVez && valor && valor !== 'livre' && !jogadasPagas.current.has(carta.jogada));
     if (paga) jogadasPagas.current.add(carta.jogada);
+    // O ataque (ou o ritual) aconteceu: a seta da mira sai do campo
+    const disparou = (resto.entradas ?? []).some((e) => e && ['ataque', 'ritual'].includes(e[2]));
     aplicar({
       ...resto,
       mudarDados: (d) => {
-        const novo = mudarDados(d);
+        let novo = mudarDados(d);
+        if (disparou && novo.mira) {
+          const { mira: _mira, ...semMira } = novo;
+          novo = semMira;
+        }
         return paga ? { ...novo, economia: pagar(novo.economia, valor) } : novo;
       },
     });
   }
+
+  // Na mira: a ameaça (do mestre) com uma carta de ataque/ritual em jogo mostra a todos quem é o alvo,
+  // do momento em que o alvo é escolhido até a ação acontecer
+  const miraAgora = mestre && agindo && carta && mira && ator.lado === 'ameacas' && !ator.oculto && alvoIds.length
+    && ['atacar', 'ritual'].includes(carta.aba)
+    ? `${carta.jogada}|${ator.id}|${alvoIds.join(',')}`
+    : null;
+  const miraEnviada = useRef(null);
+  useEffect(() => {
+    if (miraAgora === miraEnviada.current) return;
+    miraEnviada.current = miraAgora;
+    if (!miraAgora) {
+      if (dados.mira) {
+        aplicar({ mudarDados: ({ mira: _mira, ...d }) => d });
+      }
+      return;
+    }
+    const [, autor, alvos] = miraAgora.split('|');
+    aplicar({ mudarDados: (d) => ({ ...d, mira: { autor, alvos: alvos.split(',') } }) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reage só à mira mudando
+  }, [miraAgora]);
 
   /* ---------- Desenho ---------- */
   const log = (dados.log ?? [])
@@ -536,6 +601,11 @@ export default function Arena({
   const ataque = log.find((e) => e.tipo === 'ataque' && e.dados?.autor);
   const ultimoAtaque = ataque ? { id: ataque.id, ...ataque.dados } : null;
   const contaLog = log.filter((e) => e.tipo !== 'rodada' && e.tipo !== 'turno').length;
+
+  // A mira que esta tela pode ver (ninguém vê a seta de quem está oculto, nem para quem está oculto)
+  const miraVisivel = andamento && dados.mira && visiveis.some((p) => p.id === dados.mira.autor)
+    ? { autor: dados.mira.autor, alvos: (dados.mira.alvos ?? []).filter((id) => visiveis.some((p) => p.id === id)) }
+    : null;
 
   // Lembretes da vez: morrendo / enlouquecendo
   const lembretes = andamento && ator?.ver.contagens
@@ -650,6 +720,8 @@ export default function Arena({
             golpes={golpes}
             avisos={<AvisosDoCombate key={mestre ? 'mestre' : 'jogadores'} log={log} mirando={Boolean(mira)} />}
             ultimoAtaque={ultimoAtaque}
+            rodada={dados.rodada || 1}
+            mira={miraVisivel}
             onEscolher={clicarNoPalco}
             onIniciativa={mudarIniciativa}
             inspecao={inspecao && !aba && (
@@ -670,6 +742,9 @@ export default function Arena({
                   reordenar(i, i + passo);
                 }}
                 onRevelar={() => revelar(inspecao)}
+                onAbrirFicha={() => abrirFicha(inspecao)}
+                defesas={defesasDe(inspecao)}
+                rodada={dados.rodada || 1}
                 onTirar={() => { setInspecionado(null); tirar(inspecao); }}
               />
             )}
@@ -701,6 +776,7 @@ export default function Arena({
               escolha={carta.escolha}
               itemUid={carta.item}
               pedidoReacao={dados.pedidoReacao}
+              pedidoResistencia={dados.pedidoResistencia}
               ator={ator}
               mestre={mestre}
               // Jogadores não miram em quem está oculto
@@ -799,6 +875,19 @@ export default function Arena({
           fundo={dados.fundo}
           onEscolher={(fundo) => aplicar({ mudarDados: (d) => ({ ...d, fundo }) })}
           onFechar={() => setEscolhendoFundo(false)}
+        />
+      )}
+
+      {/* Um jogador pediu a resistência de ameaças: o mestre rola (ou digita) */}
+      {mestre && andamento && dados.pedidoResistencia && (
+        <PedidoDeResistencia
+          key={dados.pedidoResistencia.id}
+          pedido={dados.pedidoResistencia}
+          participantes={vistos}
+          fichas={fichas}
+          livro={livro}
+          onResponder={responderResistencia}
+          onDescartar={() => aplicar({ mudarDados: semPedido(dados.pedidoResistencia.id) })}
         />
       )}
 
