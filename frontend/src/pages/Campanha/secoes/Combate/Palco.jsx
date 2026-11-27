@@ -12,9 +12,10 @@ const semMovimento = () => window.matchMedia?.('(prefers-reduced-motion: reduce)
  * O campo de duelo: ameaças numa fileira em cima, agentes embaixo, cada um numa carta em pé.
  * Quem está na vez sobe e acende. No ataque, a carta do atacante avança até o alvo e volta.
  * Clicar numa carta abre a ficha rápida — ou, com uma carta da mão em jogo, escolhe o alvo.
+ * "avisos": o que acabou de acontecer, no topo do campo.
  */
 export default function Palco({
-  participantes, vez, mestre, preparando, mirando, alvos, selecionado, golpes, legenda, ultimoAtaque, inspecao,
+  participantes, vez, mestre, preparando, mirando, alvos, selecionado, golpes, avisos = null, ultimoAtaque, inspecao,
   onEscolher, onIniciativa, fundo = null, combateId,
 }) {
   const cartas = useRef(new Map());
@@ -73,7 +74,7 @@ export default function Palco({
   return (
     <div className={styles.palco} data-mirando={mirando || undefined}>
       <FundoDoCombate fundo={fundo} combateId={combateId} />
-      {legenda && !mirando && <p key={legenda.id} className={styles.banner} data-tom={legenda.carimbo ?? undefined}>{legenda.mostrar}</p>}
+      {avisos}
       {mirando && <p className={styles.dicaMira}>Escolha o alvo</p>}
 
       <ul className={styles.fileira} data-lado="ameacas" aria-label="Ameaças">
