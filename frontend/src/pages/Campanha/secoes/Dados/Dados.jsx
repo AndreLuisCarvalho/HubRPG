@@ -53,6 +53,28 @@ export default function Dados({ campanha }) {
   if (erro && !fichas) return <p className="erro">{erro}</p>;
   if (!fichas) return <p className={styles.carregando}>Carregando…</p>;
 
+  const topo = (
+    <header className={styles.topo}>
+      <h1>Dados</h1>
+      <p>Cada ficha tem até 3 kits (d4, d6, d8, d10, d12, d20 e d100, cada peça com a sua cor ou skin); o kit em uso vale em todas as rolagens dela.</p>
+    </header>
+  );
+
+  // Sem ficha nenhuma (campanha nova, ou jogador ainda sem agente): só o aviso, nada de kit para ler
+  if (fichas.length === 0) {
+    return (
+      <section className={styles.pagina}>
+        {topo}
+        {erro && <p className="erro">{erro}</p>}
+        <p className={styles.vazio}>
+          {campanha.papel === 'mestre'
+            ? 'Crie uma ficha (jogador, NPC ou monstro) para montar o kit dela.'
+            : 'Crie o seu agente em Jogadores para montar o kit de dados dele.'}
+        </p>
+      </section>
+    );
+  }
+
   const ficha = fichas.find((f) => f.id === Number(busca.get('ficha'))) ?? fichas[0];
   const { kits, ativo } = kitsDaFicha(ficha?.dados?.dado);
   // O kit que está sendo montado (não precisa ser o que está em uso)
@@ -134,17 +156,11 @@ export default function Dados({ campanha }) {
 
   return (
     <section className={styles.pagina}>
-      <header className={styles.topo}>
-        <h1>Dados</h1>
-        <p>Cada ficha tem até 3 kits (d4, d6, d8, d10, d12, d20 e d100, cada peça com a sua cor ou skin); o kit em uso vale em todas as rolagens dela.</p>
-      </header>
+      {topo}
 
       {erro && <p className="erro">{erro}</p>}
 
-      {fichas.length === 0 ? (
-        <p className={styles.vazio}>Crie uma ficha (jogador, NPC ou monstro) para montar o kit dela.</p>
-      ) : (
-        <div className={styles.grade}>
+      <div className={styles.grade}>
           {/* ---------- Vitrine ---------- */}
           <div className={styles.vitrine}>
             <PreviaDado estilo={estilo} selecionado={peca} className={styles.previaGrande} />
@@ -317,7 +333,6 @@ export default function Dados({ campanha }) {
             </div>
           </div>
         </div>
-      )}
     </section>
   );
 }
